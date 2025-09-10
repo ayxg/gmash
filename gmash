@@ -1,0 +1,203 @@
+#!/bin/bash
+#@doc##########################################################################
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright(c) 2025 Anton Yashchenko
+###############################################################################
+# @project: [gmash] Git Smash
+# @author(s): Anton Yashchenko
+# @website: https://www.acpp.dev
+###############################################################################
+# @file GMash main source script.
+# @created: 2025/08/31
+# @brief Smash keyboard - get git. Bash scripts for high-level git & github
+#        repo management.
+#
+# Shell code conventions:
+# - 'Try' to maintain 80 chars per line.
+# - Func prefix [gmash_]
+# - Global vars prefix [GMASH_]
+# - Local function input vars prefix [_]
+# - Local vars postfix [_]
+#@enddoc#######################################################################
+set -eu
+
+# Enable/disable gmash dev debug echos.
+# Only available here. Set by comment/uncomment.
+# Delete temporary debugging echos after.
+# (windows bash debugger isn't... there yet).
+export GMASH_DEV_DEBUG=1
+gmash_dev_debug_echo(){
+  if [ -v GMASH_DEV_DEBUG ]; then
+    echo -e "\e[34;1m" "$@" "\e[0m"
+  fi
+}
+
+# Global vars shared across parser-def && main script.
+source "$(dirname "$(readlink -f "$0")")/gmash-source/global.sh"
+
+# ! Early exit.
+# Special case for --compile-parser developer arg.
+if [ "$#" -ge 1 ] && [ "$1" == "--compile-parser" ]; then
+  eval "$GMASH_SOURCE/gmash-compile.sh"
+  exit 0
+fi
+
+# Source implementation files.
+#
+# The script is sparated into two parts: the parser definitions(parser-def)
+# and the main script. The parser def from /parser-def/ must be pre-compiled
+# (use gmash-compile.sh) into /parser/.
+#
+# @note due to this structure, sources shared with the parser definitions are
+#       NOT implicitly available in the main script.
+# @note Parsers are significantly faster at loading/execution when prebuilt.
+
+# Main script sources
+  # Main script common utils.
+  source "$GMASH_SOURCE/common.sh"
+  # 'getoptions' parser extensions. (also sourced in parser-def)
+  source "$GMASH_SOURCE/parser-extensions.sh"
+  # Compiled cli parsers.
+    source "$GMASH_SOURCE/parser/main.sh"
+    source "$GMASH_SOURCE/parser/dirs.sh"
+    source "$GMASH_SOURCE/parser/find.sh"
+    source "$GMASH_SOURCE/parser/gist.sh"
+    source "$GMASH_SOURCE/parser/mono.sh"
+    source "$GMASH_SOURCE/parser/subtree.sh"
+  # gmash commands impl.
+    source "$GMASH_SOURCE/command/dirs.sh"
+    source "$GMASH_SOURCE/command/find.sh"
+    source "$GMASH_SOURCE/command/gist.sh"
+    source "$GMASH_SOURCE/command/mono.sh"
+    source "$GMASH_SOURCE/command/subtree.sh"
+
+
+# Command usage from inside bash:
+#
+# All commands are available as either positional or named argument call mode.
+# You may call the command recursivley by through gmash, passing cli style arguments:
+#     gmash gist prepare --name "my-gist"
+# For internal use, it's more optimal to call the command using positional arguments.
+# You should use a bash array to pass the arguments(allowing for empty values).
+# All empty values should be explicitly passed.
+# For example:
+#     $(gmash_gist_prepare  "${_title:-}" "${_name:-}" "${_readme:-}" "${_noreadme:-}" \
+#          "${_notitle:-}" "${_public:-}" "${_desc:-}")
+
+#-------------------------------------------------------------------------------------------------#
+# Script main.
+#-------------------------------------------------------------------------------------------------#
+
+# Parse global args & main command.
+gmash_parser_main "$@"
+eval "set -- $GMASH_ARGR"
+
+# No args exit early.
+if [ $# -lt 1 ]; then
+  gmash_main_help
+  exit 0
+fi
+
+# Dispatch to a specific command sub-parser, by shifting based on last parsed command.
+# Then, call the target sub-command function.
+# gmash has 2 layers of commands: gmash [main] [sub] [args...].
+readonly GMASH_INVALID_CMD_ERROR="[gmash][error]: Invalid command specified.\
+ Use --help to see commands list."
+readonly GMASH_INVALID_SUBCMD_ERROR="[gmash][error]: Invalid sub-command specified.\
+ Use --help to see commands list."
+
+###############################################################################
+# gmash->main
+###############################################################################
+_command=$1
+shift
+case $_command in
+  #############################################################################
+  # gmash->dirs
+  #############################################################################
+  dirs) gmash_parser_dirs "$@"; eval "set -- $GMASH_DIRS_ARGR";
+    _command=$1
+    case $_command in
+      prefix)
+        gmash_parser_dirs_prefix "$@"; gmash_dirs_prefix; ;;
+      same)
+        gmash_parser_dirs_same "$@"; gmash_dirs_same; ;;
+      separate)
+        gmash_parser_dirs_separate "$@"; gmash_dirs_separate; ;;
+      squash)
+        gmash_parser_dirs_squash "$@"; gmash_dirs_squash; ;;
+      *)
+        echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
+    esac ;;
+  #############################################################################
+  # gmash->find
+  #############################################################################
+  find) gmash_parser_find "$@"; eval "set -- $GMASH_FIND_ARGR";
+    _command=$1
+    case $_command in
+      duplicate_code)
+        gmash_parser_find_duplicate_code "$@"; gmash_find_duplicate_code; ;;
+      gits)
+        gmash_parser_find_gits "$@"; gmash_find_gits; ;;
+      sources)
+        gmash_parser_find_sources "$@"; gmash_find_sources; ;;
+    *)
+      echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
+    esac ;;
+  #############################################################################
+  # gmash->gist
+  #############################################################################
+  gist) gmash_parser_gist "$@"; eval "set -- $GMASH_GIST_ARGR";
+    _command=$1
+    case $_command in
+      prepare)
+        gmash_parser_gist_prepare "$@"; gmash_gist_prepare; ;;
+      create)
+        gmash_parser_gist_create "$@"; gmash_gist_create; ;;
+      clone)
+        gmash_parser_gist_clone "$@"; gmash_gist_clone; ;;
+      recover)
+        gmash_parser_gist_recover "$@"; gmash_gist_recover; ;;
+      upload)
+        gmash_parser_gist_upload "$@"; gmash_gist_upload; ;;
+      *)
+        echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
+    esac ;;
+  #############################################################################
+  # gmash->lineage
+  #############################################################################
+  lineage) gmash_parser_lineage "$@"; eval "set -- $GMASH_LINEAGE_ARGR";
+    _command=$1
+    case $_command in
+      merge)
+        gmash_parser_lineage_merge "$@"; gmash_lineage_merge; ;;
+        *)
+        echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
+    esac ;;
+  #############################################################################
+  # gmash->mono
+  #############################################################################
+  mono) gmash_parser_mono "$@"; eval "set -- $GMASH_MONO_ARGR";
+    _command=$1
+    case $_command in
+      patch)
+        gmash_parser_mono_patch "$@"; gmash_mono_patch; ;;
+      *)
+        echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
+    esac ;;
+  #############################################################################
+  # gmash->subtree
+  #############################################################################
+  subtree) gmash_parser_subtree "$@"; eval "set -- $GMASH_SUBTREE_ARGR";
+    _command=$1
+    case $_command in
+      new)
+        gmash_parser_subtree_new "$@"; gmash_subtree_new; ;;
+      patch)
+        gmash_parser_subtree_patch "$@"; gmash_subtree_patch; ;;
+      *)
+        echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
+    esac ;;
+  #############################################################################
+  *) echo "$GMASH_INVALID_CMD_ERROR"; exit 1 ;;
+esac
