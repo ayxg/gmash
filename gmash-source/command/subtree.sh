@@ -13,8 +13,18 @@
 
 # @brief Patch subtree from its remote repo.
 gmash_subtree_patch(){
+  if [ $# == 0 ]; then
+    _remote=${GMASH_SUBTREE_PATCH_REMOTE:-"origin"}
+    _branch=${GMASH_SUBTREE_PATCH_BRANCH:-"main"}
+    _path=${GMASH_SUBTREE_PATCH_PATH:-"projects/$_remote"}
+  else
+    _remote=${1:-"origin"}
+    _branch=${2:-"main"}
+    _path=${3:-"projects/$_remote"}
+  fi
+
   gmash_verb "\e[33;1mgmash->subtree-patch\e[0m"
-  git subtree pull --prefix=projects/gmashtest2 gmashtest2 main
+  git subtree pull --prefix="$_path" "$_remote" "$_branch"
   git pull
   git push
   gmash_verb "\e[32m\t  ? Subtree patch accepted.\e[0m"
@@ -23,17 +33,6 @@ gmash_subtree_patch(){
 #@doc##########################################################################
   # @func gmash_subtree_new
   # @brief Add subtree to this repo from an existing external git repo.
-  # @param [required] ARGV_REMOTE --remote
-  # @param [required] ARGV_PATH --path
-  # @param [required] ARGV_USER --user
-  # @param [optional] ARGV_URL --url
-  #   : Default to '$ARGV_TGTUSER/$ARGV_NAME'.
-  # @param [optional] ARGV_TGTUSER --tgtuser
-  #   : Defaults to '$ARGV_USER'.
-  # @param [optional] ARGV_BR --br
-  #   : Defaults to 'main'.
-  # @param [optional] ARGV_TGTBR --tgtbr
-  #   : Defaults to 'main'.
   #
   # Detailed overview of the git process for example subtree 'foo-box'.
   # For each submodule:
@@ -79,16 +78,25 @@ gmash_subtree_patch(){
   #       git push
 #@enddoc#######################################################################
 gmash_subtree_new(){
-  local _remote="$GMashParamRemote"
-  local _path="$GMashParamPath"
-  local _url="$GMashParamUrl"
-  local _user="$GMashParamUser"
-  local _tgtuser="$GMashParamTgtUser"
-  local _br="$GMashParamBr"
-  local _tgtbr="$GMashParamTgtBr"
-  local _name="$GMashParamName"
-
-  local _curr_repo_name=$(basename $(git rev-parse --show-toplevel))
+  if [ $# == 0 ]; then
+    _url=${GMASH_SUBTREE_NEW_URL:-"$_remote/$_name.git"}
+    _remote=${GMASH_SUBTREE_NEW_REMOTE:-"origin"}
+    _user=${GMASH_SUBTREE_NEW_USER:-{currentGithubUser}}
+    _tgtuser=${GMASH_SUBTREE_NEW_TGTUSER:-$_user}
+    _br=${GMASH_SUBTREE_NEW_BR:-'main'}
+    _tgtbr=${GMASH_SUBTREE_NEW_TGTBR:-'main'}
+    _name=${GMASH_SUBTREE_NEW_NAME:-'subtreeDirName'}
+  else
+    _url=${1:-"$_remote/$_name.git"}
+    _remote=${2:-"origin"}
+    _user=${3:-{currentGithubUser}}
+    _tgtuser=${4:-$_user}
+    _br=${5:-'main'}
+    _tgtbr=${6:-'main'}
+    _name=${7:-'subtreeDirName'}
+  fi
+  local _curr_repo_name
+  _curr_repo_name=$(basename "$(git rev-parse --show-toplevel)")
 
   gmash_verb "\e[33;1mgmash->new-subtree\e[0m
     \e[34m\tⓘ Input arguments:\e[0m
@@ -101,7 +109,7 @@ gmash_subtree_new(){
     --tgtbr='$_tgtbr',
     --name='$_name'."
 
-  # Verify git state & parameters.
+
   gmash_verb "\e[35m\t⚙ Verifying parameters.\e[0m"
     # If _name is empty, name is the same as remote alias.
     if [ -z "$_name" ]; then
