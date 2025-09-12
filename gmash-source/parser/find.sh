@@ -206,39 +206,7 @@ Parameters:
   -p,     --path <path>                 Target path.
   -t,     --threshold <threshold>       Duplicate line threshold.
 'simian' java lib additional options:
-  Simian Similarity Analyzer 4.0.0 - https://simian.quandarypeak.com
-  Copyright (c) 2023 Quandary Peak Research. All rights reserved.
-  Subject to the Quandary Peak Academic Software License.
-  Error: Invalid option : '-help'
-  Usage: [options] [files]
-      -balanceCurlyBraces[+|-]         Accounts for curly braces when breaking lines
-      -balanceParentheses[+|-]         Accounts for parentheses when breaking lines
-      -balanceSquareBrackets[+|-]      Accounts for square brackets when breaking lines
-      -config=FNAME                    Reads the configuration from the specified file
-      -defaultLanguage=LANG            Assumes files are in the specified language if none can be inferred
-      -excludes=SPEC                   Excludes files matching the specified pattern
-      -failOnDuplication[+|-|%]        Exits with a failure return code if duplication detected
-      -formatter=TYPE[:FNAME]          Uses the specified output format when reporting
-      -ignoreBlocks=START:END          Ignores all lines between START/END
-      -ignoreCharacterCase[+|-]        Matches character literals irrespective of case
-      -ignoreCharacters[+|-]           Completely ignores character literals
-      -ignoreCurlyBraces[+|-]          Completely ignores curly braces
-      -ignoreIdentifierCase[+|-]       Matches identifiers irresepctive of case
-      -ignoreIdentifiers[+|-]          Completely ignores identifiers
-      -ignoreLiterals[+|-]             Completely ignores all literals (strings, numbers and characters)
-      -ignoreModifiers[+|-]            Ignores modifiers (public, private, static, etc.)
-      -ignoreNumbers[+|-]              Completely ignores numbers
-      -ignoreOverlappingBlocks[+|-]    Ignores blocks that wholly or partially overlap
-      -ignoreRegions[+|-]              Ignores all lines between #region/#endregion
-      -ignoreStringCase[+|-]           Matches string literals irrespective of case
-      -ignoreStrings[+|-]              Completely ignores the contents of strings
-      -ignoreSubtypeNames[+|-]         Matches on similar type names (eg. Reader and FilterReader)
-      -ignoreVariableNames[+|-]        Completely ignores variable names (fields, parameters and locals)
-      -includes=SPEC                   Including files matching the specified pattern
-      -language=LANG                   Assumes ALL files are in the specified language
-      -reportDuplicateText[+|-]        Prints the duplicate text in reports
-      -threshold=COUNT                 Matches will contain at least the specified number of lines
-  
+
   
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
