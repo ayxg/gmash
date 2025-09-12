@@ -19,7 +19,7 @@ gmash_def_parser_subtree(){
   msg -- "Sub-commands:"
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
     cmd new \
-      -- "Properly add and merge a new or existing repo as a subtree to a parent monorepo."
+      -- "Add and merge a new or existing repo as a subtree to a parent monorepo."
     cmd patch \
       -- "Patch subtree changes to monorepo."
   msg -- "Display:"
@@ -31,14 +31,27 @@ gmash_def_parser_subtree(){
 gmash_def_parser_subtree_new(){
   extend_parser
   standard_parser_setup GMASH_SUBTREE_NEW_ARGR gmash_subtree_new_help \
-    "gmash subtree new -r [repo] -b [branch]"
-  msg -- "Description:"
+    "gmash subtree new"
+  msg -- " "
   msg -- "Properly add and merge a new or existing repo as a subtree to a parent monorepo."
+  msg -- " "
   msg -- "Parameters:"
-    param GMASH_SUBTREE_NEW_REPO -r --repo var:"<repo>" \
-      -- "Target repository."
-    param GMASH_SUBTREE_NEW_BRANCH -b --branch var:"<branch>" \
-      -- "Target branch."
+    param GMASH_SUBTREE_NEW_URL -l --url var:"<remoteURL>" \
+      -- ""
+    param GMASH_SUBTREE_NEW_REMOTE -R --remote var:"[remote = \"origin\"]" \
+      -- ""
+    param GMASH_SUBTREE_NEW_PATH -p --path var:'[subtreePath = <subtreeDirName>]'\
+      -- ""
+    param GMASH_SUBTREE_NEW_USER -u --user var:'[sourceUser = {currentGithubUser}]' \
+      -- ""
+    param GMASH_SUBTREE_NEW_TGTUSER -U --tgt-user var:'[targetUser = <sourceUser>]' \
+      -- ""
+    param GMASH_SUBTREE_NEW_BR -b --branch var:"[monoBranch = \"main\"]" \
+      -- ""
+    param GMASH_SUBTREE_NEW_TGTBR -B --tgt-branch var:"[subtreeBranch = \"main\"]" \
+      -- ""
+    param GMASH_SUBTREE_NEW_NAME -n --name var:'[subtreeDirName = <remoteName>]' \
+      -- ""
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_subtree_new_help
@@ -53,10 +66,12 @@ gmash_def_parser_subtree_patch(){
   msg -- "Description:"
   msg -- "Patch subtree changes to monorepo."
   msg -- "Parameters:"
-    param GMASH_SUBTREE_PATCH_REPO -r --repo var:"<repo>" \
-      -- "Target repository."
-    param GMASH_SUBTREE_PATCH_BRANCH -b --branch var:"<branch>" \
-      -- "Target branch."
+    param GMASH_SUBTREE_PATCH_REMOTE -R --remote var:"[remote = \"origin\"]" \
+      -- ""
+    param GMASH_SUBTREE_PATCH_BRANCH -b --branch var:"[branch = \"main\"]" \
+      -- ""
+    param GMASH_SUBTREE_PATCH_PATH -p --path var:"<subtreePath>"\
+      -- ""
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_subtree_patch_help
