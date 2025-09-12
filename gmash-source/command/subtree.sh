@@ -80,6 +80,7 @@ gmash_subtree_patch(){
 gmash_subtree_new(){
   if [ $# == 0 ]; then
     _url=${GMASH_SUBTREE_NEW_URL:-"$_remote/$_name.git"}
+    _path=${GMASH_SUBTREE_NEW_PATH:-""}
     _remote=${GMASH_SUBTREE_NEW_REMOTE:-"origin"}
     _user=${GMASH_SUBTREE_NEW_USER:-{currentGithubUser}}
     _tgtuser=${GMASH_SUBTREE_NEW_TGTUSER:-$_user}
@@ -99,17 +100,6 @@ gmash_subtree_new(){
   _curr_repo_name=$(basename "$(git rev-parse --show-toplevel)")
 
   vecho_func "gmash->new->subtree"
-  veco_info "Input Arguments:
-    --remote='$_remote',
-    --path='$_path',
-    --url='$_url',
-    --user='$_user',
-    --tgtuser='$_tgtuser',
-    --br='$_br',
-    --tgtbr='$_tgtbr',
-    --name='$_name'."
-
-
   vecho_process "Verifying parameters."
     # If _name is empty, name is the same as remote alias.
     if [ -z "$_name" ]; then
@@ -135,8 +125,8 @@ gmash_subtree_new(){
 
     # Is user currently on correct git branch ?
     local _correct_branch=$(git rev-parse --abbrev-ref HEAD)
-    if [ "$_correct_branch" != "$_tgtbr" ]; then
-      echo_err "[gmash][new-subtree][error]: Must be on $_tgtbr branch (currently on $_correct_branch)."
+    if [ "$_correct_branch" != "$_br" ]; then
+      echo_err "[gmash][new-subtree][error]: Must be on $_br branch (currently on $_correct_branch)."
       return 1
     fi
   vecho_done "Params verified, working on mono branch '$_curr_repo_name/$_tgtbr'."
