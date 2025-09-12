@@ -36,8 +36,12 @@ gmash_def_parser_dirs(){
 gmash_def_parser_dirs_prefix(){
   extend_parser
   standard_parser_setup GMASH_DIRS_PREFIX_ARGR gmash_dirs_prefix_help \
-    "gmash dirs prefix --p <prefix> --P [fileOrFolder]"
+    "Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]"
+  msg -- "  "
+  msg -- "Brief:"
   msg -- "Add a prefix to each top-level file in a directory."
+  msg -- "  "
+  msg -- "Parameters:"
     param GMASH_DIRS_PREFIX_PREFIX -p --prefix var:"<prefix>" -- "Prefix to add."
     param GMASH_DIRS_PREFIX_PATH -P --path var:"[fileOrFolder]" -- "Path to a file\
  or directory. If given a file, only the single file is prefixed."
@@ -51,10 +55,15 @@ gmash_def_parser_dirs_prefix(){
 gmash_def_parser_dirs_same(){
   extend_parser
   standard_parser_setup GMASH_DIRS_SAME_ARGR gmash_dirs_same_help \
-    "gmash dirs same -p <srcPath> -P <tgtPath>"
+    "Usage: gmash dirs same -p <srcPath> -P <tgtPath>"
+  msg -- "  "
+  msg -- "Brief:"
+  msg -- "Get a diff of 2 directories."
+  msg -- "  "
   msg -- "Parameters:"
     param GMASH_DIRS_SAME_PATH -p --path var:"<srcPath>" -- "Source path."
     param GMASH_DIRS_SAME_TGTPATH -P --tgt-path var:"<tgtPath>" -- "Target path."
+  msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_dirs_same_help
     disp "GMASH_DIRS_SAME_VERSION" -v --version \
@@ -64,9 +73,11 @@ gmash_def_parser_dirs_same(){
 gmash_def_parser_dirs_separate(){
   extend_parser
   standard_parser_setup GMASH_DIRS_SEPARATE_ARGR gmash_dirs_separate_help \
-    "gmash dirs separate [path]"
-  msg -- "Description:"
+    "Usage: gmash dirs separate [path]"
+  msg -- "  "
+  msg -- "Brief:"
   msg -- "Separate each top-level file into its own folder of the same name."
+  msg -- "  "
   msg -- "Parameters:"
     param GMASH_DIRS_SEPARATE_PATH -p --path var:"[path]" -- "Path to separate files from. Defaults to current."
   msg -- "  "
@@ -79,14 +90,17 @@ gmash_def_parser_dirs_separate(){
 gmash_def_parser_dirs_squash(){
   extend_parser
   standard_parser_setup GMASH_DIRS_SQUASH_ARGR gmash_dirs_squash_help \
-    "gmash dirs squash [path]"
-  msg -- "Description:"
+    "Usage: gmash dirs squash [path]"
+  msg -- "  "
+  msg -- "Brief:"
   msg -- "Squash empty directories in the specified path."
+  msg -- "  "
   msg -- "Parameters:"
     param GMASH_DIRS_SQUASH_PATH -p --path var:"[path]" \
       -- "Target path. Defaults to current."
     param GMASH_DIRS_SQUASH_DEPTH -d --depth var:"[depth]" \
       -- "Depth of directories to squash. Defaults to 1."
+  msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_dirs_squash_help
     disp "GMASH_DIRS_SQUASH_VERSION" -v --version \
