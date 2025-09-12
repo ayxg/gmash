@@ -139,9 +139,9 @@ gmash_subtree_new(){
       echo_err "[gmash][new-subtree][error]: Must be on $_tgtbr branch (currently on $_correct_branch)."
       return 1
     fi
-  vecho_done "\e[32m\t  ✓ Params verified, working on mono branch '$_curr_repo_name/$_tgtbr'.\e[0m"
+  vecho_done "Params verified, working on mono branch '$_curr_repo_name/$_tgtbr'."
 
-  vecho_info "\e[34m\tⓘ Final input parameters:\e[0m
+  vecho_info "Final input parameters:
     --remote='$_remote',
     --path='$_path',
     --url='$_url',
@@ -156,22 +156,22 @@ gmash_subtree_new(){
       # github repo $_tgtuser/$_name.git exists & accessible? Use it as the url.
       if git ls-remote "https://github.com/$_tgtuser/$_name.git" &> /dev/null; then
           _url="https://github.com/$_tgtuser/$_name.git"
-          vecho "Found existing GitHub repo '$_tgtuser/$_name.git'. Using it as the subtree remote URL."
+          vecho_action "Found existing GitHub repo '$_tgtuser/$_name.git'. Using it as the subtree remote URL."
       else
         # Does the subtree target remote repo already exist ?
         if git remote get-url "$_remote" >/dev/null 2>&1; then
           _url=$(git remote get-url "$_remote" 2>&1)
-          vecho "Found existing remote '$_remote' with URL '$_url'. Using it as the subtree remote URL."
+          vecho_action "Found existing remote '$_remote' with URL '$_url'. Using it as the subtree remote URL."
           if ! git ls-remote "$_url" &> /dev/null; then
-            echo "[gmash][new-subtree][error]: Existing remote '$_remote' URL is not accessible. URL: $_url"
+            echo_err "[gmash][new-subtree][error]: Existing remote '$_remote' URL is not accessible. URL: $_url"
             return 1
           fi
         else
           # Create a new GitHub repo at '$_tgtuser/$_name.git' with a single
           # commit of a README.md file(required to add as subtree).
           if command -v gh >/dev/null 2>&1; then
-            vecho "Creating new GitHub repo '$_tgtuser/$_name' for subtree..."
-            vecho "\e[33m\t\t💻 gh repo create '$_tgtuser/$_name' --private --add-readme --description ...\e[0m"
+            vecho_action "Creating new GitHub repo '$_tgtuser/$_name' for subtree..."
+            vecho_func "gh repo create '$_tgtuser/$_name' --private --add-readme --description ..."
             if gh repo create "$_tgtuser/$_name" --private --add-readme --description \
               "[gmash][new-subtree] Generated subtree repository '$_tgtuser/$_name' for '$_user/$_curr_repo_name:$_path'"; then
               _url="https://github.com/$_tgtuser/$_name.git"
@@ -190,51 +190,51 @@ gmash_subtree_new(){
 
   vecho "Guarding current remotes, subtrees and mono paths. Overwrite disabled."
     if git config "remote.$_remote.url" > /dev/null; then
-        echo "[gmash][new-subtree][error]: Remote '$_remote' already exists."
+        echo_err "[gmash][new-subtree][error]: Remote '$_remote' already exists."
         return 1
     fi
     vecho_action "Remote '$_remote' is unique."
 
     if git remote -v | awk '{print $2}' | grep -q "^$_url$"; then
-        echo "[gmash][new-subtree][error]: URL '$_url' is already used by another remote."
+        echo_err "[gmash][new-subtree][error]: URL '$_url' is already used by another remote."
         return 1
     fi
     vecho_action "URL '$_url' is not used by any existing remote."
 
     if [ -e "$_path" ] && [ -n "$(find "$_path" -maxdepth 1 -mindepth 1 -print -quit 2>/dev/null)" ]; then
-        echo "[gmash][new-subtree][error]: Target path '$_path' exists and contains files."
+        echo_err "[gmash][new-subtree][error]: Target path '$_path' exists and contains files."
         return 1
     fi
     vecho_action "Target path '$_path' is clear."
 
     if git check-ignore -q "$_path"; then
-        echo "[gmash][new-subtree][error]: Target path '$_path' matches gitignore patterns"
+        echo_err "[gmash][new-subtree][error]: Target path '$_path' matches gitignore patterns"
         return 1
     fi
     vecho_action "Target path '$_path' is not ignored by gitignore."
   vecho_done "Safe to add subtree.\e[0m"
 
   # Do all the dirty subtree creation git commands... Im still unsure which parts here are necessary.
-    vecho "\e[33m\t💻 git remote add -f '$_remote' '$_url'"
+    vecho_func "git remote add -f '$_remote' '$_url'"
     git remote add -f "$_remote" "$_url"
 
-    vecho "\e[33m\t💻 git subtree add --prefix='$_path' '$_remote' '$_tgtbr'"
+    vecho_func "git subtree add --prefix='$_path' '$_remote' '$_tgtbr'"
     git subtree add --prefix="$_path" "$_url" "$_tgtbr"
 
-    vecho "\e[33m\t💻 git subtree pull --prefix='$_path' '$_remote' '$_tgtbr'"
+    vecho_func "git subtree pull --prefix='$_path' '$_remote' '$_tgtbr'"
     git subtree pull --prefix="$_path" "$_remote" "$_tgtbr"
 
-    vecho "\e[33m\t💻 git push"
+    vecho_func "git push"
     git push
 
     vecho_done "Subtree '$_remote' added to '$_path' and pushed to remote.\e[0m"
-    vecho "\e[34m\t[gmash][new-subtree] ⓘ Result metadata:\e[0m
-      \t\t[Remote URL]: '$_url'
-      \t\t[Target Remote Alias]: '$_remote'
-      \t\t[Target Subtree Branch]: '$_tgtbr'
-      \t\t[Mono Repo]: '$_user/$_curr_repo_name'
-      \t\t[Subtree Repo]: '$_tgtuser/$_name'
-      \t\t[Mono->Subtree Link Path]: '$_path'.\e[0m"
+    vecho_info "Result metadata:\
+      [Remote URL]: '$_url'
+      [Target Remote Alias]: '$_remote'
+      [Target Subtree Branch]: '$_tgtbr'
+      [Mono Repo]: '$_user/$_curr_repo_name'
+      [Subtree Repo]: '$_tgtuser/$_name'
+      [Mono->Subtree Link Path]: '$_path'.\e[0m"
 
   return 0
 }
