@@ -18,8 +18,7 @@
 #@enddoc------------------------------------------------------------------------------------------#
 
 # Source path (used for relative sources)
-export GMASH_SOURCE=""
-GMASH_SOURCE="$(dirname "$(readlink -f "$0")")/gmash-source"
+export GMASH_SOURCE="$(dirname "$(readlink -f "$0")")/gmash-source"
 
 # Program Metadata
 export GMASH_PROGRAM="${0##*/}"

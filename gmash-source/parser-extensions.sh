@@ -14,7 +14,7 @@
 
 # Source the global vars so they are available to the parser definitions. The parser definitions
 # are pre-generated(compiled) then used in the main script.
-source "$(dirname "$(readlink -f "$0")")/gmash-source/global.sh"
+source "$GMASH_SOURCE/global.sh"
 
 # Set as getoptions parser error callback.
 parser_error() {

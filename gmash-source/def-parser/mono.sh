@@ -10,7 +10,7 @@
 # @file
 # @created: 2025/09/02
 #@enddoc###########################################################################################
-source "$(dirname "$(readlink -f "$0")")/gmash-source/parser-extensions.sh"
+source "$GMASH_SOURCE/parser-extensions.sh"
 
 gmash_def_parser_mono(){
   extend_parser

@@ -11,7 +11,7 @@
 # @created: 2025/09/02
 #@enddoc#######################################################################
 
-source "$(dirname "$(readlink -f "$0")")/gmash-source/parser-extensions.sh"
+source "$GMASH_SOURCE/parser-extensions.sh"
 
 # Main 'gmash' cli args parser.
 # This parse step only parses the main command, then dispatches to a command specific parse step.
