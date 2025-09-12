@@ -1,9 +1,9 @@
-# Use Case : Add a gist as a subtree.
+## Use Case : Add a gist as a subtree.
 
 ``` bash
 $ gmash -V subtree new -l "https://gist.github.com/zhymet/7fe2c96a925c208f2a248ca76422e405.git" --path "gist/util-cxx20-contig-enum-7fe2c96a925c208f2a248ca76422e405" -b master -B main -R util-cxx20-contig-enum-7fe2c96a925c208f2a248ca76422e405
 ```
-
+### Output
 ```
  gmash->new->subtree
     ⚙  Verifying parameters.
@@ -55,4 +55,12 @@ To https://github.com/ayzg/gists.git
       [Subtree Repo]: '{currentGithubUser}/subtreeDirName'
       [Mono->Subtree Link Path]: 'gist/util-cxx20-contig-enum-7fe2c96a925c208f2a248ca76422e405'.
 
+```
+
+### Will produce this commit messsage in the parent repo:
+```
+Add 'gist/util-cxx20-contig-enum-7fe2c96a925c208f2a248ca76422e405/' from commit 'd06e02cc36b3c12f1565b3ba759b925a784ee838'
+git-subtree-dir: gist/util-cxx20-contig-enum-7fe2c96a925c208f2a248ca76422e405
+git-subtree-mainline: fb64222
+git-subtree-split: d06e02c
 ```
