@@ -2,7 +2,7 @@
 Follow these steps to install gmash, compile its parsers, verify your setup, and run your first command.
 
 ### Prerequisites
-- `git-bash` 
+- `git-bash`
 - `gh` (GitHub CLI)
 - `getoptions` library (only required if you wish to modify the source files)
 
@@ -27,9 +27,9 @@ source ~/.bashrc
 ### 3. Compile Parsers
 gmash uses gengetopt to generate CLI parsers for its commands. Run the compile script:
 ```bash
-bash gmash-source/gmash-compile.sh
+gmash --compile-parser
 ```
-This produces updated parser source files under `gmash-source/parser/` 
+This produces updated parser source files under `gmash-source/parser/`
 and integrates them into the main dispatcher.
 ### 4. Verify Installation
 Check that `gmash` is on your `PATH` and that parsers load correctly:
