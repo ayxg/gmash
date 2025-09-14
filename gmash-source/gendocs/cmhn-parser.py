@@ -3,14 +3,31 @@
 # @project CMHN : Command Line Help Notation Parser
 # @brief Grammar for parsing 'help' manuals displayed by command line applications.
 
-from typing import List, Optional, Union
+import sys
+from typing import List, Optional
 from enum import Enum, auto
+
+CMNH_TITLE = "CMHN - Command Line Help Notation Parser"
+CMNH_VERSION = "v0.0.0"
+CMNH_LICENSE = "AGPL-3.0-or-later Copyright(c) 2025 Anton Yashchenko"
+CMNH_HELP = """Usage: python gen-docs.py '<help text to parse>'
+
+Parse the provided help text into a Command Line Help Notation (CMHN) object.
+
+Options:
+  -t, --test            Run unit tests and exit.
+  -v, --version         Show version information and exit.
+  -h, --help            Show this help message and exit.
+  -d, --debug           Enable debug mode for detailed output.
+  -V, --verbose         Enable verbose output for more detailed information.
+
+"""
 
 ###############################################################################
 # Impl
 # Models an LL Recursive parser directly from the raw input, no tokenizer.
 ###############################################################################
-
+is_alnumus = lambda c: c.isalnum() or c == '_'
 is_alpha = lambda c: c.isalpha() or c == '_'
 is_numeric = lambda c: c.isdigit()
 is_indent = lambda c: c in ("\n    " | "\n  " | "\n\t")
@@ -20,28 +37,32 @@ is_newline = lambda c: c == '\n'
 is_whitespace = lambda c: c in (' ', '\t')
 
 class eTk(Enum):
-  USAGE = auto()
-  TEXT = auto()
-  NEWLINE = auto()
-  SHELL_IDENT = auto()
-  LONG_FLAG_IDENT = auto()
-  SHORT_FLAG_IDENT = auto()
-  INDENTED_LINE = auto()
-  SHORT_FLAG = auto()
-  LONG_FLAG = auto()
-  OPTIONAL_ARG = auto()
-  REQUIRED_ARG = auto()
-  SPACE = auto()
-  COLON = auto()
-  TEXT_LINE = auto()
-  ARGUMENT = auto()
-  ARGUMENT_LIST = auto()
+  NOTHING = auto()    # Empty node
+  POSION = auto()     # Error node, value is the error message
+  SYNTAX = auto()   # Root node
+  USAGE = auto()      # Usage line
+  BRIEF = auto()      # Brief description paragraph
+  SECTION = auto()    # Section with title
+  TEXT_LINE = auto()  # A line of text
   PARAGRAPH = auto()
-  SECTION = auto()
+  SHELL_IDENT = auto() # Shell variable identifier
+  SHORT_FLAG = auto()  # Short flag, e.g. -f
+  SHORT_FLAG_IDENT = auto() # Short flag identifier, e.g. f
+  LONG_FLAG = auto()   # Long flag, e.g. --force
+  LONG_FLAG_IDENT = auto() # Long flag identifier, e.g. force
+  OPTIONAL_ARG = auto() # Optional argument, e.g. [file]
+  REQUIRED_ARG = auto() # Required argument, e.g. <file>
+  ARGUMENT = auto()    # An argument with flags and description
+  ARGUMENT_LIST = auto() # A list of arguments
 
 class Ast:
-  def __init__(self, type: eTk, value: Optional[str] = None,
-               line: int = 0, col: int = 0, end_line: int = 0, end_col: int = 0,
+  def __init__(self,
+               type: eTk = eTk.NOTHING,
+               value: Optional[str] = None,
+               line: int = 0,
+               col: int = 0,
+               end_line: int = 0,
+               end_col: int = 0,
                branches: Optional[List['Ast']] = None
                ) -> None:
     self.type: eTk = type
@@ -58,132 +79,319 @@ class Ast:
   def __repr__(self) -> str:
     return f'Ast({self.type}, {self.value}, {self.branches})'
 
+def verbose_print(msg: str) -> None:
+  if verbose_mode:
+    print(msg)
+
+def debug_print(msg: str) -> None:
+  if debug_mode:
+    print(msg)
+
+def print_help_text() -> None:
+  print(CMNH_TITLE, CMNH_VERSION, CMNH_LICENSE, sep="\n")
+  print(CMNH_HELP)
+  sys.exit(0)
+
+def print_ascii_tree(astnode : Ast, prefix: str = "", is_last: bool = True) -> None:
+  """Print the AST as a compact ASCII tree with boxes and connection lines"""
+  content = astnode.type
+  if astnode.value is not None:
+    content += f"\n{astnode.value}"
+
+  lines = content.split('\n')
+  max_width = max(len(line) for line in lines) if lines else 0
+
+  box_lines = []
+  box_lines.append("┌" + "─" * (max_width + 2) + "┐")
+  for line in lines:
+    box_lines.append("│ " + line.ljust(max_width) + " │")
+  box_lines.append("└" + "─" * (max_width + 2) + "┘")
+
+  for i, line in enumerate(box_lines):
+    print(prefix + line)
+
+  if astnode.branches:
+    for i, child in enumerate(astnode.branches):
+      is_last_child = (i == len(astnode.branches) - 1)
+
+      if is_last_child:
+        print(prefix + "    │   ")
+        print(prefix + "    │   ")
+        print(prefix + "    └───────┐")
+      else:
+        print(prefix + "    │   ")
+        print(prefix + "    │   ")
+        print(prefix + "    ├───────┐")
+
+      # Calculate child prefix - align with the connection point
+      child_prefix = prefix
+      if is_last_child:
+        child_prefix += "       "  # 7 spaces to align with the end of "└─ "
+      else:
+        child_prefix += "    │  "  # 6 spaces: 4 for indent + │ + 2 spaces
+
+      if hasattr(child, 'print_ascii_tree'):
+        child.print_ascii_tree(child_prefix, is_last_child)
+      else:
+        token_content = child.type
+        if hasattr(child, 'value') and child.value is not None:
+            token_content += f"\n{child.value}"
+
+        token_lines = token_content.split('\n')
+        token_max_width = max(len(line) for line in token_lines) if token_lines else 0
+
+        token_box_lines = []
+        token_box_lines.append("┌" + "─" * (token_max_width + 2) + "┐")
+        for line in token_lines:
+            token_box_lines.append("│ " + line.ljust(token_max_width) + " │")
+        token_box_lines.append("└" + "─" * (token_max_width + 2) + "┘")
+
+        for j, line in enumerate(token_box_lines):
+            print(child_prefix + line)
+
 class Parser:
-  def __init__(self, tokens):
-    self.tokens = tokens
+  def __init__(self, input: str = "") -> None:
+    self.input = input
     self.pos = 0
     self.output = []
 
   def curr(self):
-    if self.pos < len(self.tokens):
-      return self.tokens[self.pos]
+    if self.pos < len(self.input):
+      return self.input[self.pos]
     return None
 
   def advance(self, count : int = 1):
     self.pos += count
 
-  def peek(self, offset: int = 1) -> Optional[Tk]:
-    if self.pos + offset < len(self.tokens):
-      return self.tokens[self.pos + offset]
+  def peek(self, offset: int = 1) -> int:
+    if self.pos + offset < len(self.input):
+      return self.input[self.pos + offset]
     return None
 
   def at_eof(self):
-    return self.pos >= len(self.tokens)
+    return self.pos >= len(self.input)
 
-  def eat(self, expected_type: eTk) -> Tk:
-    token = self.curr()
-    if token is None:
-      raise Exception(f"Unexpected end of input, expected {expected_type.name}")
-    if token.type != expected_type:
-      raise Exception(f"Unexpected token {token.type.name} at line {token.line}, col {token.col}, expected {expected_type.name}")
-    self.advance()
-    return token
+  # Attempt to consume the next token if it matches one of the expected strings.
+  # If successful, append the token to the provided Ast node , advance by string length,
+  # and return True.
+  # Otherwise, return False without modifying the Ast node.
+  def eat(self, append_to : Ast,production : eTk ,expected_strings : List[str] = []):
+    if self.at_eof():
+      return False
+    elif expected_strings:
+      for expected_string in expected_strings:
+        if self.input.startswith(expected_string, self.pos):
+          append_to.append(Ast(production,expected_string))
+          self.advance(len(expected_string))
+          return True
+    return False
+
+  # pass count -1 to skip all consecutive chars, returns the number of chars skipped
+  def skip(self, char: str, count: int = 1) -> int:
+    skipped = 0
+    while self.curr() and self.curr() == char and (count == -1 or skipped < count):
+      self.advance()
+      skipped += 1
+    return skipped
 
   def skip_whitespace(self):
-    while self.curr() and ( self.curr().type == eTk.SPACE or self.curr().type == eTk.NEWLINE):
+    while self.curr() and ( self.curr() == ' ' or self.curr() == "\n"):
       self.advance()
 
-  def parse_syntax(self,input):
+  def skip_empty_lines(self):
+    while self.curr() and self.curr() == "\n":
+      self.advance()
+
+  def parse_syntax(self,input: str) -> Ast:
     # <cli_help> ::= "Usage: "? <text_line> "\n\n" <paragraph> <section>*
+    root = Ast(eTk.SYNTAX)
+    self.input = input
+    self.pos = 0
+
     # Consume optional "usage:" prefix
-    if input.startswith("Usage") or input.startswith("usage")     \
-        or input.startswith("USAGE"):
-          self.advance(len("usage"))
+    usage = None
+    if self.eat(root,eTk.USAGE,"Usage","usage","USAGE","use","Use","USE"):
+      usage = root.branches[0]
+    else:
+      usage = root.append(Ast(eTk.USAGE,""))
     self.skip_whitespace()
-    if self.curr() and self.curr() == ':':
-      self.advance()
-      self.skip_whitespace()
-    # Get usage line
-    self.parse_paragraph()
-    self.eat(eTk.NEWLINE)
-    # Get brief description paragraph
-    self.parse_paragraph()
-    self.eat(eTk.NEWLINE)
-    # Look for any identified sections
-    while self.curr():
-      if self.curr().type == eTk.SHELL_IDENT:
-        self.parse_section()
+    self.skip(':',1)
+    self.skip_whitespace()
+    self.parse_text_line(usage)
+    self.skip_empty_lines()
+
+    # Consume optional brief description
+    brief = None
+    if self.eat(root,eTk.BRIEF,"brief","Brief","BRIEF"):
+      brief = root.branches[1]
+    else:
+      brief = root.append(Ast(eTk.BRIEF,""))
+
+    self.skip_whitespace()
+    self.skip(':',1)
+    self.skip_whitespace()
+    self.parse_paragraph(brief)
+    self.expect('\n')
+    self.skip_whitespace()
+    self.skip_empty_lines()
+
+    # Parse all other sections
+    while not self.at_eof():
+      if self.curr() and is_alnumus(self.curr()):
+        self.parse_section(root)
+        while self.curr() and self.curr() == '\n':
+          self.advance()
+          self.skip_whitespace()
       else:
+        self.advance()
 
-
-            if self.curr().type == eTk.SPACE:
-                self.advance()
-
-    root = Ast('CLI_HELP')
-    self.eat(eTk.USAGE)  # "Usage: "
-    root.append(self.parse_text_line())
-    self.eat(eTk.NEWLINE)
-    self.eat(eTk.NEWLINE)
-    root.append(self.parse_paragraph())
-
-    while self.curr() and self.curr().type == eTk.SHELL_IDENT:
-      root.append(self.parse_section())
     return root
 
-  def parse_text_line(self):
-    # <text_line>
-    node = Ast('TEXT_LINE')
-    node.append(self.eat(eTk.TEXT))
-    return node
+  def expect(self, char: str) -> None:
+    if self.curr() != char:
+      raise Exception(f"Expected '{char}' at position {self.pos}, found '{self.curr()}'")
+    self.advance()
 
-  def parse_paragraph(self):
-    # <paragraph> ::= ( <text_line> "\n" )+
-    node = Ast('PARAGRAPH')
-    while self.curr() and self.curr().type == eTk.TEXT \
-        and (self.curr().type != eTk.NEWLINE and self.peek().type != eTk.NEWLINE):
-      node.append(self.parse_text_line())
-      self.eat(eTk.NEWLINE)
-      self.eat(eTk.NEWLINE)
-    return node
+  # All characters until newline
+  def parse_text_line(self, append_to : Ast) -> None:
+    text = ""
+    while not self.at_eof() and is_text(self.curr()):
+      text += self.curr()
+      self.advance()
+    if self.curr() == '\n' : self.advance()
+    append_to.append(Ast(eTk.TEXT_LINE,text))
 
-  def parse_section(self):
-    # <section> ::= <shell_ident> <indented_line> ( <argument_list> | <paragraph> )
-    node = Ast('SECTION')
-    node.append(self.eat(eTk.SHELL_IDENT))
-    node.append(self.eat(eTk.INDENTED_LINE))
-    if self.curr() and self.curr().type in (eTk.SHORT_FLAG, eTk.LONG_FLAG):
-      node.append(self.parse_argument_list())
+  # A paragraph is one or more lines of text separated by newlines
+  def parse_paragraph(self, append_to : Ast) -> None:
+    paragraph = Ast(eTk.PARAGRAPH)
+    while not self.at_eof() and is_text(self.curr()):
+      self.parse_text_line(paragraph)
+    append_to.append(paragraph)
+
+  # A section starts with a title (shell ident) followed by indented lines
+  def parse_section(self, append_to : Ast) -> None:
+    section = Ast(eTk.SECTION)
+    title = ""
+    while not self.at_eof() and is_alnumus(self.curr()):
+      title += self.curr()
+      self.advance()
+    section.append(Ast(eTk.SHELL_IDENT,title))
+    self.skip_whitespace()
+    indent = ""
+    while not self.at_eof() and is_indent(self.curr()):
+      indent += self.curr()
+      self.advance()
+    section.append(Ast(eTk.INDENTED_LINE,indent))
+    self.skip_whitespace()
+    # Determine if next is argument list or paragraph
+    if self.curr() and (self.curr() == '-' or self.curr() == '--'):
+      self.parse_argument_list(section)
     else:
-      node.append(self.parse_paragraph())
-    return node
+      self.parse_paragraph(section)
+    append_to.append(section)
 
-  def parse_argument_list(self):
-    # <argument_list> ::= ( <argument> "\n" )+
-    node = Ast('ARGUMENT_LIST')
-    while self.curr() and self.curr().type in (eTk.SHORT_FLAG, eTk.LONG_FLAG):
-      node.append(self.parse_argument())
-      self.eat(eTk.NEWLINE)
-    return node
+  # An argument list is one or more arguments
+  def parse_argument_list(self, append_to : Ast) -> None:
+    arg_list = Ast(eTk.ARGUMENT_LIST)
+    while not self.at_eof() and (self.curr() == '-' or self.curr() == '--'):
+      self.parse_argument(arg_list)
+      self.skip_whitespace()
+    append_to.append(arg_list)
 
-  def parse_argument(self):
-    # <argument> ::= (( <short_flag> ) " ")? (( <long_flag> ) " " )+ ( <optional_arg> |  <required_arg> )? <indented_line> ": " <text_line>
-    node = Ast('ARGUMENT')
-    if self.curr().type == eTk.SHORT_FLAG:
-      node.append(self.eat(eTk.SHORT_FLAG))
-      self.eat(eTk.SPACE)
-    while self.curr().type == eTk.LONG_FLAG:
-      node.append(self.eat(eTk.LONG_FLAG))
-      self.eat(eTk.SPACE)
-    if self.curr().type == eTk.OPTIONAL_ARG:
-      node.append(self.eat(eTk.OPTIONAL_ARG))
-    elif self.curr().type == eTk.REQUIRED_ARG:
-      node.append(self.eat(eTk.REQUIRED_ARG))
-    node.append(self.eat(eTk.INDENTED_LINE))
-    self.eat(eTk.COLON)
-    self.eat(eTk.SPACE)
-    node.append(self.parse_text_line())
-    return node
+  # An argument consists of optional short flag, one or more long flags,
+  # optional or required argument, indented line, colon, text line
+  def parse_argument(self, append_to : Ast) -> None:
+    argument = Ast(eTk.ARGUMENT)
+    self.skip_whitespace()
+    if self.curr() == '-':
+      self.parse_short_flag(argument)
+      self.skip_whitespace()
+    while self.curr() == '-':
+      self.parse_long_flag(argument)
+      self.skip_whitespace()
+    if self.curr() == '[':
+      self.parse_optional_arg(argument)
+      self.skip_whitespace()
+    elif self.curr() == '<':
+      self.parse_required_arg(argument)
+      self.skip_whitespace()
+    indent = ""
+    while not self.at_eof() and is_indent(self.curr()):
+      indent += self.curr()
+      self.advance()
+    argument.append(Ast(eTk.INDENTED_LINE,indent))
+    self.skip_whitespace()
+    self.expect(':')
+    self.skip_whitespace()
+    self.parse_text_line(argument)
+    append_to.append(argument)
+  # Short cli flag identifier, single character.
+  # <short_flag_ident> ::= ( [a-z] | [A-Z] )
+  def parse_short_flag_ident(self, append_to : Ast) -> None:
+    if not self.curr() or not is_alpha(self.curr()):
+      raise Exception(f"Expected short flag identifier at position {self.pos}, found '{self.curr()}'")
+    ident = self.curr()
+    self.advance()
+    append_to.append(Ast(eTk.SHORT_FLAG_IDENT,ident))
 
+  # Short cli flag, starts with single dash
+  # <short_flag> ::= "-" ( [a-z] | [A-Z] )
+  def parse_short_flag(self, append_to : Ast) -> None:
+    short_flag = Ast(eTk.SHORT_FLAG)
+    self.expect('-')
+    self.parse_short_flag_ident(short_flag)
+    append_to.append(short_flag)
+
+  # Long cli flag identifier, multiple characters.
+  # <long_flag_ident> ::= ( [a-z] | [A-Z] |
+  #     "-" | "_" | [0-9] )+
+  def parse_long_flag_ident(self, append_to : Ast) -> None:
+    ident = ""
+    while not self.at_eof() and (is_alnumus(self.curr()) or self.curr() == '-'):
+      ident += self.curr()
+      self.advance()
+    if not ident:
+      raise Exception(f"Expected long flag identifier at position {self.pos}, found '{self.curr()}'")
+    append_to.append(Ast(eTk.LONG_FLAG_IDENT,ident))
+
+  # Long cli flag, starts with double dash
+  # <long_flag> ::= "--" <long_flag_ident>
+  def parse_long_flag(self, append_to : Ast) -> None:
+    long_flag = Ast(eTk.LONG_FLAG)
+    self.expect('-')
+    self.expect('-')
+    self.parse_long_flag_ident(long_flag)
+    append_to.append(long_flag)
+
+  # Optional argument, enclosed in square brackets
+  # <optional_arg> ::= "[" <shell_ident> "]"
+  def parse_optional_arg(self, append_to : Ast) -> None:
+    optional_arg = Ast(eTk.OPTIONAL_ARG)
+    self.expect('[')
+    self.parse_shell_ident(optional_arg)
+    self.expect(']')
+    append_to.append(optional_arg)
+
+  # Required argument, enclosed in angle brackets
+  # <required_arg> ::= "<" <shell_ident> ">"
+  def parse_required_arg(self, append_to : Ast) -> None:
+    required_arg = Ast(eTk.REQUIRED_ARG)
+    self.expect('<')
+    self.parse_shell_ident(required_arg)
+    self.expect('>')
+    append_to.append(required_arg)
+
+  # Shell identifier, alphanumeric and underscores
+  # <shell_ident> ::= ( [a-z] | [A-Z] | [
+  #     "_" | [0-9] )+
+  def parse_shell_ident(self, append_to : Ast) -> None:
+    ident = ""
+    while not self.at_eof() and is_alnumus(self.curr()):
+      ident += self.curr()
+      self.advance()
+    if not ident:
+      raise Exception(f"Expected shell identifier at position {self.pos}, found '{self.curr()}'")
+    append_to.append(Ast(eTk.SHELL_IDENT,ident))
 
 ###############################################################################
 # Unit Test Utils
@@ -496,142 +704,68 @@ def ut_parser_basic():
 
 
 ###############################################################################
-# Dev debugging stuff
-###############################################################################
-
-def print_ascii_tree(astnode : Ast, prefix: str = "", is_last: bool = True) -> None:
-  """Print the AST as a compact ASCII tree with boxes and connection lines"""
-  content = astnode.type
-  if astnode.value is not None:
-    content += f"\n{astnode.value}"
-
-  lines = content.split('\n')
-  max_width = max(len(line) for line in lines) if lines else 0
-
-  box_lines = []
-  box_lines.append("┌" + "─" * (max_width + 2) + "┐")
-  for line in lines:
-    box_lines.append("│ " + line.ljust(max_width) + " │")
-  box_lines.append("└" + "─" * (max_width + 2) + "┘")
-
-  for i, line in enumerate(box_lines):
-    print(prefix + line)
-
-  if astnode.branches:
-    for i, child in enumerate(astnode.branches):
-      is_last_child = (i == len(astnode.branches) - 1)
-
-      if is_last_child:
-        print(prefix + "    │   ")
-        print(prefix + "    │   ")
-        print(prefix + "    └───────┐")
-      else:
-        print(prefix + "    │   ")
-        print(prefix + "    │   ")
-        print(prefix + "    ├───────┐")
-
-      # Calculate child prefix - align with the connection point
-      child_prefix = prefix
-      if is_last_child:
-        child_prefix += "       "  # 7 spaces to align with the end of "└─ "
-      else:
-        child_prefix += "    │  "  # 6 spaces: 4 for indent + │ + 2 spaces
-
-      if hasattr(child, 'print_ascii_tree'):
-        child.print_ascii_tree(child_prefix, is_last_child)
-      else:
-        token_content = child.type
-        if hasattr(child, 'value') and child.value is not None:
-            token_content += f"\n{child.value}"
-
-        token_lines = token_content.split('\n')
-        token_max_width = max(len(line) for line in token_lines) if token_lines else 0
-
-        token_box_lines = []
-        token_box_lines.append("┌" + "─" * (token_max_width + 2) + "┐")
-        for line in token_lines:
-            token_box_lines.append("│ " + line.ljust(token_max_width) + " │")
-        token_box_lines.append("└" + "─" * (token_max_width + 2) + "┘")
-
-        for j, line in enumerate(token_box_lines):
-            print(child_prefix + line)
-
-def run_test_parse():
-  test_input = (
-    "Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]\n\n"
-    "Add a prefix to each top-level file in a directory.\n\n"
-    "Parameters\n"
-    "   -f --force \n"
-    "    : Force changes and overwrite.\n"
-    "   -f --force \n"
-    "    : Force changes and overwrite.\n\n"
-    "Display\n"
-    "  -h --help\n"
-    "    : Display help.\n"
-    "  -v -version\n"
-    "    : Display version\n\n"
-    "Details\n"
-    "A paragraph of text, these are the details of a command.\n\n\n\n"
-  )
-
-  # Tokenize the input
-  tokenizer = Lexer(test_input)
-  tokens = tokenizer.tokenize()
-
-  print("DEBUG - First 20 tokens:")
-  for i, token in enumerate(tokens[:20]):
-      print(f"{i}: {token}")
-  print("...")
-
-  # Parse the tokens
-  parser = Parser(tokens)
-  try:
-      ast = parser.parse_syntax()
-      print("Parsing successful!")
-      print("AST Tree:")
-      ast.print_ascii_tree()
-      # Basic assertions
-      assert ast.type == 'CLI_HELP'
-      assert len(ast.children) >= 2  # At least usage and description
-      print("Unit test passed!")
-  except Exception as e:
-      print(f"Parsing failed: {e}")
-      raise
-
-
-###############################################################################
 # Command Line Interface
 ###############################################################################
+verbose_mode = False
+debug_mode = False
 
 if __name__ == "__main__":
-  # if --test argument is postional argument 1, run unit tests
-  import sys
-  if '--test' == sys.argv[1]:
-    ut_parser_shell_ident()
-    ut_parser_long_flag_ident()
-    ut_parser_short_flag_ident()
-    ut_parser_text_line()
-    ut_parser_short_flag()
-    ut_parser_long_flag()
-    ut_parser_optional_arg()
-    ut_parser_required_arg()
-    ut_parser_argument()
-    ut_parser_argument_list()
-    ut_parser_paragraph()
-    ut_parser_section()
-    ut_parser_usage_line()
-    ut_parser_brief_section()
-    ut_parser_basic()
-  else:
-  # else the entire argument is treated as a help text to parse
-    if len(sys.argv) < 2:
-      print("Usage: python gen-docs.py '<help text to parse>'")
-      sys.exit(1)
-    help_text = sys.argv[1]
-    parser = Parser()
-    try:
-        ast = parser.parse_syntax(help_text)
-        ast.print_ascii_tree()
-    except Exception as e:
-        print(f"Parsing failed: {e}")
-        raise
+  if len(sys.argv) < 2:
+    print_help_text()
+
+  # Display help and exit
+  if any(arg == '-h' or arg == '--help' for arg in sys.argv):
+    print_help_text()
+
+  # Display version and exit
+  if any(arg == '-v' or arg == '--version' for arg in sys.argv):
+    print(CMNH_VERSION)
+    sys.exit(0)
+
+  # Run unit tests and exit
+  if any(arg == '-t' or arg == '--test' for arg in sys.argv):
+    print("Running unit tests...")
+    # ut_parser_shell_ident()
+    # ut_parser_long_flag_ident()
+    # ut_parser_short_flag_ident()
+    # ut_parser_text_line()
+    # ut_parser_short_flag()
+    # ut_parser_long_flag()
+    # ut_parser_optional_arg()
+    # ut_parser_required_arg()
+    # ut_parser_argument()
+    # ut_parser_argument_list()
+    # ut_parser_paragraph()
+    # ut_parser_section()
+    # ut_parser_usage_line()
+    # ut_parser_brief_section()
+    # ut_parser_basic()
+    print("All unit tests completed.")
+    sys.exit(0)
+
+  # Enable debug mode
+  verbose_mode = any(arg == '-V' or arg == '--verbose' for arg in sys.argv)
+  debug_mode = any(arg == '-d' or arg == '--debug' for arg in sys.argv)
+  if debug_mode : verbose_mode = True
+
+  # Pop the script name
+  sys.argv.pop(0)
+
+  # Remove all flags from args
+  sys.argv = [arg for arg in sys.argv if not arg.startswith('-')]
+
+  # If no args left, show help and exit
+  if len(sys.argv) < 1:
+    print_help_text()
+
+  help_text = sys.argv[0]
+
+  verbose_print("\033[92mParing Input...\033[0m")
+  verbose_print(help_text)
+
+  parser = Parser()
+  parser.parse_syntax(help_text)
+
+  verbose_print("\033[92mDisplaying AST...\033[0m")
+  if verbose_mode:
+    print_ascii_tree(parser.output)
