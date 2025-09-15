@@ -33,6 +33,22 @@ def is_newline(c: str) -> bool:
 def is_whitespace(c: str) -> bool:
     return c in (' ', '\t')
 
+def is_usage_keyword(s: str) -> bool:
+    return s.startswith("Usage") or s.startswith("usage") or s.startswith("USAGE")
+
+def is_indented_line(s: str, indent_level: int = 1) -> bool:
+    """ Check if the line starts with the specified indent level (spaces or tabs). """
+    if indent_level < 1:
+        # make sure the line has no leading spaces or tabs
+        if s.startswith(' ') or s.startswith('\t'):
+            return False
+        else :
+            return True
+    space_indent = ' ' * (4 * indent_level)
+    tab_indent = '\t' * indent_level
+    return s.startswith(space_indent) or s.startswith(tab_indent)
+
+
 class Tk(Enum):
     """ Grammar rule types for CMHN ast. """
     NOTHING = auto()    # Empty node
@@ -253,9 +269,13 @@ class Parser:
 
     def curr_line(self) -> str:
         """ Return the current line from inp_lines or empty string if out of range. """
-        if 0 <= self.line < len(self.inp_lines):
+        if 0 <= self.in_lines(self.line):
             return self.inp_lines[self.line]
         return ""
+
+    def in_lines(self, line: int) -> bool:
+        """ Check if the given line index is in range of inp_lines. """
+        return 0 <= line < len(self.inp_lines)
 
     def parse_syntax(self,inp: str = "") -> Ast:
         """
@@ -264,54 +284,55 @@ class Parser:
         <cli_help> ::= \"Usage: \"? <text_line> \"\\n\\n\" <paragraph> <section>*
         ```
         """
+        # Configure parser state
         self.output = Ast(Tk.SYNTAX)
         if inp != "":
             self.inp = inp
-        self.inp_lines = inp.splitlines(keepends=True) # Split input into lines for easier processing
+        # Split input into lines for easier processing
+        self.inp_lines = inp.splitlines(keepends=True)
         self.pos = 0
         self.line = 0
-
         if self.inp_lines == []:
             raise ParserError("Input is empty")
 
-        while self.line < len(self.inp_lines):
+        while self.in_lines(self.line):
             self.pos = 0
             # Strip a single following newline to normalize line endings.
             self.inp_lines[self.line] = self.inp_lines[self.line].rstrip('\n')
-
-            if self.inp_lines[self.line] == "":
+            if self.inp_lines[self.line] == "": # Skip empty lines
                 self.line += 1
                 continue
-
             is_usage = False
             is_section = False
             sect_title = self.inp_lines[self.line]
-
             # Check for special case usage section which does not require a following indent.
             is_usage = False
-            if sect_title.startswith("Usage") or sect_title.startswith("usage") or sect_title.startswith("USAGE"):
+            if is_usage_keyword(sect_title):
                 is_usage = True
                 self.pos = len("Usage")
                 self.pos += skip_whitespace(sect_title,self.pos)
                 self.pos += skip_chars(sect_title,self.pos,':',1)
                 self.pos += skip_whitespace(sect_title,self.pos)
-                # The rest of the line is the usage text
-                # If the rest of the line is empty look for indented text on the next line.
+
+                # The rest of the line is the usage text. If the rest of the line is empty
+                # look for indented text on the next line.
                 usage_text = sect_title[self.pos:].strip()
                 if usage_text == "":
                     self.line += 1
-                    if self.line < len(self.inp_lines) and (self.inp_lines[self.line].startswith("    ") or self.inp_lines[self.line].startswith("\t")):
+                    if self.in_lines(self.line) and is_indented_line(self.inp_lines[self.line],1):
                         usage_text = self.inp_lines[self.line].strip()
                     else:
-                        raise Exception(f"Expected indented usage text after 'Usage:' at line {self.line}")
+                        raise ParserError(f"Expected indented usage\
+                            text after usage keyword at line {self.line}",self.line,self.pos,self)
                 self.output.append(Ast(Tk.USAGE,usage_text))
                 self.line += 1
                 continue
 
             # If not usage, parse regular section or paragraph
             if not is_usage:
-                section_begin = self.inp_lines[self.line + 1] if self.line + 1 < len(self.inp_lines) else ""
-                if section_begin.startswith("    ") or section_begin.startswith("\t"):
+                section_begin = self.inp_lines[self.line + 1] \
+                        if self.line + 1 < len(self.inp_lines) else ""
+                if is_indented_line(section_begin,1):
                     is_section = True
 
                 # Section
@@ -319,17 +340,21 @@ class Parser:
                     self.output.append(Ast(Tk.SECTION,sect_title.strip()))
                     self.line += 1
 
-                    # If a section begins with a - or --, parse as argument list.
-                    if self.line < len(self.inp_lines) and (self.inp_lines[self.line].startswith("    -") or self.inp_lines[self.line].startswith("\t-")):
+                    # If a section begins with a - or --, parse as an argument list.
+                    if self.in_lines(self.line) \
+                            and (self.inp_lines[self.line].startswith("    -")
+                            or self.inp_lines[self.line].startswith("\t-")):
                         self.parse_argument_list(append_to = self.output.branches[-1])
                     else:
-                        while self.line < len(self.inp_lines) and (self.inp_lines[self.line].startswith("    ") or self.inp_lines[self.line].startswith("\t")):
-                            self.output.branches[-1].append(Ast(Tk.TEXT_LINE,self.inp_lines[self.line].strip()))
+                        while self.in_lines(self.line) \
+                                and is_indented_line(self.inp_lines[self.line],1):
+                            self.output.branches[-1]\
+                                .append(Ast(Tk.TEXT_LINE,self.inp_lines[self.line].strip()))
                             self.line += 1
                 # Paragraph
                 else:
                     paragraph = self.output.append(Ast(Tk.PARAGRAPH))
-                    while self.line < len(self.inp_lines) and self.inp_lines[self.line].strip() != "":
+                    while self.in_lines(self.line) and self.inp_lines[self.line].strip() != "":
                         paragraph.append(Ast(Tk.TEXT_LINE,self.inp_lines[self.line].strip()))
                         self.line += 1
                     self.line += 1 # skip empty line after paragraph
@@ -343,7 +368,7 @@ class Parser:
         flag_start = skip_whitespace(self.curr_line(),0)
         if not self.curr_line().startswith('-',flag_start):
             Exception(f"Expected argument list starting with '-' or '--' at line {self.line}")
-        while self.line < len(self.inp_lines) and self.curr_line().startswith('-',flag_start):
+        while self.in_lines(self.line) and self.curr_line().startswith('-',flag_start):
             self.pos = flag_start
             self.parse_argument(arg_list)
             self.line += 1
@@ -450,7 +475,7 @@ class Parser:
                         raise ParserError(f"Expected argument description text at line {self.line}",self.line,self.pos,self)
                     argument.append(Ast(Tk.TEXT_LINE,text))
 
-                    while self.line < len(self.inp_lines) and (self.inp_lines[self.line].startswith("        ") or self.inp_lines[self.line].startswith("\t\t")):
+                    while self.in_lines(self.line) and (self.inp_lines[self.line].startswith("        ") or self.inp_lines[self.line].startswith("\t\t")):
                         text = self.curr_line().strip()
                         self.line += 1
                         argument.append(Ast(Tk.TEXT_LINE,text))
