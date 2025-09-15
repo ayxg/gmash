@@ -202,8 +202,8 @@ def print_ast_detailed(node, indent=0):
 
 def skip_chars(s: str, pos: int, char: str, count: int = 1) -> int:
     """ Skip the specified character from the given position in the string.
-        Pass count -1 to skip all consecutive chars.
-        Returns the number of characters skipped.
+        - Pass count -1 to skip all consecutive chars.
+        - Returns the number of characters skipped.
     """
     beg = pos
     curr = pos
@@ -213,7 +213,7 @@ def skip_chars(s: str, pos: int, char: str, count: int = 1) -> int:
 
 def skip_whitespace(s: str, pos: int = 0) -> int:
     """ Skip whitespace characters from the given position in the string.
-        Returns the number of characters skipped.
+        - Returns the number of characters skipped.
     """
     beg = pos
     while beg < len(s) and is_whitespace(s[beg]):
@@ -221,7 +221,9 @@ def skip_whitespace(s: str, pos: int = 0) -> int:
     return beg - pos
 
 class ParserError(Exception):
-    """ Exception raised for parser errors. """
+    """ Exception raised for parser errors.
+        - Pass the parser instance to `prs` arg to print context.
+    """
     def __init__(self, message: str, line: int = 0, col: int = 0,prs = None) -> None:
         super().__init__(f"ParserError at line {line}, col {col}: {message}")
         self.line = line
@@ -233,7 +235,11 @@ class ParserError(Exception):
             print_action(" " * (prs.pos) + "^")
 
 class Parser:
-    """ LL Recursive descent parser for CMHN grammar. """
+    """ LL Recursive descent parser for CMHN grammar.
+        - Initialize `Parser` with an input string, or pass the input to `parse_syntax` method.
+        - Call `parse_syntax` method to parse.
+        - Parse result will be the stored in `output` attribute as an `Ast` class.
+    """
     def __init__(self, inp: str = "") -> None:
         self.inp = inp
         self.inp_lines = []
@@ -252,7 +258,12 @@ class Parser:
         return ""
 
     def parse_syntax(self,inp: str) -> Ast:
-        # <cli_help> ::= "Usage: "? <text_line> "\n\n" <paragraph> <section>*
+        """
+        Grammar Rule:
+        ```
+        <cli_help> ::= \"Usage: \"? <text_line> \"\\n\\n\" <paragraph> <section>*
+        ```
+        """
         self.output = Ast(Tk.SYNTAX)
         self.inp = inp
         self.pos = 0
@@ -728,7 +739,6 @@ PARAMS:
     ])
     )
 
-
 # <cli_help> ::= <usage_line> <brief_section> <section>*
 def ut_parser_basic():
     test_parser("ut_parser_basic",parser_input=""
@@ -870,9 +880,14 @@ if __name__ == "__main__":
     # Remove all flags from args
     sys.argv = [arg for arg in sys.argv if not arg.startswith('-')]
 
-    # If no args left, show help and exit
+    # If no args left,
+    # check the standard input for piped input and read it as the help text
     if len(sys.argv) < 1:
-        print_help_text()
+        if not sys.stdin.isatty():
+            help_text = sys.stdin.read()
+            if help_text.strip() == "":
+                print_help_text()
+            sys.argv.append(help_text)
 
     help_text = sys.argv[0]
 
