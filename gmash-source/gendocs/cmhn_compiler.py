@@ -257,7 +257,7 @@ class Parser:
             return self.inp_lines[self.line]
         return ""
 
-    def parse_syntax(self,inp: str) -> Ast:
+    def parse_syntax(self,inp: str = "") -> Ast:
         """
         Grammar Rule:
         ```
@@ -265,12 +265,14 @@ class Parser:
         ```
         """
         self.output = Ast(Tk.SYNTAX)
-        self.inp = inp
+        if inp != "":
+            self.inp = inp
+        self.inp_lines = inp.splitlines(keepends=True) # Split input into lines for easier processing
         self.pos = 0
-
-        # Split input into lines for easier processing
-        self.inp_lines = inp.splitlines(keepends=True)
         self.line = 0
+
+        if self.inp_lines == []:
+            raise ParserError("Input is empty")
 
         while self.line < len(self.inp_lines):
             self.pos = 0
