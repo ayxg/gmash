@@ -6,38 +6,52 @@ Copyright(c) Anton Yashchenko 2025
 """
 
 import sys
-from typing import List, Optional
+from typing import List, Optional, Union
 from enum import Enum, auto
 
 def is_alnumus(c: str) -> bool:
+    """ Is alpha, numeric or underscore."""
     return c.isalnum() or c == '_'
 
+def is_alnumdash(c: str) -> bool:
+    """ Is alpha, numeric or underscore."""
+    return c.isalnum() or c == '_' or c == '-'
+
+
 def is_alpha(c: str) -> bool:
+    """ Is alpha or underscore."""
     return c.isalpha() or c == '_'
 
 def is_numeric(c: str) -> bool:
+    """ Is numeric."""
     return c.isdigit()
 
 def is_indent(c: str) -> bool:
+    """ Is indent character (4 spaces or a tab)."""
     return c in ("\n    " or "\n  " or "\n\t")
 
 def is_text(c: str) -> bool:
+    """ Is any character except newline."""
     return c not in ('\n')
 
 def is_dash(c: str) -> bool:
+    """ Is dash character."""
     return c == '-'
 
 def is_newline(c: str) -> bool:
+    """ Is newline character."""
     return c == '\n'
 
 def is_whitespace(c: str) -> bool:
+    """ Is whitespace character (space or tab)."""
     return c in (' ', '\t')
 
 def is_usage_keyword(s: str) -> bool:
+    """ Check if a line starts with 'Usage', 'USAGE' or 'usage'. """
     return s.startswith("Usage") or s.startswith("usage") or s.startswith("USAGE")
 
 def is_indented_line(s: str, indent_level: int = 1) -> bool:
-    """ Check if the line starts with the specified indent level (spaces or tabs). """
+    """ Check if a line starts with the specified indent level (spaces or tabs). """
     if indent_level < 1:
         # make sure the line has no leading spaces or tabs
         if s.startswith(' ') or s.startswith('\t'):
@@ -47,7 +61,6 @@ def is_indented_line(s: str, indent_level: int = 1) -> bool:
     space_indent = ' ' * (4 * indent_level)
     tab_indent = '\t' * indent_level
     return s.startswith(space_indent) or s.startswith(tab_indent)
-
 
 class Tk(Enum):
     """ Grammar rule types for CMHN ast. """
@@ -113,9 +126,15 @@ def verbose_print(msg: str) -> None:
         print(msg)
 
 def print_action(msg: str,indent_level = 0) -> None:
+    """ Print an action message in green color.
+        - indent_level : number of indents to add before the message.
+    """
     print("    " * indent_level + "└────" * (indent_level != 0) + "\033[92m" + msg +"\033[0m")
 
 def print_error(msg: str,indent_level = 0) -> None:
+    """ Print an error message in red color.
+        - indent_level : number of indents to add before the message.
+    """
     print("    " * indent_level + "└────" * (indent_level != 1) + "\033[91m" + msg +"\033[0m")
 
 def debug_print(msg: str) -> None:
@@ -216,6 +235,44 @@ def print_ast_detailed(node, indent=0):
 
 # Utils
 
+class ParseResult:
+    """ Result of a parse operation. """
+    def __init__(self, res: Union[tuple[Ast,int,int],str]) -> None:
+        if isinstance(res, tuple):
+            self.ast = res[0]
+            self.end_line = res[1]
+            self.end_col = res[2]
+            self.error = None
+        else:
+            self.ast = None
+            self.end_line = 0
+            self.end_col = 0
+            self.error = res
+
+    def is_error(self) -> bool:
+        """ Check if the parse result is an error. """
+        return self.error is not None
+
+    def get_ast(self) -> Optional[Ast]:
+        """ Get the AST if parse was successful, else None. """
+        return self.ast if not self.is_error() else None
+
+    def get_error(self) -> Optional[str]:
+        """ Get the error message if parse failed, else None. """
+        return self.error if self.is_error() else None
+
+    def get_line(self) -> int:
+        """ Get the line number where the parse ended. """
+        return self.end_line
+
+    def get_col(self) -> int:
+        """ Get the column number where the parse ended. """
+        return self.end_col
+
+def split_lines(s: str) -> List[str]:
+    """ Split the input string into lines, keeping line endings. """
+    return s.splitlines()
+
 def skip_chars(s: str, pos: int, char: str, count: int = 1) -> int:
     """ Skip the specified character from the given position in the string.
         - Pass count -1 to skip all consecutive chars.
@@ -235,6 +292,211 @@ def skip_whitespace(s: str, pos: int = 0) -> int:
     while beg < len(s) and is_whitespace(s[beg]):
         beg += 1
     return beg - pos
+
+def line_startswith(s: str, prefix: str, pos : int = 0) -> bool:
+    return s.startswith(prefix,pos + skip_whitespace(s,pos))
+
+def parse_long_flag(inp : List[str], line: int, pos: int) -> ParseResult:
+    """ A long flag starts with two dashes followed by an identifier.
+        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
+    """
+    curr_line = line
+    curr_pos = pos
+    if curr_line >= len(inp):
+        return ParseResult("Expected long flag but reached end of inp")
+    line_str = inp[curr_line]
+    curr_pos += skip_whitespace(line_str,curr_pos)
+    if not line_str.startswith('--',curr_pos):
+        return ParseResult(f"Expected long flag starting with '--' at line {curr_line}")
+    curr_pos += 2
+    flag_ident = ""
+    while curr_pos < len(line_str) and is_alnumdash(line_str[curr_pos]):
+        flag_ident += line_str[curr_pos]
+        curr_pos += 1
+    if len(flag_ident) < 2 or not is_alpha(flag_ident[0]) or not is_alnumus(flag_ident[-1]):
+        return ParseResult(f"Expected long flag identifier at line {curr_line}")
+    long_flag_ast = Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,flag_ident)])
+    return ParseResult((long_flag_ast,curr_line,curr_pos))
+
+def parse_short_flag(inp : List[str], line: int, pos: int) -> ParseResult:
+    """ A short flag starts with a single dash followed by a single character identifier.
+        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
+    """
+    curr_line = line
+    curr_pos = pos
+    if curr_line >= len(inp):
+        return ParseResult("Expected short flag but reached end of inp")
+    line_str = inp[curr_line]
+    if not line_str.startswith('-',curr_pos) or line_str.startswith('--',curr_pos):
+        return ParseResult(f"Expected short flag starting with '-' at line {curr_line}")
+    curr_pos += 1
+    if curr_pos >= len(line_str) or not is_alpha(line_str[curr_pos]):
+        return ParseResult(f"Expected single character short flag identifier at line {curr_line}")
+    flag_ident = line_str[curr_pos]
+    curr_pos += 1
+    short_flag_ast = Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,flag_ident)])
+    return ParseResult((short_flag_ast,curr_line,curr_pos))
+
+def parse_optional_arg(inp : List[str], line: int, pos: int) -> ParseResult:
+    """ An optional argument is enclosed in square brackets.
+        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
+    """
+    curr_line = line
+    curr_pos = pos
+    if curr_line >= len(inp):
+        return ParseResult("Expected optional argument but reached end of inp")
+    line_str = inp[curr_line]
+    curr_pos += skip_whitespace(line_str,curr_pos)
+    if not line_str.startswith('[',curr_pos):
+        return ParseResult(f"Expected optional argument starting with '[' at line {curr_line}")
+    curr_pos += 1
+    arg_ident = ""
+    while curr_pos < len(line_str) and is_alnumus(line_str[curr_pos]):
+        arg_ident += line_str[curr_pos]
+        curr_pos += 1
+    if len(arg_ident) < 1 or not is_alpha(arg_ident[0]) or not is_alnumus(arg_ident[-1]):
+        return ParseResult(f"Expected optional argument identifier at line {curr_line}")
+    curr_pos += skip_whitespace(line_str,curr_pos)
+    if curr_pos >= len(line_str) or not line_str.startswith(']',curr_pos):
+        return ParseResult(f"Expected closing ']' for optional argument at line {curr_line}")
+    curr_pos += 1
+    optional_arg_ast = Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,arg_ident)])
+    return ParseResult((optional_arg_ast,curr_line,0))
+
+def parse_required_arg(inp : List[str], line: int, pos: int) -> ParseResult:
+    """ A required argument is enclosed in angle brackets.
+        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
+    """
+    curr_line = line
+    curr_pos = pos
+    if curr_line >= len(inp):
+        return ParseResult("Expected required argument but reached end of inp")
+    line_str = inp[curr_line]
+    curr_pos += skip_whitespace(line_str,curr_pos)
+    if not line_str.startswith('<',curr_pos):
+        return ParseResult(f"Expected required argument starting with '<' at line {curr_line}")
+    curr_pos += 1
+    arg_ident = ""
+    while curr_pos < len(line_str) and is_alnumus(line_str[curr_pos]):
+        arg_ident += line_str[curr_pos]
+        curr_pos += 1
+    if len(arg_ident) < 1 or not is_alpha(arg_ident[0]) or not is_alnumus(arg_ident[-1]):
+        return ParseResult(f"Expected required argument identifier at line {curr_line}")
+    curr_pos += skip_whitespace(line_str,curr_pos)
+    if curr_pos >= len(line_str) or not line_str.startswith('>',curr_pos):
+        return ParseResult(f"Expected closing '>' for required argument at line {curr_line}")
+    curr_pos += 1
+    required_arg_ast = Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,arg_ident)])
+    return ParseResult((required_arg_ast,curr_line,0))
+
+def parse_argument(inp : List[str], line: int, pos: int) -> ParseResult:
+    """ An argument consists of optional short flag, one or more long flags,
+        optional or required argument, followed by a description text line.
+        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
+    """
+    if line >= len(inp):
+        return ParseResult("Expected argument but reached end of inp")
+    line_str = inp[line]            # Current line string
+    argument_ast = Ast(Tk.ARGUMENT) # Argument root node
+    has_short_flag = False          # Whether a short flag was parsed
+    has_long_flag = False           # Whether a long flag was parsed
+
+    # Parse optional short flag
+    if line_startswith(line_str,"-") and not line_startswith(line_str,"--"):
+        has_short_flag = True
+        pos = skip_whitespace(line_str,pos)
+        short_flag_result = parse_short_flag(inp,line,pos)
+        if short_flag_result.is_error():
+            return ParseResult(f"Failed to parse short flag at line {line}")
+        argument_ast.append(short_flag_result.get_ast())
+        line = short_flag_result.get_line()
+        pos = short_flag_result.get_col()
+        pos = skip_whitespace(line_str,pos)
+        if line > len(inp) and inp[line][pos] == ',':
+            pos += 1
+            pos += skip_whitespace(inp[line],pos)
+
+    # Parse one or more long flags
+    while line_startswith(line_str,"--",pos):
+        has_long_flag = True
+        pos = skip_whitespace(line_str,pos)
+        long_flag_result = parse_long_flag(inp,line,pos)
+        if long_flag_result.is_error():
+            return ParseResult(f"Failed to parse long flag at line {line} with error:\n\t\t\"{long_flag_result.get_error()}\"")
+        argument_ast.append(long_flag_result.get_ast())
+        line = long_flag_result.get_line()
+        pos = long_flag_result.get_col()
+        pos = skip_whitespace(line_str,pos)
+        if line > len(inp) and inp[line][pos] == ',':
+            pos += 1
+            pos += skip_whitespace(inp[line],pos)
+
+
+    if not has_long_flag and not has_short_flag:
+        return ParseResult(f"Expected at least one long flag at line {line}")
+
+    return ParseResult((argument_ast,line,pos))
+
+
+    # # Parse optional or required argument
+    # if line_str.startswith('[',pos):
+    #     optional_arg_result = parse_optional_arg(inp,line,pos)
+    #     if optional_arg_result.is_error():
+    #         return ParseResult(f"Failed to parse optional argument at line {line}")
+    #     argument_ast.append(optional_arg_result.get_ast())
+    #     line = optional_arg_result.get_line()
+    #     pos = optional_arg_result.get_col()
+    #     if line >= len(inp):
+    #         return ParseResult("Expected argument description but reached end of inp")
+    #     line_str = inp[line]
+    #     pos += skip_whitespace(line_str,pos)
+    # elif line_str.startswith('<',pos):
+    #     required_arg_result = parse_required_arg(inp,line,pos)
+    #     if required_arg_result.is_error():
+    #         return ParseResult(f"Failed to parse required argument at line {line}")
+    #     argument_ast.append(required_arg_result.get_ast())
+    #     line = required_arg_result.get_line()
+    #     pos = required_arg_result.get_col()
+    #     if line >= len(inp):
+    #         return ParseResult("Expected argument description but reached end of inp")
+    #     line_str = inp[line]
+    #     pos += skip_whitespace(line_str,pos)
+
+    # # Indented line with colon and text
+    # if line_str.startswith(':',pos):
+    #     pos += 1
+    #     pos += skip_whitespace(line_str,pos)
+    #     text = line_str[pos:].strip()
+    #     if text == "":
+    #         return ParseResult(f"Expected argument description text after ':' at line {line}")
+    #     argument_ast.append(Ast(Tk.TEXT_LINE,text))
+    #     return ParseResult((argument_ast,line + 1,0))
+    # else:
+    #     text = line_str[pos:].strip()
+    #     if text == "":
+    #         # Check for indented following paragraph.
+    #         next_line = line + 1
+    #         if next_line < len(inp)\
+    #                 and (inp[next_line].startswith("        ") or inp[next_line].startswith("\t\t")):
+    #             # parse a paragraph.
+    #             line += 1
+    #             text = inp[line].strip()
+    #             line += 1
+    #             if text == "":
+    #                 return ParseResult(f"Expected argument description text at line {line}")
+    #             argument_ast.append(Ast(Tk.TEXT_LINE,text))
+
+    #             while line < len(inp)\
+    #                     and (inp[line].startswith("        ") or inp[line].startswith("\t\t")):
+    #                 text = inp[line].strip()
+    #                 line += 1
+    #                 argument_ast.append(Ast(Tk.TEXT_LINE,text))
+    #         else:
+    #             return ParseResult(f"Expected argument description text at line {line}")
+    #     else :
+    #         argument_ast.append(Ast(Tk.TEXT_LINE,text))
+    # return ParseResult((argument_ast,line + 1,0))
+
 
 class ParserError(Exception):
     """ Exception raised for parser errors.
@@ -256,6 +518,7 @@ class Parser:
         - Call `parse_syntax` method to parse.
         - Parse result will be the stored in `output` attribute as an `Ast` class.
     """
+
     def __init__(self, inp: str = "") -> None:
         self.inp = inp
         self.inp_lines = []
@@ -273,200 +536,218 @@ class Parser:
             return self.inp_lines[self.line]
         return ""
 
+    def line_at(self, line: int) -> str:
+        """ Return the line at the given index from inp_lines or empty string if out of range. """
+        if self.in_lines(line):
+            return self.inp_lines[line]
+        return ""
+
     def in_lines(self, line: int) -> bool:
         """ Check if the given line index is in range of inp_lines. """
         return 0 <= line < len(self.inp_lines)
 
-    def parse_syntax(self,inp: str = "") -> Ast:
+    def try_parse(self, parse_func, append_to ,from_line: int, from_pos: int) -> ParseResult:
+        """ Try to parse using the given parse function from the specified line and position.
+            - If parsing fails, restore the parser state to the original line and position.
+        """
+        orig_line = from_line
+        orig_pos = from_pos
+        result = parse_func(from_line, from_pos)
+        if result.is_error():
+            # Restore original state on failure
+            self.line = orig_line
+            self.pos = orig_pos
+        else:
+            append_to.append(result.ast)
+            self.line = result.end_line
+            self.pos = result.end_col
+        return result
+
+    def parse_syntax(self,inp: str = "") -> ParseResult:
         """
         Grammar Rule:
-        ```
-        <cli_help> ::= \"Usage: \"? <text_line> \"\\n\\n\" <paragraph> <section>*
-        ```
+            ```
+            <cli_help> ::= \"Usage: \"? <text_line> \"\\n\\n\" <paragraph> <section>*
+            ```
         """
         # Configure parser state
         self.output = Ast(Tk.SYNTAX)
         if inp != "":
             self.inp = inp
-        # Split input into lines for easier processing
-        self.inp_lines = inp.splitlines(keepends=True)
         self.pos = 0
         self.line = 0
+
+        # Split input into lines for easier processing
+        self.inp_lines = inp.splitlines(keepends=True)
+
         if self.inp_lines == []:
             raise ParserError("Input is empty")
 
         while self.in_lines(self.line):
             self.pos = 0
+
             # Strip a single following newline to normalize line endings.
             self.inp_lines[self.line] = self.inp_lines[self.line].rstrip('\n')
+
             if self.inp_lines[self.line] == "": # Skip empty lines
                 self.line += 1
                 continue
             is_usage = False
             is_section = False
             sect_title = self.inp_lines[self.line]
+
             # Check for special case usage section which does not require a following indent.
             is_usage = False
             if is_usage_keyword(sect_title):
                 is_usage = True
-                self.pos = len("Usage")
-                self.pos += skip_whitespace(sect_title,self.pos)
-                self.pos += skip_chars(sect_title,self.pos,':',1)
-                self.pos += skip_whitespace(sect_title,self.pos)
-
-                # The rest of the line is the usage text. If the rest of the line is empty
-                # look for indented text on the next line.
-                usage_text = sect_title[self.pos:].strip()
-                if usage_text == "":
-                    self.line += 1
-                    if self.in_lines(self.line) and is_indented_line(self.inp_lines[self.line],1):
-                        usage_text = self.inp_lines[self.line].strip()
-                    else:
-                        raise ParserError(f"Expected indented usage\
-                            text after usage keyword at line {self.line}",self.line,self.pos,self)
-                self.output.append(Ast(Tk.USAGE,usage_text))
-                self.line += 1
+                if self.try_parse(self.parse_usage_section,self.output,self.line,self.pos).is_error():
+                    raise ParserError("Failed to parse usage section",self.line,self.pos,self)
                 continue
 
             # If not usage, parse regular section or paragraph
             if not is_usage:
-                section_begin = self.inp_lines[self.line + 1] \
-                        if self.line + 1 < len(self.inp_lines) else ""
+                section_begin = self.inp_lines[self.line + 1] if self.line + 1 < len(self.inp_lines) else ""
                 if is_indented_line(section_begin,1):
                     is_section = True
-
-                # Section
                 if is_section:
-                    self.output.append(Ast(Tk.SECTION,sect_title.strip()))
-                    self.line += 1
-
-                    # If a section begins with a - or --, parse as an argument list.
-                    if self.in_lines(self.line) \
-                            and (self.inp_lines[self.line].startswith("    -")
-                            or self.inp_lines[self.line].startswith("\t-")):
-                        self.parse_argument_list(append_to = self.output.branches[-1])
-                    else:
-                        while self.in_lines(self.line) \
-                                and is_indented_line(self.inp_lines[self.line],1):
-                            self.output.branches[-1]\
-                                .append(Ast(Tk.TEXT_LINE,self.inp_lines[self.line].strip()))
-                            self.line += 1
-                # Paragraph
+                    if self.try_parse(self.parse_section,self.output,self.line,self.pos).is_error():
+                        raise ParserError("Failed to parse section",self.line,self.pos,self)
                 else:
-                    paragraph = self.output.append(Ast(Tk.PARAGRAPH))
-                    while self.in_lines(self.line) and self.inp_lines[self.line].strip() != "":
-                        paragraph.append(Ast(Tk.TEXT_LINE,self.inp_lines[self.line].strip()))
-                        self.line += 1
-                    self.line += 1 # skip empty line after paragraph
-
+                    if self.try_parse(self.parse_paragraph,self.output,self.line,self.pos).is_error():
+                        raise ParserError("Failed to parse paragraph",self.line,self.pos,self)
         return self.output
 
-    def parse_argument_list(self, append_to : Ast) -> None:
+    def parse_usage_section(self, from_line: int, from_pos: int) -> ParseResult:
+        """ A usage section starts with 'Usage:' or 'usage:' or 'USAGE:' """
+        if not self.in_lines(from_line):
+            return ParseResult("Expected usage section but reached end of input")
+        curr_line = from_line
+        curr_pos = from_pos
+        line = self.line_at(curr_line)
+        if not is_usage_keyword(line):
+            return ParseResult(f"Expected usage section starting with 'Usage:' at line {curr_line}")
+        curr_pos += len("Usage")
+        curr_pos += skip_whitespace(line,curr_pos)
+        curr_pos += skip_chars(line,curr_pos,':',1)
+        curr_pos += skip_whitespace(line,curr_pos)
+
+        # The rest of the line is the usage text. If the rest of the line is empty
+        # look for indented text on the next line.
+        usage_text = line[curr_pos:].strip()
+        if usage_text == "":
+            curr_line += 1
+            if self.in_lines(curr_line) and is_indented_line(self.line_at(curr_line),1):
+                usage_text = self.line_at(curr_line).strip()
+            else:
+                return ParseResult(f"Expected indented usage\
+                    text after usage keyword at line {curr_line}")
+        usage_ast = Ast(Tk.USAGE,usage_text)
+        return ParseResult((usage_ast,curr_line + 1,0))
+
+    def parse_section(self, from_line: int, from_pos: int) -> ParseResult:
+        """ A section starts with a title line followed by one or more indented text lines. """
+        if not self.in_lines(from_line): return ParseResult("Expected section but reached end of input")
+        if is_indented_line(self.line_at(from_line),1): return ParseResult(f"Expected section title at line {from_line}")
+        section_title = self.line_at(from_line).strip()
+        from_line += 1
+        if not self.in_lines(from_line) or not is_indented_line(self.line_at(from_line),1):
+            return ParseResult(f"Expected indented text after section title at line {from_line}")
+        section_ast = Ast(Tk.SECTION,section_title)
+
+        section_start = skip_whitespace(self.line_at(from_line),0)
+        if self.line_at(from_line).startswith('-',section_start):
+            arg_list_result = self.try_parse(self.parse_argument_list,section_ast,from_line,0)
+            if arg_list_result.is_error():
+                return ParseResult(f"Failed to parse argument list at line {from_line}")
+            return ParseResult((section_ast,from_line,0))
+        else:
+            while self.in_lines(from_line) and is_indented_line(self.line_at(from_line),1):
+                section_ast.append(Ast(Tk.TEXT_LINE,self.line_at(from_line).strip()))
+                from_line += 1
+            return ParseResult((section_ast,from_line,0))
+
+    def parse_paragraph(self, from_line: int, from_pos: int) -> ParseResult:
+        """ A paragraph is one or more text lines separated by empty lines. """
+        if not self.in_lines(from_line):
+            return ParseResult("Expected paragraph but reached end of input")
+        curr_line = from_line
+        curr_pos = from_pos
+        paragraph_ast = Ast(Tk.PARAGRAPH)
+        while self.in_lines(curr_line) and self.line_at(curr_line).strip() != "":
+            paragraph_ast.append(Ast(Tk.TEXT_LINE,self.line_at(curr_line).strip()))
+            curr_line += 1
+        curr_line += 1 # skip empty line after paragraph
+        return ParseResult((paragraph_ast,curr_line,0))
+
+    def parse_argument_list(self, from_line: int, from_pos: int) -> ParseResult:
         """ An argument list is one or more arguments """
         arg_list = Ast(Tk.ARGUMENT_LIST)
-        # Skip any whitespace before an argument.
-        flag_start = skip_whitespace(self.curr_line(),0)
-        if not self.curr_line().startswith('-',flag_start):
-            Exception(f"Expected argument list starting with '-' or '--' at line {self.line}")
-        while self.in_lines(self.line) and self.curr_line().startswith('-',flag_start):
-            self.pos = flag_start
-            self.parse_argument(arg_list)
-            self.line += 1
-        append_to.append(arg_list)
+        while self.in_lines(from_line) and (self.line_at(from_line).startswith('-',from_pos) or self.line_at(from_line).startswith(' ',from_pos) or self.line_at(from_line).startswith('\t',from_pos)):
+            arg_result = self.try_parse(self.parse_argument,arg_list,from_line,from_pos)
+            if arg_result.is_error():
+                return ParseResult(f"Failed to parse argument at line {from_line}")
+            from_line = arg_result.end_line
+            from_pos = arg_result.end_col
+        return ParseResult((arg_list,from_line,from_pos))
 
-    def parse_argument(self, append_to : Ast) -> None:
+    def parse_argument(self,from_line,from_pos) -> ParseResult:
         """
             # An argument consists of optional short flag, one or more long flags,
             # optional or required argument, indented line, colon, text line
         """
         argument = Ast(Tk.ARGUMENT)
-        # Optional short flag.
-        flag_start = self.pos
+        flag_start = skip_whitespace(self.line_at(from_line),from_pos)
+
+        # 1. Optional short flag.
         has_short_flag = False
-        if self.curr_line().startswith('-',flag_start) and \
-                not self.curr_line().startswith('--',flag_start):
+        if self.line_at(from_line).startswith('-',flag_start) and \
+                not self.line_at(from_line).startswith('--',flag_start):
             has_short_flag = True
-            self.advance()
-            flag_ident : str = ""
-            while(self.curr_line()[self.pos] != ' ' and self.curr_line()[self.pos]\
-                    != '\t' and self.curr_line()[self.pos] != '\n'):
-                self.pos += 1
-                flag_ident += self.curr_line()[self.pos - 1]
+            short_flag = self.try_parse(self.parse_short_flag,argument,from_line,flag_start)
+            if short_flag.is_error():
+                raise ParserError(f"Failed to parse short flag at line {self.line}",from_line,flag_start,self)
 
-            if len(flag_ident) != 1 or not is_alpha(flag_ident[0]):
-                raise ParserError\
-                    (f"Expected single character short flag identifier at line {self.line}")
-            argument.append\
-                (Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,flag_ident)]))
-            self.pos += skip_whitespace(self.curr_line(),self.pos)
-            flag_start = self.pos
-
-        # One or more long flags, but only requried if there wasn't any previous short flag.
-        if self.curr_line().startswith('--',flag_start):
-            while self.curr_line().startswith('--',flag_start):
-                self.advance(2)
-                flag_ident : str = ""
-                while(self.pos < len(self.curr_line()) and\
-                        self.curr_line()[self.pos] not in (' ', '\t', '\n')):
-                    self.pos += 1
-                    flag_ident += self.curr_line()[self.pos - 1]
-                if len(flag_ident) < 2 or not is_alpha(flag_ident[0])\
-                        or not is_alnumus(flag_ident[-1]):
-                    raise ParserError(f"Expected long flag identifier at line {self.line}")
-                argument.append(Ast(Tk.LONG_FLAG,None,\
-                        branches = [Ast(Tk.LONG_FLAG_IDENT,flag_ident)]))
-                self.pos += skip_whitespace(self.curr_line(),self.pos)
-                flag_start = self.pos
+        # 2. One or more long flags, but only requried if there wasn't any previous short flag.
+        flag_start = skip_whitespace(self.line_at(from_line),from_pos)
+        if self.line_at(from_line).startswith('--',flag_start):
+            while self.in_lines(from_line):
+                flag_start = skip_whitespace(self.line_at(from_line),from_pos)
+                if not self.line_at(from_line).startswith('--',flag_start):
+                    break
+                long_flag = self.try_parse(self.parse_long_flag,argument,from_line,flag_start)
+                if long_flag.is_error():
+                    raise ParserError(f"Failed to parse long flag at line {from_line}",from_line,flag_start,self)
         else:
             if not has_short_flag:
-                raise ParserError(f"Expected long flag starting with '--' at line {self.line}")
+                raise ParserError(f"Expected long flag starting with '--' at line {self.line}",from_line,flag_start,self)
 
-        # Optional or required argument
-        if self.curr_line().startswith('[',flag_start):
-            self.pos = flag_start
-            self.advance()
-            argument_ident : str = ""
-            while self.pos < len(self.curr_line()) and is_alnumus(self.curr_line()[self.pos]):
-                argument_ident += self.curr_line()[self.pos]
-                self.pos += 1
-            if argument_ident == "":
-                raise ParserError(f"Expected optional argument identifier after '[' at line {self.line}")
-            if self.pos >= len(self.curr_line()) or self.curr_line()[self.pos] != ']':
-                raise ParserError(f"Expected closing ']' for optional argument at line {self.line}")
-            self.advance() # skip closing ']'
-            argument.append(Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,argument_ident)]))
-            self.pos += skip_whitespace(self.curr_line(),self.pos)
-            flag_start = self.pos
-        elif self.curr_line().startswith('<',flag_start):
-            self.pos = flag_start
-            self.advance()
-            argument_ident : str = ""
-            while self.pos < len(self.curr_line()) and is_alnumus(self.curr_line()[self.pos]):
-                argument_ident += self.curr_line()[self.pos]
-                self.pos += 1
-            if argument_ident == "":
-                raise ParserError(f"Expected required argument identifier after '<' at line {self.line}")
-            if self.pos >= len(self.curr_line()) or self.curr_line()[self.pos] != '>':
-                raise ParserError(f"Expected closing '>' for required argument at line {self.line}")
-            self.advance() # skip closing '>'
-            argument.append(Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,argument_ident)]))
-            self.pos += skip_whitespace(self.curr_line(),self.pos)
-            flag_start = self.pos
+        # 3. Optional or required argument.
+        if self.line_at(from_line).startswith('[',flag_start):
+            optional_arg = self.try_parse(self.parse_optional_arg,argument,self.line,self.pos)
+            if optional_arg.is_error():
+                raise ParserError(f"Failed to parse optional argument at line {self.line}")
+        elif self.line_at(from_line).startswith('<',flag_start):
+            required_arg = self.try_parse(self.parse_required_arg,argument,self.line,self.pos)
+            if required_arg.is_error():
+                raise ParserError(f"Failed to parse required argument at line {self.line}")
+
         # Indented line with colon and text
-        if self.curr_line().startswith(':',flag_start):
+        if self.line_at(from_line).startswith(':',flag_start):
             self.pos = flag_start + 1
-            self.pos += skip_whitespace(self.curr_line(),self.pos)
-            text = self.curr_line()[self.pos:].strip()
+            self.pos += skip_whitespace(self.line_at(from_line),self.pos)
+            text = self.line_at(from_line)[self.pos:].strip()
             if text == "":
                 raise ParserError(f"Expected argument description text after ':' at line {self.line}")
             argument.append(Ast(Tk.TEXT_LINE,text))
-            append_to.append(argument)
+            #append_to.append(argument)
+
         else: # Else parse the rest of the line as the description
             text = self.curr_line()[flag_start:].strip()
             if text == "":
                 # Check for indented following paragraph.
                 next_line = self.line + 1
-                if next_line < len(self.inp_lines) and (self.inp_lines[next_line].startswith("        ") or self.inp_lines[next_line].startswith("\t\t")):
+                if next_line < len(self.inp_lines) \
+                        and (self.inp_lines[next_line].startswith("        ") or self.inp_lines[next_line].startswith("\t\t")):
                     # parse a paragraph.
                     self.line += 1
                     text = self.curr_line().strip()
@@ -475,7 +756,8 @@ class Parser:
                         raise ParserError(f"Expected argument description text at line {self.line}",self.line,self.pos,self)
                     argument.append(Ast(Tk.TEXT_LINE,text))
 
-                    while self.in_lines(self.line) and (self.inp_lines[self.line].startswith("        ") or self.inp_lines[self.line].startswith("\t\t")):
+                    while self.in_lines(self.line) \
+                            and (self.inp_lines[self.line].startswith("        ") or self.inp_lines[self.line].startswith("\t\t")):
                         text = self.curr_line().strip()
                         self.line += 1
                         argument.append(Ast(Tk.TEXT_LINE,text))
@@ -483,7 +765,7 @@ class Parser:
                     raise ParserError(f"Expected argument description text at line {self.line}",self.line,self.pos,self)
             else :
                 argument.append(Ast(Tk.TEXT_LINE,text))
-        append_to.append(argument)
+        return ParseResult((argument,self.line + 1,0))
 
 ###############################################################################
 # Unit Test Utils
@@ -580,6 +862,7 @@ def compare_asts(input_ast, expected_ast):
     print_expected_ast_diff(expected_ast, input_ast)
 
 def test_parser(test_name, parser_input, expected_output):
+    """ Run a parser test and compare the output AST to the expected AST."""
     try:
         prs = Parser()
         ast = prs.parse_syntax(parser_input)
@@ -596,9 +879,76 @@ def test_parser(test_name, parser_input, expected_output):
     except ParserError as e:
         print_error(f"Test {test_name} raised an exception: {e}",1)
 
+def test_parser_function(funct,test_name,parser_input,expected_output):
+    """ Run a specific parser function test and compare the output AST to the expected AST."""
+    try:
+        result = funct(split_lines(parser_input),0,0)
+        if result.is_error():
+            print_error(f"Test {test_name} failed with error:\n\t{result.error}",1)
+            return
+        ast = result.ast
+        did_test_pass = ast == expected_output
+        if not did_test_pass:
+            print_error(f"Test {test_name} failed.",1)
+            compare_asts(ast, expected_output)
+        else:
+            print_action(f"Test {test_name} passed.",1)
+    except ParserError as e:
+        print_error(f"Test {test_name} raised an exception: {e}",1)
+
 # ###############################################################################
 # # Unit Tests
 # ###############################################################################
+
+def ut_parser_usage_line():
+    """Usage line"""
+    test_parser("ut_parser_usage_line",
+        parser_input="Usage: myprogram [options] <input_file>\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"myprogram [options] <input_file>")
+        ])
+    )
+
+def ut_parser_paragraph():
+    """Paragraph"""
+    test_parser("ut_parser_paragraph",
+        parser_input="This is a paragraph.\nThis is the second line.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"This is a paragraph."),
+                Ast(Tk.TEXT_LINE,"This is the second line.")
+            ])
+        ])
+    )
+
+def ut_parser_usage_and_paragraph():
+    """Usage line and paragraph"""
+    test_parser("ut_parser_usage_and_paragraph",
+        parser_input="Usage: myprogram [options] <input_file>\n\nThis is a paragraph.\nThis is the second line.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"myprogram [options] <input_file>"),
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"This is a paragraph."),
+                Ast(Tk.TEXT_LINE,"This is the second line.")
+            ])
+        ])
+    )
+
+def ut_parser_usage_paragraph_section():
+    """Usage line, paragraph and section"""
+    test_parser("ut_parser_usage_paragraph_section",
+        parser_input="Usage: myprogram [options] <input_file>\n\nThis is a paragraph.\nThis is the second line.\n\nDetails\n    These are the details.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"myprogram [options] <input_file>"),
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"This is a paragraph."),
+                Ast(Tk.TEXT_LINE,"This is the second line.")
+            ]),
+            Ast(Tk.SECTION,"Details",branches = [
+                Ast(Tk.TEXT_LINE,"These are the details.")
+            ])
+        ])
+    )
 
 def ut_parser_arg_long_flag():
     """Long cli argument flag"""
@@ -718,16 +1068,8 @@ def ut_parser_arg_indented_multiline_brief_following_arg():
         ])
     )
 
-def ut_parser_usage_line():
-    """Usage line"""
-    test_parser("ut_parser_usage_line",
-        parser_input="Usage: myprogram [options] <input_file>\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.USAGE,"myprogram [options] <input_file>")
-        ])
-    )
-
 def ut_parser_simple():
+    """Simple complete example"""
     test_parser("ut_parser_simple",parser_input=""
                 """USAGE:
     py cmhn_compiler.py [ [ -v | --verbose ] | [ -d | --debug ] ] <helpTextInput>
@@ -766,8 +1108,8 @@ PARAMS:
     ])
     )
 
-# <cli_help> ::= <usage_line> <brief_section> <section>*
 def ut_parser_basic():
+    """Basic complete example"""
     test_parser("ut_parser_basic",parser_input=""
         "Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]\n\n"
         "Add a prefix to each top-level file in a directory.\n\n"
@@ -824,20 +1166,120 @@ def ut_parser_basic():
         ])
     )
 
+def ut_parsefunc_long_flag():
+    """ Long flag parse function """
+    test_parser_function(parse_long_flag,
+        "ut_parsefunc_long_flag",
+        parser_input="--long-flag-ident123",
+        expected_output=Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')])
+    )
+
+def ut_parsefunc_short_flag():
+    """ Short flag parse function """
+    test_parser_function(parse_short_flag,
+        "ut_parsefunc_short_flag",
+        parser_input="-f\n",
+        expected_output=Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')])
+    )
+
+def ut_parsefunc_long_and_short_flag():
+    """ Long and short flag parse function """
+    test_parser_function(parse_argument,
+        "ut_parsefunc_long_and_short_flag",
+        parser_input="-f --long-flag-ident123 This is the argument documentation.\n",
+        expected_output=Ast(Tk.ARGUMENT,None,branches = [
+            Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
+            Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
+            Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+        ])
+    )
+
+def ut_parsefunc_optional_arg():
+    """ Optional arg parse function """
+    test_parser_function(parse_optional_arg,
+        "ut_parsefunc_optional_arg",
+        parser_input="[optional_arg123]",
+        expected_output=Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'optional_arg123')])
+    )
+
+def ut_parsefunc_required_arg():
+    """ Required arg parse function """
+    test_parser_function(parse_required_arg,
+        "ut_parsefunc_required_arg",
+        parser_input="<required_arg123>",
+        expected_output=Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'required_arg123')])
+    )
+
+def ut_parsefunc_argument_shortflag_only():
+    """ Argument with short flag only parse function """
+    test_parser_function(parse_argument,
+        "ut_parsefunc_argument_shortflag_only",
+        parser_input="-f\n",
+        expected_output=Ast(Tk.ARGUMENT,None,branches = [
+            Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')])
+        ])
+    )
+
+def ut_parsefunc_argument_longflag_only():
+    """ Argument with long flag only parse function """
+    test_parser_function(parse_argument,
+        "ut_parsefunc_argument_longflag_only",
+        parser_input="--long-flag-ident123\n",
+        expected_output=Ast(Tk.ARGUMENT,None,branches = [
+            Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')])
+        ])
+    )
+
+def ut_parsefunc_argument_list():
+    """ Argument list parse function """
+    test_parser_function(Parser().parse_argument_list,
+        "ut_parsefunc_argument_list",
+        parser_input="-f --long-flag-ident123 This is the argument documentation.\n"
+                     "-g --another-flag [optional_arg] This is another argument.\n",
+        expected_output=Ast(Tk.ARGUMENT_LIST,None,branches = [
+            Ast(Tk.ARGUMENT,None,branches = [
+                Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
+                Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
+                Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+            ]),
+            Ast(Tk.ARGUMENT,None,branches = [
+                Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'g')]),
+                Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'another-flag')]),
+                Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'optional_arg')]),
+                Ast(Tk.TEXT_LINE,"This is another argument.")
+            ])
+        ])
+    )
 
 def run_unit_tests():
+    """ Run all unit tests. """
     print_action("Running unit tests...")
-    ut_parser_arg_long_flag()
-    ut_parser_arg_short_flag()
-    ut_parser_arg_short_and_long_flag()
-    ut_parser_arg_optional_arg()
-    ut_parser_arg_required_arg()
-    ut_parser_arg_indented_brief_following_arg()
-    ut_parser_arg_indented_multiline_brief_following_arg()
-    ut_parser_usage_line()
-    ut_parser_simple()
 
-    ut_parser_basic()
+    print_action("      Testing parser functions:")
+    ut_parsefunc_long_flag()
+    ut_parsefunc_short_flag()
+    ut_parsefunc_optional_arg()
+    ut_parsefunc_required_arg()
+    ut_parsefunc_argument_shortflag_only()
+    ut_parsefunc_argument_longflag_only()
+    #ut_parsefunc_long_and_short_flag()
+    #ut_parsefunc_argument_list()
+
+    # print_action("      Testing parser end-to-end:")
+    # ut_parser_usage_line()
+    # ut_parser_paragraph()
+    # ut_parser_usage_and_paragraph()
+    # ut_parser_usage_paragraph_section()
+    # ut_parser_arg_long_flag()
+    # ut_parser_arg_short_flag()
+    # ut_parser_arg_short_and_long_flag()
+    # ut_parser_arg_optional_arg()
+    # ut_parser_arg_required_arg()
+    # ut_parser_arg_indented_brief_following_arg()
+    # ut_parser_arg_indented_multiline_brief_following_arg()
+    # ut_parser_simple()
+    # ut_parser_basic()
+
     print_action("All unit tests completed.")
 
 ###############################################################################
@@ -848,6 +1290,7 @@ debug_mode = False
 print_raw_repr = False
 print_tree = False
 print_fancy_tree = False
+
 CMNH_TITLE = "CMHN - Command Line Help Notation Parser"
 CMNH_VERSION = "v0.0.0"
 CMNH_LICENSE = "AGPL-3.0-or-later Copyright(c) 2025 Anton Yashchenko"
