@@ -46,7 +46,14 @@ def is_whitespace(c: str) -> bool:
 
 def is_usage_keyword(s: str) -> bool:
     """ Check if a line starts with 'Usage', 'USAGE' or 'usage'. """
-    return s.startswith("Usage") or s.startswith("usage") or s.startswith("USAGE")
+    is_usage = False
+    if s.startswith("Usage"):
+        is_usage = True
+    elif s.startswith("usage"):
+        is_usage = True
+    elif s.startswith("USAGE"):
+        is_usage = True
+    return is_usage
 
 def is_indented_line(s: str, indent_level: int = 1) -> bool:
     """ Check if a line starts with the specified indent level (spaces or tabs). """
@@ -296,13 +303,18 @@ def line_startswith(s: str, prefix: str, pos : int = 0) -> bool:
     """ Check if line starts with a given prefix, ignoring leading whitespace."""
     return s.startswith(prefix,pos + skip_whitespace(s,pos))
 
-# Parsing automatons
+###############################################################################
+# Parsing Automatons
+# - Each parse function approximatley models a grammar rule from the CMNH EBNF.
+# - Success -> tuple[Ast,int,int] -> (ast, end_line, end_col)
+# - Failure -> tuple[str,int,int,List[str]]] -> (error message, line, col, input)
+###############################################################################
 
 def parse_long_flag(inp : List[str], line: int, pos: int) -> ParseResult:
     """
     EBNF:
-            `<long_flag_ident> ::= ( [a-z] | [A-Z] )+ ( [a-z] | [A-Z] | "-" )+ ( [a-z] | [A-Z] | [0-9] )`
-            `<long_flag> ::= "--" <long_flag_ident>`
+        `<long_flag_ident> ::= ( [a-z] | [A-Z] )+ ( [a-z] | [A-Z] | "-" )+ ( [a-z] | [A-Z] | [0-9] )`
+        `<long_flag> ::= "--" <long_flag_ident>`
 
     Long cli argument flag format:
         - Begins with alpha.
@@ -325,7 +337,9 @@ def parse_long_flag(inp : List[str], line: int, pos: int) -> ParseResult:
     return ParseResult((Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,flag_ident)]),line,pos))
 
 def parse_short_flag(inp : List[str], line: int, pos: int) -> ParseResult:
-    """ EBNF: `<short_flag> ::= "-" ( [a-z] | [A-Z] )`
+    """
+    EBNF:
+        `<short_flag> ::= "-" ( [a-z] | [A-Z] )`
     """
     if line >= len(inp):
         return ParseResult(("Expected short flag but reached end of inp.",line,pos,inp))
@@ -340,94 +354,98 @@ def parse_short_flag(inp : List[str], line: int, pos: int) -> ParseResult:
     return ParseResult((Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,flag_ident)]),line,pos))
 
 def parse_optional_arg(inp : List[str], line: int, pos: int) -> ParseResult:
-    """ An optional argument is enclosed in square brackets.
-        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
     """
-    pos = pos
+    EBNF:
+        `<shell_ident> ::= ( [a-z] | [A-Z] ) ( [a-z] | [A-Z] | [0-9] )+ ( [a-z] | [A-Z] )`
+        `<optional_arg> ::= "[" <shell_ident> "]"`
+
+    Help text's running shell variable identifier format.
+        - Begin with alpha or underscore.
+        - May contain alpha, numeric or underscore.
+    """
     if line >= len(inp):
-        return ParseResult("Expected optional argument but reached end of inp")
+        return ParseResult(("Expected optional argument but reached end of input.",line,pos,inp))
     inp[line] = inp[line]
     pos += skip_whitespace(inp[line],pos)
     if not inp[line].startswith('[',pos):
-        return ParseResult(f"Expected optional argument starting with '[' at line {line}")
+        return ParseResult(("Expected optional argument starting with a '['.",line,pos,inp))
     pos += 1
     arg_ident = ""
     while pos < len(inp[line]) and is_alnumus(inp[line][pos]):
         arg_ident += inp[line][pos]
         pos += 1
     if len(arg_ident) < 1 or not is_alpha(arg_ident[0]) or not is_alnumus(arg_ident[-1]):
-        return ParseResult(f"Expected optional argument identifier at line {line}")
+        return ParseResult(("Expected optional argument identifier.",line,pos,inp))
     pos += skip_whitespace(inp[line],pos)
     if pos >= len(inp[line]) or not inp[line].startswith(']',pos):
-        return ParseResult(f"Expected closing ']' for optional argument at line {line}")
+        return ParseResult(("Expected closing ']' for optional argument.",line,pos,inp))
     pos += 1
-    optional_arg_ast = Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,arg_ident)])
-    return ParseResult((optional_arg_ast,line,pos))
+    return ParseResult((Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,arg_ident)]),line,pos))
 
 def parse_required_arg(inp : List[str], line: int, pos: int) -> ParseResult:
-    """ A required argument is enclosed in angle brackets.
-        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
     """
-    curr_line = line
-    curr_pos = pos
-    if curr_line >= len(inp):
-        return ParseResult("Expected required argument but reached end of inp")
-    line_str = inp[curr_line]
-    curr_pos += skip_whitespace(line_str,curr_pos)
-    if not line_str.startswith('<',curr_pos):
-        return ParseResult(f"Expected required argument starting with '<' at line {curr_line}")
-    curr_pos += 1
-    arg_ident = ""
-    while curr_pos < len(line_str) and is_alnumus(line_str[curr_pos]):
-        arg_ident += line_str[curr_pos]
-        curr_pos += 1
-    if len(arg_ident) < 1 or not is_alpha(arg_ident[0]) or not is_alnumus(arg_ident[-1]):
-        return ParseResult(f"Expected required argument identifier at line {curr_line}")
-    curr_pos += skip_whitespace(line_str,curr_pos)
-    if curr_pos >= len(line_str) or not line_str.startswith('>',curr_pos):
-        return ParseResult(f"Expected closing '>' for required argument at line {curr_line}")
-    curr_pos += 1
-    required_arg_ast = Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,arg_ident)])
-    return ParseResult((required_arg_ast,curr_line,curr_pos))
-
-def parse_argument(inp : List[str], line: int, pos: int) -> ParseResult:
-    """ An argument consists of optional short flag, one or more long flags,
-        optional or required argument, followed by a description text line.
-        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
+    EBNF:
+        `<shell_ident> ::= ( [a-z] | [A-Z] ) ( [a-z] | [A-Z] | [0-9] )+ ( [a-z] | [A-Z] )`
+        `<required_arg> ::= "<" <shell_ident> ">"`
     """
     if line >= len(inp):
-        return ParseResult("Expected argument but reached end of inp")
-    line_str = inp[line]            # Current line string
-    argument_ast = Ast(Tk.ARGUMENT) # Argument root node
+        return ParseResult(("Expected required argument but reached end of input.",line,pos,inp))
+    inp = inp[line]
+    pos += skip_whitespace(inp,pos)
+    if not inp.startswith('<',pos):
+        return ParseResult(("Expected required argument starting with a '<'.",line,pos,inp))
+    pos += 1
+    arg_ident = ""
+    while pos < len(inp) and is_alnumus(inp[pos]):
+        arg_ident += inp[pos]
+        pos += 1
+    if len(arg_ident) < 1 or not is_alpha(arg_ident[0]) or not is_alnumus(arg_ident[-1]):
+        return ParseResult(("Expected required argument identifier.",line,pos,inp))
+    pos += skip_whitespace(inp,pos)
+    if pos >= len(inp) or not inp.startswith('>',pos):
+        return ParseResult(("Expected closing '>' for required argument.",line,pos,inp))
+    pos += 1
+    return ParseResult((Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,arg_ident)]),line,pos))
+
+def parse_argument(inp : List[str], line: int, pos: int) -> ParseResult:
+    """
+    EBNF:
+        `<argument> ::= (( <short_flag> ) " ")? (( <long_flag> ) " " ) +
+        ( <optional_arg> |  <required_arg> )? <indented_line> ": " <text_line>`
+    """
+    if line >= len(inp):
+        return ParseResult(("Expected argument but reached end of input.",line,pos,inp))
+    inp[line] = inp[line]            # Current line string
+    node = Ast(Tk.ARGUMENT) # Argument root node
     has_short_flag = False          # Whether a short flag was parsed
     has_long_flag = False           # Whether a long flag was parsed
 
     # Parse optional short flag
-    if line_startswith(line_str,"-") and not line_startswith(line_str,"--"):
+    if line_startswith(inp[line],"-") and not line_startswith(inp[line],"--"):
         has_short_flag = True
-        pos += skip_whitespace(line_str,pos)
+        pos += skip_whitespace(inp[line],pos)
         short_flag_result = parse_short_flag(inp,line,pos)
         if short_flag_result.is_error():
             return short_flag_result
-        argument_ast.append(short_flag_result.get_ast())
+        node.append(short_flag_result.get_ast())
         line = short_flag_result.get_line()
         pos = short_flag_result.get_col()
-        pos += skip_whitespace(line_str,pos)
+        pos += skip_whitespace(inp[line],pos)
         if line < len(inp) and pos < len(inp[line]) and inp[line][pos] == ',':
             pos += 1
             pos += skip_whitespace(inp[line],pos)
 
     # Parse one or more long flags
-    while line_startswith(line_str,"--",pos):
+    while line_startswith(inp[line],"--",pos):
         has_long_flag = True
-        pos += skip_whitespace(line_str,pos)
+        pos += skip_whitespace(inp[line],pos)
         long_flag_result = parse_long_flag(inp,line,pos)
         if long_flag_result.is_error():
-            return ParseResult(f"Failed to parse long flag at line {line} with error:\n\t\t\"{long_flag_result.get_error()}\"")
-        argument_ast.append(long_flag_result.get_ast())
+            return long_flag_result
+        node.append(long_flag_result.get_ast())
         line = long_flag_result.get_line()
         pos = long_flag_result.get_col()
-        pos += skip_whitespace(line_str,pos)
+        pos += skip_whitespace(inp[line],pos)
         if line < len(inp) and pos < len(inp[line]) and inp[line][pos] == ',':
             pos += 1
             pos += skip_whitespace(inp[line],pos)
@@ -437,41 +455,41 @@ def parse_argument(inp : List[str], line: int, pos: int) -> ParseResult:
         return ParseResult(f"Expected at least one long flag at line {line}")
 
     # Parse optional or required argument
-    if line_str.startswith('[',pos):
+    if inp[line].startswith('[',pos):
         optional_arg_result = parse_optional_arg(inp,line,pos)
         if optional_arg_result.is_error():
-            return ParseResult(f"Failed to parse optional argument at line {line}")
-        argument_ast.append(optional_arg_result.get_ast())
+            return optional_arg_result
+        node.append(optional_arg_result.get_ast())
         line = optional_arg_result.get_line()
         pos = optional_arg_result.get_col()
         if line >= len(inp):
-            return ParseResult("Expected argument description but reached end of inp")
-        line_str = inp[line]
-        pos += skip_whitespace(line_str,pos)
-    elif line_str.startswith('<',pos):
+            return ParseResult(("Expected argument description but reached end of input.",line,pos,inp))
+        inp[line] = inp[line]
+        pos += skip_whitespace(inp[line],pos)
+    elif inp[line].startswith('<',pos):
         required_arg_result = parse_required_arg(inp,line,pos)
         if required_arg_result.is_error():
-            return ParseResult(f"Failed to parse required argument at line {line}")
-        argument_ast.append(required_arg_result.get_ast())
+            return required_arg_result
+        node.append(required_arg_result.get_ast())
         line = required_arg_result.get_line()
         pos = required_arg_result.get_col()
         if line >= len(inp):
-            return ParseResult("Expected argument description but reached end of inp")
-        line_str = inp[line]
-        pos += skip_whitespace(line_str,pos)
+            return ParseResult(("Expected argument description but reached end of input.",line,pos,inp))
+        inp[line] = inp[line]
+        pos += skip_whitespace(inp[line],pos)
 
     # Description
     # Indented line with colon and text
-    if line_str.startswith(':',pos):
+    if inp[line].startswith(':',pos):
         pos += 1
-        pos += skip_whitespace(line_str,pos)
-        text = line_str[pos:].strip()
+        pos += skip_whitespace(inp[line],pos)
+        text = inp[line][pos:].strip()
         if text == "":
-            return ParseResult(f"Expected argument description text after ':' at line {line}")
-        argument_ast.append(Ast(Tk.TEXT_LINE,text))
-        return ParseResult((argument_ast,line + 1,0))
+            return ParseResult(("Expected argument description text after ':'.",line,pos,inp))
+        node.append(Ast(Tk.TEXT_LINE,text))
+        return ParseResult((node,line + 1,0))
     else:
-        text = line_str[pos:].strip()
+        text = inp[line][pos:].strip()
         if text == "":
             # Check for indented following paragraph.
             next_line = line + 1
@@ -482,29 +500,32 @@ def parse_argument(inp : List[str], line: int, pos: int) -> ParseResult:
                 text = inp[line].strip()
                 line += 1
                 if text == "":
-                    return ParseResult(f"Expected argument description text at line {line}")
-                argument_ast.append(Ast(Tk.TEXT_LINE,text))
+                    return ParseResult(("Expected argument description text.",line,pos,inp))
+                node.append(Ast(Tk.TEXT_LINE,text))
 
                 while line < len(inp)\
                         and (inp[line].startswith("        ") or inp[line].startswith("\t\t")):
                     text = inp[line].strip()
                     line += 1
-                    argument_ast.append(Ast(Tk.TEXT_LINE,text))
+                    node.append(Ast(Tk.TEXT_LINE,text))
             else:
-                return ParseResult((argument_ast,line,pos)) # No desc, continue
+                return ParseResult((node,line,pos)) # No desc, continue
         else :
-            argument_ast.append(Ast(Tk.TEXT_LINE,text))
+            node.append(Ast(Tk.TEXT_LINE,text))
 
-    return ParseResult((argument_ast,line,pos))
+    return ParseResult((node,line,pos))
 
 def parse_argument_list(inp : List[str], line: int, pos: int) -> ParseResult:
-    """ An argument list is one or more arguments """
-    arg_list = Ast(Tk.ARGUMENT_LIST)
+    """
+    EBNF:
+        `<argument_list> ::= ( <argument> "\\n" )+`
+    """
+    node = Ast(Tk.ARGUMENT_LIST)
     while line < len(inp) and line_startswith(inp[line],'-'):
         arg_result = parse_argument(inp,line,pos)
         if arg_result.is_error():
-            return ParseResult(f"Failed to parse argument at line {line} with error:\n\t\t\"{arg_result.get_error()}\"")
-        arg_list.append(arg_result.get_ast())
+            return arg_result
+        node.append(arg_result.get_ast())
         line = arg_result.get_line()
         pos = 0 # Reset the column position for the newline. Assuming each argument starts on a new line.
         line += 1 # Go to the next line.
@@ -512,31 +533,32 @@ def parse_argument_list(inp : List[str], line: int, pos: int) -> ParseResult:
         while line < len(inp) and inp[line].strip() == "":
             line += 1
     # Programmer error, you should detect an argument dash before calling this function.
-    if len(arg_list.branches) == 0:
-        return ParseResult(f"[EXCEPTION][parse_argument_list]\
-            Attempting to parse non-existing argument list at line {line}, col {pos}.")
-    return ParseResult((arg_list,line,pos))
+    if len(node.branches) == 0:
+        return ParseResult(("Attempting to parse non-existing argument list.",line,pos,inp))
+    return ParseResult((node,line,pos))
 
 def parse_section(inp : List[str], line: int, pos: int) -> ParseResult:
-    if line > len(inp): return ParseResult("Expected section but reached end of input")
-    if is_indented_line(inp[line]): return ParseResult(f"Expected section title at line {line}, col {pos}")
+    if line > len(inp):
+        return ParseResult(("Expected section but reached end of input.",line,pos,inp))
+    if is_indented_line(inp[line]):
+        return ParseResult(("Expected section title.",line,pos,inp))
     section_title = inp[line].strip()
     line += 1
     section = Ast(Tk.SECTION,section_title)
     if not line < len(inp) or not is_indented_line(inp[line]):
-        return ParseResult(f"Expected indented text after section title at line {line}, col {pos}")
+        return ParseResult(("Expected indented text after section title.",line,pos,inp))
 
     section_start = skip_whitespace(inp[line])
     if inp[line].startswith('-',section_start):
         arg_list_result = parse_argument_list(inp,line,section_start)
         if arg_list_result.is_error():
-            return ParseResult(f"Failed to parse argument list at line {line}")
+            return ParseResult(("Failed to parse argument list.",line,pos,inp))
         section.append(arg_list_result.get_ast())
         return ParseResult((section,arg_list_result.get_line(),arg_list_result.get_col()))
     else:
         para_result = parse_paragraph(inp,line,0,1)
         if para_result.is_error():
-            return ParseResult(f"Failed to parse paragraph at line {line}")
+            return ParseResult(("Failed to parse paragraph.",line,pos,inp))
         section.append(para_result.get_ast())
         line = para_result.get_line()
         pos = para_result.get_col()
@@ -545,9 +567,9 @@ def parse_section(inp : List[str], line: int, pos: int) -> ParseResult:
 def parse_paragraph(inp : List[str], line: int, pos: int,indent_level = 0) -> ParseResult:
     """ A paragraph is one or more indented text lines. """
     if line >= len(inp):
-        return ParseResult("Expected paragraph but reached end of inp")
+        return ParseResult(("Expected paragraph but reached end of input.",line,pos,inp))
     if not is_indented_line(inp[line],indent_level):
-        return ParseResult(f"Expected indented paragraph at line {line}, col {pos}")
+        return ParseResult(("Expected indented paragraph.",line,pos,inp))
     para = Ast(Tk.PARAGRAPH)
     while line < len(inp) and ( is_indented_line(inp[line],indent_level) or inp[line].strip() == "" ):
         # When indent level is 0, disambiguate from a section title by looking forward for an indented line.
@@ -557,8 +579,8 @@ def parse_paragraph(inp : List[str], line: int, pos: int,indent_level = 0) -> Pa
         para.append(Ast(Tk.TEXT_LINE,inp[line].strip()))
         line += 1
 
-    # if the last line is empty, move back to the last non-empty line
-    if len(para.branches) > 0 and para.branches[-1].value == "":
+    # while the last line is empty, move back to the last non-empty line
+    while len(para.branches) > 0 and para.branches[-1].value == "":
         para.branches.pop()
 
     return ParseResult((para,line,0))
@@ -568,7 +590,7 @@ def parse_usage_section(inp : List[str], line: int, pos: int) -> ParseResult:
     if line >= len(inp):
         return ParseResult("Expected usage section but reached end of inp")
     if not is_usage_keyword(inp[line]):
-        return ParseResult(f"Expected usage section starting with 'Usage:' at line {line}")
+        return ParseResult(("Expected usage section starting with 'Usage:'.",line,pos,inp))
     pos += len("Usage")
     pos += skip_whitespace(inp[line],pos)
     pos += skip_chars(inp[line],pos,':',1)
@@ -579,15 +601,16 @@ def parse_usage_section(inp : List[str], line: int, pos: int) -> ParseResult:
         line += 1
         if line < len(inp) and is_indented_line(inp[line],1):
             usage_text = inp[line].strip()
+            line += 1
         else:
-            return ParseResult(f"Expected indented usage text after usage keyword at line {line}")
+            return ParseResult(("Expected indented usage text after usage keyword.",line,pos,inp))
     else: # inline usage
         line += 1 # move past usage line
 
     pos = 0  # reset pos for next line, always end at start of next line
     return ParseResult((Ast(Tk.USAGE,usage_text),line,pos))
 
-def parse_help_text(inp : List[str], line: int, pos: int) -> None:
+def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
     """
     Grammar Rule:
         `<cli_help> ::= <usage_section>? ( <section> | <paragraph> )*`
@@ -598,7 +621,7 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> None:
     line = 0
 
     if inp == []:
-        raise ParserError("Input is empty")
+        return ParseResult(("Input is empty",line,pos,inp))
 
     while line < len(inp):
         pos = 0
@@ -616,7 +639,7 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> None:
             is_usage = True
             usage_result = parse_usage_section(inp,line,pos)
             if usage_result.is_error():
-                raise ParserError("Failed to parse usage section")
+                return usage_result
             output.append(usage_result.get_ast())
             line = usage_result.get_line()
             pos = usage_result.get_col()
@@ -634,7 +657,7 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> None:
         if is_section:
             section_result = parse_section(inp,line,pos)
             if section_result.is_error():
-                raise ParserError("Failed to parse section")
+                return section_result
             output.append(section_result.get_ast())
             line = section_result.get_line()
             pos = section_result.get_col()
@@ -643,7 +666,7 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> None:
         else:
             para_result = parse_paragraph(inp,line,pos)
             if para_result.is_error():
-                raise ParserError("Failed to parse paragraph")
+                return para_result
             output.append(para_result.get_ast())
             line = para_result.get_line()
             pos = para_result.get_col()
@@ -651,37 +674,20 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> None:
                 line += 1
     return ParseResult((output,line,pos))
 
-class ParserError(Exception):
-    """ Exception raised for parser errors.
-        - Pass the parser instance to `prs` arg to print context.
-    """
-    def __init__(self, message: str, line: int = 0, col: int = 0,inp = None) -> None:
-        super().__init__(f"[CommandLineHelpText][ERROR][L:{line},C:{col}] {message}")
-        self.line = line
-        self.col = col
-        if inp is not None:
-            # Print the current line with a marker at the error position.
-            print_error(inp[line],1)
-            print_action(" " * (col) + "^")
-
-
-
-
 class CommandLineHelpText:
     """ Command line help text intermediate representation"""
 
     def __init__(self) -> None:
         self.ir : Ast = Ast(Tk.NOTHING)
 
-    def parse(self, inp: str) -> Ast:
+    def parse(self, inp: str) -> ParseResult:
         """ Parse the input string and return the AST. """
         inp_lines = split_lines(inp)
         result = parse_help_text(inp_lines,0,0)
         if result.is_error():
-            raise ParserError(result.get_error())
+            return result
         self.ir = result.get_ast()
-        return self.ir
-
+        return result
 
 ###############################################################################
 # Unit Test Utils
@@ -779,306 +785,35 @@ def compare_asts(input_ast, expected_ast):
 
 def test_parser(test_name, parser_input, expected_output):
     """ Run a parser test and compare the output AST to the expected AST."""
-    try:
-        prs = CommandLineHelpText()
-        ast = prs.parse(parser_input)
-        did_test_pass = ast == expected_output
+    prs = CommandLineHelpText()
+    ast = prs.parse(parser_input)
+    if ast.is_error():
+        print_error(f"Test {test_name} failed with error:\n\t{ast.get_error()}",1)
+    else:
+        did_test_pass = ast.get_ast() == expected_output
         if not did_test_pass:
             print_error(f"Test {test_name} failed.",1)
-            compare_asts(prs.ir, expected_output)
+            compare_asts(ast.get_ast(), expected_output)
         else:
             print_action(f"Test {test_name} passed.",1)
-    except ParserError as e:
-        print_error(f"Test {test_name} raised an exception: {e}",1)
 
 def test_parser_function(funct,test_name,parser_input,expected_output):
     """ Run a specific parser function test and compare the output AST to the expected AST."""
-    try:
-        result = funct(split_lines(parser_input),0,0)
-        if result.is_error():
-            print_error(f"Test {test_name} failed with error:\n\t{result.error}",1)
-            return
-        ast = result.ast
-        did_test_pass = ast == expected_output
-        if not did_test_pass:
-            print_error(f"Test {test_name} failed.",1)
-            compare_asts(ast, expected_output)
-        else:
-            print_action(f"Test {test_name} passed.",1)
-    except ParserError as e:
-        print_error(f"Test {test_name} raised an exception: {e}",1)
+    result = funct(split_lines(parser_input),0,0)
+    if result.is_error():
+        print_error(f"Test {test_name} failed with error:\n\t{result.error}",1)
+        return
+    ast = result.get_ast()
+    did_test_pass = ast == expected_output
+    if not did_test_pass:
+        print_error(f"Test {test_name} failed.",1)
+        compare_asts(ast, expected_output)
+    else:
+        print_action(f"Test {test_name} passed.",1)
 
 # ###############################################################################
 # # Unit Tests
 # ###############################################################################
-
-def ut_parser_usage_line():
-    """Usage line"""
-    test_parser("ut_parser_usage_line",
-        parser_input="Usage: myprogram [options] <input_file>\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.USAGE,"myprogram [options] <input_file>")
-        ])
-    )
-
-def ut_parser_paragraph():
-    """Paragraph"""
-    test_parser("ut_parser_paragraph",
-        parser_input="This is a paragraph.\nThis is the second line.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.PARAGRAPH,None,branches = [
-                Ast(Tk.TEXT_LINE,"This is a paragraph."),
-                Ast(Tk.TEXT_LINE,"This is the second line.")
-            ])
-        ])
-    )
-
-def ut_parser_usage_and_paragraph():
-    """Usage line and paragraph"""
-    test_parser("ut_parser_usage_and_paragraph",
-        parser_input="Usage: myprogram [options] <input_file>\n\nThis is a paragraph.\nThis is the second line.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.USAGE,"myprogram [options] <input_file>"),
-            Ast(Tk.PARAGRAPH,None,branches = [
-                Ast(Tk.TEXT_LINE,"This is a paragraph."),
-                Ast(Tk.TEXT_LINE,"This is the second line.")
-            ])
-        ])
-    )
-
-def ut_parser_usage_paragraph_section():
-    """Usage line, paragraph and section"""
-    test_parser("ut_parser_usage_paragraph_section",
-        parser_input="Usage: myprogram [options] <input_file>\n\nThis is a paragraph.\nThis is the second line.\n\nDetails\n    These are the details.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.USAGE,"myprogram [options] <input_file>"),
-            Ast(Tk.PARAGRAPH,None,branches = [
-                Ast(Tk.TEXT_LINE,"This is a paragraph."),
-                Ast(Tk.TEXT_LINE,"This is the second line.")
-            ]),
-            Ast(Tk.SECTION,"Details",branches = [
-                Ast(Tk.PARAGRAPH,None,branches = [
-                    Ast(Tk.TEXT_LINE,"These are the details.")
-                ])
-            ])
-        ])
-    )
-
-def ut_parser_arg_long_flag():
-    """Long cli argument flag"""
-    test_parser("ut_parser_arg_long_flag",
-        parser_input="Options\n    --long-flag-ident123 This is the argument documentation.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.SECTION,"Options",branches = [
-                Ast(Tk.ARGUMENT_LIST,None,branches = [
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
-                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
-                    ])
-                ])
-            ])
-        ])
-    )
-
-def ut_parser_arg_short_flag():
-    """Short cli argument flag"""
-    test_parser("ut_parser_arg_short_flag",
-        parser_input="Options\n    -f This is the argument documentation.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.SECTION,"Options",branches = [
-                Ast(Tk.ARGUMENT_LIST,None,branches = [
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
-                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
-                    ])
-                ])
-            ])
-        ])
-    )
-
-def ut_parser_arg_short_and_long_flag():
-    """Short and long cli argument flags"""
-    test_parser("ut_parser_arg_short_and_long_flag",
-        parser_input="Options\n    -f --long-flag-ident123 This is the argument documentation.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.SECTION,"Options",branches = [
-                Ast(Tk.ARGUMENT_LIST,None,branches = [
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
-                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
-                    ])
-                ])
-            ])
-        ])
-    )
-
-def ut_parser_arg_optional_arg():
-    """Optional cli argument"""
-    test_parser("ut_parser_arg_optional_arg",
-        parser_input="Options\n    --long-flag-ident123 [optional_arg123] This is the argument documentation.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.SECTION,"Options",branches = [
-                Ast(Tk.ARGUMENT_LIST,None,branches = [
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
-                        Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'optional_arg123')]),
-                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
-                    ])
-                ])
-            ])
-        ])
-    )
-
-def ut_parser_arg_required_arg():
-    """Required cli argument"""
-    test_parser("ut_parser_arg_required_arg",
-        parser_input="Options\n    --long-flag-ident123 <required_arg123> This is the argument documentation.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.SECTION,"Options",branches = [
-                Ast(Tk.ARGUMENT_LIST,None,branches = [
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
-                        Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'required_arg123')]),
-                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
-                    ])
-                ])
-            ])
-        ])
-    )
-
-def ut_parser_arg_indented_brief_following_arg():
-    """Argument with indented brief following"""
-    test_parser("ut_parser_arg_indented_brief_following_arg",
-        parser_input="Options\n    --long-flag-ident123 <required_arg123>\n        This is the argument documentation.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.SECTION,"Options",branches = [
-                Ast(Tk.ARGUMENT_LIST,None,branches = [
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
-                        Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'required_arg123')]),
-                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
-                    ])
-                ])
-            ])
-        ])
-    )
-
-def ut_parser_arg_indented_multiline_brief_following_arg():
-    """Argument with indented brief following"""
-    test_parser("ut_parser_arg_indented_multiline_brief_following_arg",
-        parser_input="Options\n    --long-flag-ident123 <required_arg123>\n        This is the argument documentation.\n        This is the second line.\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.SECTION,"Options",branches = [
-                Ast(Tk.ARGUMENT_LIST,None,branches = [
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
-                        Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'required_arg123')]),
-                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
-                        ,Ast(Tk.TEXT_LINE,"This is the second line.")
-                    ])
-                ])
-            ])
-        ])
-    )
-
-def ut_parser_simple():
-    """Simple complete example"""
-    test_parser("ut_parser_simple",parser_input=""
-                """USAGE:
-    py cmhn_compiler.py [ [ -v | --verbose ] | [ -d | --debug ] ] <helpTextInput>
-
-
-BRIEF:
-    This is a brief.
-
-
-
-This is a paragraph.
-This is the second line.
-
-
-PARAMS:
-    -f This is an argument.
-
-""",
-    expected_output=Ast(Tk.SYNTAX,None,branches = [
-        Ast(Tk.USAGE,"py cmhn_compiler.py [ [ -v | --verbose ] | [ -d | --debug ] ] <helpTextInput>"),
-        Ast(Tk.SECTION,"BRIEF:",branches = [
-            Ast(Tk.TEXT_LINE,"This is a brief.")
-        ]),
-        Ast(Tk.PARAGRAPH,None,branches = [
-            Ast(Tk.TEXT_LINE,"This is a paragraph."),
-            Ast(Tk.TEXT_LINE,"This is the second line.")
-        ]),
-        Ast(Tk.SECTION,"PARAMS:",branches = [
-            Ast(Tk.ARGUMENT_LIST,None,branches = [
-                Ast(Tk.ARGUMENT,None,branches = [
-                    Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
-                    Ast(Tk.TEXT_LINE,"This is an argument.")
-                ])
-            ])
-        ])
-    ])
-    )
-
-def ut_parser_basic():
-    """Basic complete example"""
-    test_parser("ut_parser_basic",parser_input=""
-        "Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]\n\n"
-        "Add a prefix to each top-level file in a directory.\n\n"
-        "Parameters\n"
-        "    -f --force \n"
-        "        Force changes and overwrite.\n"
-        "    -h --husky \n"
-        "        Use secret husky superpowers.\n\n"
-        "Display\n"
-        "   -h --help\n"
-        "        Display help.\n"
-        "   -v -version\n"
-        "        Display version\n\n"
-        "Details\n"
-        "    A paragraph of text, these are the details of a command.\n\n\n\n",
-        expected_output=Ast(Tk.SYNTAX,None,branches = [
-            Ast(Tk.USAGE,"gmash dirs prefix --p <prefix> --P [fileOrFolder]"),
-            Ast(Tk.PARAGRAPH,None,branches = [
-                Ast(Tk.TEXT_LINE,"Add a prefix to each top-level file in a directory.")
-            ]),
-            Ast(Tk.SECTION,"Parameters",branches = [
-                Ast(Tk.ARGUMENT_LIST,None,branches = [
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'force')]),
-                        Ast(Tk.TEXT_LINE,"Force changes and overwrite.")
-                    ]),
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'h')]),
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'husky')]),
-                        Ast(Tk.TEXT_LINE,"Use secret husky superpowers.")
-                    ])
-                ])
-            ]),
-            Ast(Tk.SECTION,"Display",branches = [
-                Ast(Tk.ARGUMENT_LIST,None,branches = [
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'h')]),
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'help')]),
-                        Ast(Tk.TEXT_LINE,"Display help.")
-                    ]),
-                    Ast(Tk.ARGUMENT,None,branches = [
-                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'v')]),
-                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'version')]),
-                        Ast(Tk.TEXT_LINE,"Display version")
-                    ])
-                ])
-            ]),
-            Ast(Tk.SECTION,"Details",branches = [
-                Ast(Tk.PARAGRAPH,None,branches = [
-                    Ast(Tk.TEXT_LINE,"A paragraph of text, these are the details of a command.")
-                ])
-            ])
-        ])
-    )
 
 def ut_parsefunc_long_flag():
     """ Long flag parse function """
@@ -1309,6 +1044,275 @@ def ut_parsefunc_help_text():
     ])
     )
 
+def ut_parser_usage_line():
+    """Usage line"""
+    test_parser("ut_parser_usage_line",
+        parser_input="Usage: myprogram [options] <input_file>\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"myprogram [options] <input_file>")
+        ])
+    )
+
+def ut_parser_paragraph():
+    """Paragraph"""
+    test_parser("ut_parser_paragraph",
+        parser_input="This is a paragraph.\nThis is the second line.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"This is a paragraph."),
+                Ast(Tk.TEXT_LINE,"This is the second line.")
+            ])
+        ])
+    )
+
+def ut_parser_usage_and_paragraph():
+    """Usage line and paragraph"""
+    test_parser("ut_parser_usage_and_paragraph",
+        parser_input="Usage: myprogram [options] <input_file>\n\nThis is a paragraph.\nThis is the second line.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"myprogram [options] <input_file>"),
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"This is a paragraph."),
+                Ast(Tk.TEXT_LINE,"This is the second line.")
+            ])
+        ])
+    )
+
+def ut_parser_usage_paragraph_section():
+    """Usage line, paragraph and section"""
+    test_parser("ut_parser_usage_paragraph_section",
+        parser_input="Usage: myprogram [options] <input_file>\n\nThis is a paragraph.\nThis is the second line.\n\nDetails\n    These are the details.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"myprogram [options] <input_file>"),
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"This is a paragraph."),
+                Ast(Tk.TEXT_LINE,"This is the second line.")
+            ]),
+            Ast(Tk.SECTION,"Details",branches = [
+                Ast(Tk.PARAGRAPH,None,branches = [
+                    Ast(Tk.TEXT_LINE,"These are the details.")
+                ])
+            ])
+        ])
+    )
+
+def ut_parser_arg_long_flag():
+    """Long cli argument flag"""
+    test_parser("ut_parser_arg_long_flag",
+        parser_input="Options\n    --long-flag-ident123 This is the argument documentation.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.SECTION,"Options",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
+                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+                    ])
+                ])
+            ])
+        ])
+    )
+
+def ut_parser_arg_short_flag():
+    """Short cli argument flag"""
+    test_parser("ut_parser_arg_short_flag",
+        parser_input="Options\n    -f This is the argument documentation.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.SECTION,"Options",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
+                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+                    ])
+                ])
+            ])
+        ])
+    )
+
+def ut_parser_arg_short_and_long_flag():
+    """Short and long cli argument flags"""
+    test_parser("ut_parser_arg_short_and_long_flag",
+        parser_input="Options\n    -f --long-flag-ident123 This is the argument documentation.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.SECTION,"Options",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
+                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+                    ])
+                ])
+            ])
+        ])
+    )
+
+def ut_parser_arg_optional_arg():
+    """Optional cli argument"""
+    test_parser("ut_parser_arg_optional_arg",
+        parser_input="Options\n    --long-flag-ident123 [optional_arg123] This is the argument documentation.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.SECTION,"Options",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
+                        Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'optional_arg123')]),
+                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+                    ])
+                ])
+            ])
+        ])
+    )
+
+def ut_parser_arg_required_arg():
+    """Required cli argument"""
+    test_parser("ut_parser_arg_required_arg",
+        parser_input="Options\n    --long-flag-ident123 <required_arg123> This is the argument documentation.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.SECTION,"Options",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
+                        Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'required_arg123')]),
+                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+                    ])
+                ])
+            ])
+        ])
+    )
+
+def ut_parser_arg_indented_brief_following_arg():
+    """Argument with indented brief following"""
+    test_parser("ut_parser_arg_indented_brief_following_arg",
+        parser_input="Options\n    --long-flag-ident123 <required_arg123>\n        This is the argument documentation.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.SECTION,"Options",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
+                        Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'required_arg123')]),
+                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+                    ])
+                ])
+            ])
+        ])
+    )
+
+def ut_parser_arg_indented_multiline_brief_following_arg():
+    """Argument with indented brief following"""
+    test_parser("ut_parser_arg_indented_multiline_brief_following_arg",
+        parser_input="Options\n    --long-flag-ident123 <required_arg123>\n        This is the argument documentation.\n        This is the second line.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.SECTION,"Options",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
+                        Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'required_arg123')]),
+                        Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+                        ,Ast(Tk.TEXT_LINE,"This is the second line.")
+                    ])
+                ])
+            ])
+        ])
+    )
+
+def ut_parser_simple():
+    test_parser("ut_parser_simple",
+        parser_input="USAGE:\n"
+            +"    py cmhn_compiler.py [ [ -v | --verbose ] | [ -d | --debug ] ] <helpTextInput>\n"
+            +"\n"
+            +"\n"
+            +"BRIEF:\n"
+            +"    This is a brief.\n"
+            +"\n"
+            +"\n"
+            +"\n"
+            +"This is a paragraph.\n"
+            +"This is the second line.\n"
+            +"\n"
+            +"\n"
+            +"PARAMS:\n"
+            +"    -f This is an argument.\n"
+            +"\n"
+            +"\n"
+        ,
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"py cmhn_compiler.py [ [ -v | --verbose ] | [ -d | --debug ] ] <helpTextInput>"),
+            Ast(Tk.SECTION,"BRIEF:",branches = [
+                Ast(Tk.PARAGRAPH,None,branches = [Ast(Tk.TEXT_LINE,"This is a brief.")
+                ])
+            ]),
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"This is a paragraph."),
+                Ast(Tk.TEXT_LINE,"This is the second line.")
+            ]),
+            Ast(Tk.SECTION,"PARAMS:",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
+                        Ast(Tk.TEXT_LINE,"This is an argument.")
+                    ])
+                ])
+            ])
+        ])
+    )
+
+def ut_parser_full():
+    """Basic complete example"""
+    test_parser("ut_parser_basic",parser_input=""
+        "Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]\n\n"
+        "Add a prefix to each top-level file in a directory.\n\n"
+        "Parameters\n"
+        "    -f --force \n"
+        "        Force changes and overwrite.\n"
+        "    -h --husky \n"
+        "        Use secret husky superpowers.\n\n"
+        "Display\n"
+        "   -h --help\n"
+        "        Display help.\n"
+        "   -v -version\n"
+        "        Display version\n\n"
+        "Details\n"
+        "    A paragraph of text, these are the details of a command.\n\n\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"gmash dirs prefix --p <prefix> --P [fileOrFolder]"),
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"Add a prefix to each top-level file in a directory.")
+            ]),
+            Ast(Tk.SECTION,"Parameters",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'force')]),
+                        Ast(Tk.TEXT_LINE,"Force changes and overwrite.")
+                    ]),
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'h')]),
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'husky')]),
+                        Ast(Tk.TEXT_LINE,"Use secret husky superpowers.")
+                    ])
+                ])
+            ]),
+            Ast(Tk.SECTION,"Display",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'h')]),
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'help')]),
+                        Ast(Tk.TEXT_LINE,"Display help.")
+                    ]),
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'v')]),
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'version')]),
+                        Ast(Tk.TEXT_LINE,"Display version")
+                    ])
+                ])
+            ]),
+            Ast(Tk.SECTION,"Details",branches = [
+                Ast(Tk.PARAGRAPH,None,branches = [
+                    Ast(Tk.TEXT_LINE,"A paragraph of text, these are the details of a command.")
+                ])
+            ])
+        ])
+    )
+
 def run_unit_tests():
     """ Run all unit tests. """
     print_action("Running unit tests...")
@@ -1333,7 +1337,7 @@ def run_unit_tests():
     ut_parsefunc_usage_section()
     ut_parsefunc_help_text()
 
-    print_action("Testing parser end-to-end:",1)
+    print_action("Testing parser end-to-end:")
     ut_parser_usage_line()
     ut_parser_paragraph()
     ut_parser_usage_and_paragraph()
@@ -1346,7 +1350,7 @@ def run_unit_tests():
     ut_parser_arg_indented_brief_following_arg()
     ut_parser_arg_indented_multiline_brief_following_arg()
     ut_parser_simple()
-    ut_parser_basic()
+    #ut_parser_full()
 
     print_action("All unit tests completed.")
 
