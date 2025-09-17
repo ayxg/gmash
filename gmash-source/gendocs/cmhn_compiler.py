@@ -530,10 +530,122 @@ def parse_section(inp : List[str], line: int, pos: int) -> ParseResult:
         section.append(arg_list_result.get_ast())
         return ParseResult((section,arg_list_result.get_line(),arg_list_result.get_col()))
     else:
-        while line < len(inp) and is_indented_line(inp[line]) or inp[line].strip() == "":
-            section.append(Ast(Tk.TEXT_LINE,inp[line].strip()))
+        para_result = parse_paragraph(inp,line,0,1)
+        if para_result.is_error():
+            return ParseResult(f"Failed to parse paragraph at line {line}")
+        section.append(para_result.get_ast())
+        line = para_result.get_line()
+        pos = para_result.get_col()
+        return ParseResult((section,line,pos))
+
+def parse_paragraph(inp : List[str], line: int, pos: int,indent_level = 0) -> ParseResult:
+    """ A paragraph is one or more indented text lines. """
+    if line >= len(inp):
+        return ParseResult("Expected paragraph but reached end of inp")
+    if not is_indented_line(inp[line],indent_level):
+        return ParseResult(f"Expected indented paragraph at line {line}, col {pos}")
+    para = Ast(Tk.PARAGRAPH)
+    while line < len(inp) and ( is_indented_line(inp[line],indent_level) or inp[line].strip() == "" ):
+        # When indent level is 0, disambiguate from a section title by looking forward for an indented line.
+        if indent_level == 0 and not is_indented_line(inp[line],1) and inp[line].strip() != ""\
+                and line + 1 < len(inp) and is_indented_line(inp[line + 1],1):
+            break
+        para.append(Ast(Tk.TEXT_LINE,inp[line].strip()))
+        line += 1
+
+    # if the last line is empty, move back to the last non-empty line
+    if len(para.branches) > 0 and para.branches[-1].value == "":
+        para.branches.pop()
+
+    return ParseResult((para,line,0))
+
+def parse_usage_section(inp : List[str], line: int, pos: int) -> ParseResult:
+    """ A usage section starts with 'Usage:' or 'usage:' or 'USAGE:' """
+    if line >= len(inp):
+        return ParseResult("Expected usage section but reached end of inp")
+    if not is_usage_keyword(inp[line]):
+        return ParseResult(f"Expected usage section starting with 'Usage:' at line {line}")
+    pos += len("Usage")
+    pos += skip_whitespace(inp[line],pos)
+    pos += skip_chars(inp[line],pos,':',1)
+    pos += skip_whitespace(inp[line],pos)
+    usage_text = inp[line][pos:].strip()
+    # If the rest of the line is empty look for indented text on the next line.
+    if usage_text == "":
+        line += 1
+        if line < len(inp) and is_indented_line(inp[line],1):
+            usage_text = inp[line].strip()
+        else:
+            return ParseResult(f"Expected indented usage text after usage keyword at line {line}")
+    else: # inline usage
+        line += 1 # move past usage line
+
+    pos = 0  # reset pos for next line, always end at start of next line
+    return ParseResult((Ast(Tk.USAGE,usage_text),line,pos))
+
+def parse_help_text(inp : List[str], line: int, pos: int) -> None:
+    """
+    Grammar Rule:
+        `<cli_help> ::= <usage_section>? ( <section> | <paragraph> )*`
+    """
+    # Configure parser state
+    output = Ast(Tk.SYNTAX)
+    pos = 0
+    line = 0
+
+    if inp == []:
+        raise ParserError("Input is empty")
+
+    while line < len(inp):
+        pos = 0
+
+        if inp[line] == "": # Skip empty lines
             line += 1
-        return ParseResult((section,line,0))
+            continue
+        is_usage = False
+        is_section = False
+        sect_title = inp[line]
+
+        # Check for special case usage section which does not require a following indent.
+        is_usage = False
+        if is_usage_keyword(sect_title):
+            is_usage = True
+            usage_result = parse_usage_section(inp,line,pos)
+            if usage_result.is_error():
+                raise ParserError("Failed to parse usage section")
+            output.append(usage_result.get_ast())
+            line = usage_result.get_line()
+            pos = usage_result.get_col()
+            # skip any empty lines after usage
+            while line < len(inp) and inp[line].strip() == "":
+                line += 1
+            continue
+
+        # If not usage, parse regular section or paragraph
+        if not is_usage:
+            section_begin = inp[line + 1] if line + 1 < len(inp) else ""
+            if is_indented_line(section_begin,1):
+                is_section = True
+
+        if is_section:
+            section_result = parse_section(inp,line,pos)
+            if section_result.is_error():
+                raise ParserError("Failed to parse section")
+            output.append(section_result.get_ast())
+            line = section_result.get_line()
+            pos = section_result.get_col()
+            while line < len(inp) and inp[line].strip() == "":
+                line += 1
+        else:
+            para_result = parse_paragraph(inp,line,pos)
+            if para_result.is_error():
+                raise ParserError("Failed to parse paragraph")
+            output.append(para_result.get_ast())
+            line = para_result.get_line()
+            pos = para_result.get_col()
+            while line < len(inp) and inp[line].strip() == "":
+                line += 1
+    return ParseResult((output,line,pos))
 
 class ParserError(Exception):
     """ Exception raised for parser errors.
@@ -600,121 +712,7 @@ class Parser:
             self.pos = result.end_col
         return result
 
-    def parse_syntax(self,inp: str = "") -> ParseResult:
-        """
-        Grammar Rule:
-            ```
-            <cli_help> ::= \"Usage: \"? <text_line> \"\\n\\n\" <paragraph> <section>*
-            ```
-        """
-        # Configure parser state
-        self.output = Ast(Tk.SYNTAX)
-        if inp != "":
-            self.inp = inp
-        self.pos = 0
-        self.line = 0
 
-        # Split input into lines for easier processing
-        self.inp_lines = inp.splitlines(keepends=True)
-
-        if self.inp_lines == []:
-            raise ParserError("Input is empty")
-
-        while self.in_lines(self.line):
-            self.pos = 0
-
-            # Strip a single following newline to normalize line endings.
-            self.inp_lines[self.line] = self.inp_lines[self.line].rstrip('\n')
-
-            if self.inp_lines[self.line] == "": # Skip empty lines
-                self.line += 1
-                continue
-            is_usage = False
-            is_section = False
-            sect_title = self.inp_lines[self.line]
-
-            # Check for special case usage section which does not require a following indent.
-            is_usage = False
-            if is_usage_keyword(sect_title):
-                is_usage = True
-                if self.try_parse(self.parse_usage_section,self.output,self.line,self.pos).is_error():
-                    raise ParserError("Failed to parse usage section",self.line,self.pos,self)
-                continue
-
-            # If not usage, parse regular section or paragraph
-            if not is_usage:
-                section_begin = self.inp_lines[self.line + 1] if self.line + 1 < len(self.inp_lines) else ""
-                if is_indented_line(section_begin,1):
-                    is_section = True
-                if is_section:
-                    if self.try_parse(self.parse_section,self.output,self.line,self.pos).is_error():
-                        raise ParserError("Failed to parse section",self.line,self.pos,self)
-                else:
-                    if self.try_parse(self.parse_paragraph,self.output,self.line,self.pos).is_error():
-                        raise ParserError("Failed to parse paragraph",self.line,self.pos,self)
-        return self.output
-
-    def parse_usage_section(self, from_line: int, from_pos: int) -> ParseResult:
-        """ A usage section starts with 'Usage:' or 'usage:' or 'USAGE:' """
-        if not self.in_lines(from_line):
-            return ParseResult("Expected usage section but reached end of input")
-        curr_line = from_line
-        curr_pos = from_pos
-        line = self.line_at(curr_line)
-        if not is_usage_keyword(line):
-            return ParseResult(f"Expected usage section starting with 'Usage:' at line {curr_line}")
-        curr_pos += len("Usage")
-        curr_pos += skip_whitespace(line,curr_pos)
-        curr_pos += skip_chars(line,curr_pos,':',1)
-        curr_pos += skip_whitespace(line,curr_pos)
-
-        # The rest of the line is the usage text. If the rest of the line is empty
-        # look for indented text on the next line.
-        usage_text = line[curr_pos:].strip()
-        if usage_text == "":
-            curr_line += 1
-            if self.in_lines(curr_line) and is_indented_line(self.line_at(curr_line),1):
-                usage_text = self.line_at(curr_line).strip()
-            else:
-                return ParseResult(f"Expected indented usage\
-                    text after usage keyword at line {curr_line}")
-        usage_ast = Ast(Tk.USAGE,usage_text)
-        return ParseResult((usage_ast,curr_line + 1,0))
-
-    def parse_section(self, from_line: int, from_pos: int) -> ParseResult:
-        """ A section starts with a title line followed by one or more indented text lines. """
-        if not self.in_lines(from_line): return ParseResult("Expected section but reached end of input")
-        if is_indented_line(self.line_at(from_line),1): return ParseResult(f"Expected section title at line {from_line}")
-        section_title = self.line_at(from_line).strip()
-        from_line += 1
-        if not self.in_lines(from_line) or not is_indented_line(self.line_at(from_line),1):
-            return ParseResult(f"Expected indented text after section title at line {from_line}")
-        section_ast = Ast(Tk.SECTION,section_title)
-
-        section_start = skip_whitespace(self.line_at(from_line),0)
-        if self.line_at(from_line).startswith('-',section_start):
-            arg_list_result = self.try_parse(self.parse_argument_list,section_ast,from_line,0)
-            if arg_list_result.is_error():
-                return ParseResult(f"Failed to parse argument list at line {from_line}")
-            return ParseResult((section_ast,from_line,0))
-        else:
-            while self.in_lines(from_line) and is_indented_line(self.line_at(from_line),1):
-                section_ast.append(Ast(Tk.TEXT_LINE,self.line_at(from_line).strip()))
-                from_line += 1
-            return ParseResult((section_ast,from_line,0))
-
-    def parse_paragraph(self, from_line: int, from_pos: int) -> ParseResult:
-        """ A paragraph is one or more text lines separated by empty lines. """
-        if not self.in_lines(from_line):
-            return ParseResult("Expected paragraph but reached end of input")
-        curr_line = from_line
-        curr_pos = from_pos
-        paragraph_ast = Ast(Tk.PARAGRAPH)
-        while self.in_lines(curr_line) and self.line_at(curr_line).strip() != "":
-            paragraph_ast.append(Ast(Tk.TEXT_LINE,self.line_at(curr_line).strip()))
-            curr_line += 1
-        curr_line += 1 # skip empty line after paragraph
-        return ParseResult((paragraph_ast,curr_line,0))
 
 ###############################################################################
 # Unit Test Utils
@@ -1289,8 +1287,10 @@ def ut_parsefunc_section_paragraph():
         "ut_parsefunc_section_paragraph",
         parser_input="Details\n    This is a paragraph.\n    This is the second line.\n",
         expected_output=Ast(Tk.SECTION,"Details",branches = [
-            Ast(Tk.TEXT_LINE,"This is a paragraph."),
-            Ast(Tk.TEXT_LINE,"This is the second line.")
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"This is a paragraph."),
+                Ast(Tk.TEXT_LINE,"This is the second line.")
+            ])
         ])
     )
 
@@ -1316,6 +1316,32 @@ def ut_parsefunc_section_arguments():
         ])
     )
 
+def ut_parsefunc_usage_section():
+    """ Usage section parse function """
+    test_parser_function(parse_usage_section,
+        "ut_parsefunc_usage_section",
+        parser_input="Usage: myprogram [options] <input_file>\n",
+        expected_output=Ast(Tk.USAGE,"myprogram [options] <input_file>")
+    )
+
+def ut_parsefunc_help_text():
+    """ Full help text parse function """
+    test_parser_function(parse_help_text,
+        "ut_parsefunc_help_text",
+        parser_input="Usage: myprogram [options] <input_file>\n\nThis is a paragraph.\nThis is the second line.\n\nDetails\n    These are the details.\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"myprogram [options] <input_file>"),
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"This is a paragraph."),
+                Ast(Tk.TEXT_LINE,"This is the second line.")
+            ]),
+            Ast(Tk.SECTION,"Details",branches = [ Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"These are the details.")
+            ])
+        ])
+    ])
+    )
+
 def run_unit_tests():
     """ Run all unit tests. """
     print_action("Running unit tests...")
@@ -1337,6 +1363,8 @@ def run_unit_tests():
     ut_parsefunc_argument_list()
     ut_parsefunc_section_paragraph()
     ut_parsefunc_section_arguments()
+    ut_parsefunc_usage_section()
+    ut_parsefunc_help_text()
 
     # print_action("      Testing parser end-to-end:")
     # ut_parser_usage_line()
