@@ -530,7 +530,7 @@ def parse_section(inp : List[str], line: int, pos: int) -> ParseResult:
         section.append(arg_list_result.get_ast())
         return ParseResult((section,arg_list_result.get_line(),arg_list_result.get_col()))
     else:
-        while line < len(inp) and is_indented_line(inp[line]):
+        while line < len(inp) and is_indented_line(inp[line]) or inp[line].strip() == "":
             section.append(Ast(Tk.TEXT_LINE,inp[line].strip()))
             line += 1
         return ParseResult((section,line,0))
