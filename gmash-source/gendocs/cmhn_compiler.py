@@ -514,25 +514,26 @@ def parse_argument_list(inp : List[str], line: int, pos: int) -> ParseResult:
     return ParseResult((arg_list,line,pos))
 
 def parse_section(inp : List[str], line: int, pos: int) -> ParseResult:
-    if not self.in_lines(from_line): return ParseResult("Expected section but reached end of input")
-    if is_indented_line(self.line_at(from_line),1): return ParseResult(f"Expected section title at line {from_line}")
-    section_title = self.line_at(from_line).strip()
-    from_line += 1
-    if not self.in_lines(from_line) or not is_indented_line(self.line_at(from_line),1):
-        return ParseResult(f"Expected indented text after section title at line {from_line}")
-    section_ast = Ast(Tk.SECTION,section_title)
+    if line > len(inp): return ParseResult("Expected section but reached end of input")
+    if is_indented_line(inp[line]): return ParseResult(f"Expected section title at line {line}, col {pos}")
+    section_title = inp[line].strip()
+    line += 1
+    section = Ast(Tk.SECTION,section_title)
+    if not line < len(inp) or not is_indented_line(inp[line]):
+        return ParseResult(f"Expected indented text after section title at line {line}, col {pos}")
 
-    section_start = skip_whitespace(self.line_at(from_line),0)
-    if self.line_at(from_line).startswith('-',section_start):
-        arg_list_result = self.try_parse(self.parse_argument_list,section_ast,from_line,0)
+    section_start = skip_whitespace(inp[line])
+    if inp[line].startswith('-',section_start):
+        arg_list_result = parse_argument_list(inp,line,section_start)
         if arg_list_result.is_error():
-            return ParseResult(f"Failed to parse argument list at line {from_line}")
-        return ParseResult((section_ast,from_line,0))
+            return ParseResult(f"Failed to parse argument list at line {line}")
+        section.append(arg_list_result.get_ast())
+        return ParseResult((section,arg_list_result.get_line(),arg_list_result.get_col()))
     else:
-        while self.in_lines(from_line) and is_indented_line(self.line_at(from_line),1):
-            section_ast.append(Ast(Tk.TEXT_LINE,self.line_at(from_line).strip()))
-            from_line += 1
-        return ParseResult((section_ast,from_line,0))
+        while line < len(inp) and is_indented_line(inp[line]):
+            section.append(Ast(Tk.TEXT_LINE,inp[line].strip()))
+            line += 1
+        return ParseResult((section,line,0))
 
 class ParserError(Exception):
     """ Exception raised for parser errors.
@@ -1282,6 +1283,39 @@ def ut_parsefunc_argument_list():
         ])
     )
 
+def ut_parsefunc_section_paragraph():
+    """ Section with paragraph parse function """
+    test_parser_function(parse_section,
+        "ut_parsefunc_section_paragraph",
+        parser_input="Details\n    This is a paragraph.\n    This is the second line.\n",
+        expected_output=Ast(Tk.SECTION,"Details",branches = [
+            Ast(Tk.TEXT_LINE,"This is a paragraph."),
+            Ast(Tk.TEXT_LINE,"This is the second line.")
+        ])
+    )
+
+def ut_parsefunc_section_arguments():
+    """ Section with argument list parse function """
+    test_parser_function(parse_section,
+        "ut_parsefunc_section_arguments",
+        parser_input="Options\n    -f --long-flag-ident123 This is the argument documentation.\n    -g --another-flag [optional_arg] This is another argument.\n",
+        expected_output=Ast(Tk.SECTION,"Options",branches = [
+            Ast(Tk.ARGUMENT_LIST,None,branches = [
+                Ast(Tk.ARGUMENT,None,branches = [
+                    Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'f')]),
+                    Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'long-flag-ident123')]),
+                    Ast(Tk.TEXT_LINE,"This is the argument documentation.")
+                ]),
+                Ast(Tk.ARGUMENT,None,branches = [
+                    Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'g')]),
+                    Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'another-flag')]),
+                    Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'optional_arg')]),
+                    Ast(Tk.TEXT_LINE,"This is another argument.")
+                ])
+            ])
+        ])
+    )
+
 def run_unit_tests():
     """ Run all unit tests. """
     print_action("Running unit tests...")
@@ -1301,6 +1335,8 @@ def run_unit_tests():
     ut_parsefunc_argument_full()
     ut_parsefunc_argument_full_with_commas()
     ut_parsefunc_argument_list()
+    ut_parsefunc_section_paragraph()
+    ut_parsefunc_section_arguments()
 
     # print_action("      Testing parser end-to-end:")
     # ut_parser_usage_line()
