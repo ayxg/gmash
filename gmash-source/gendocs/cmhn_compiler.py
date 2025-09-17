@@ -1232,7 +1232,7 @@ def ut_parser_simple():
 
 def ut_parser_full():
     """Basic complete example"""
-    test_parser("ut_parser_basic",parser_input=""
+    test_parser("ut_parser_full",parser_input=""
         "Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]\n\n"
         "Add a prefix to each top-level file in a directory.\n\n"
         "Parameters\n"
@@ -1325,7 +1325,7 @@ def run_unit_tests():
     ut_parser_arg_indented_brief_following_arg()
     ut_parser_arg_indented_multiline_brief_following_arg()
     ut_parser_simple()
-    #ut_parser_full()
+    ut_parser_full()
 
     print_action("All unit tests completed.")
 
@@ -1385,8 +1385,8 @@ CMNH_TEST_MAP : dict = {
     ,"ut_parser_arg_required_arg": ut_parser_arg_required_arg
     ,"ut_parser_arg_indented_brief_following_arg": ut_parser_arg_indented_brief_following_arg
     ,"ut_parser_arg_indented_multiline_brief_following_arg": ut_parser_arg_indented_multiline_brief_following_arg
-
-    # "ut_parser_simple": ut_parser_simple,
+    ,"ut_parser_simple" : ut_parser_simple
+    ,"ut_parser_full": ut_parser_full,
     # "ut_parser_basic": ut_parser_basic
 }
 
@@ -1468,10 +1468,10 @@ if __name__ == "__main__":
 
     if print_raw_repr:
         print_action("Displaying raw AST.")
-        print(parser.output)
+        print(parser.ir)
     if print_tree:
         print_action("Displaying ascii AST.")
-        print_ascii_tree_simple(parser.output)
+        print_ascii_tree_simple(parser.ir)
     if print_fancy_tree:
         print_action("Displaying fancy AST.")
-        print_ascii_tree(parser.output)
+        print_ascii_tree(parser.ir)
