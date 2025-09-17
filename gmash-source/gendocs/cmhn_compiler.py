@@ -235,7 +235,7 @@ def print_ast_detailed(node, indent=0):
 
 class ParseResult:
     """ Result of a parse operation. """
-    def __init__(self, res: Union[tuple[Ast,int,int],str]) -> None:
+    def __init__(self, res: Union[tuple[Ast,int,int],tuple[str,int,int,List[str]]]) -> None:
         if isinstance(res, tuple):
             self.ast = res[0]
             self.end_line = res[1]
@@ -243,9 +243,10 @@ class ParseResult:
             self.error = None
         else:
             self.ast = None
-            self.end_line = 0
-            self.end_col = 0
-            self.error = res
+            self.error = res[0]
+            self.end_line = res[1]
+            self.end_col = res[2]
+            self.source = res[3] if len(res) > 3 else None
 
     def is_error(self) -> bool:
         """ Check if the parse result is an error. """
@@ -298,67 +299,70 @@ def line_startswith(s: str, prefix: str, pos : int = 0) -> bool:
 # Parsing automatons
 
 def parse_long_flag(inp : List[str], line: int, pos: int) -> ParseResult:
-    """ A long flag starts with two dashes followed by an identifier.
-        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
+    """
+    EBNF:
+            `<long_flag_ident> ::= ( [a-z] | [A-Z] )+ ( [a-z] | [A-Z] | "-" )+ ( [a-z] | [A-Z] | [0-9] )`
+            `<long_flag> ::= "--" <long_flag_ident>`
+
+    Long cli argument flag format:
+        - Begins with alpha.
+        - May contain alpha, numeric or dash.
+        - Ends with alpha or numeric.
     """
     if line >= len(inp):
-        return ParseResult("Expected long flag but reached end of inp")
-    line_str = inp[line]
-    pos += skip_whitespace(line_str,pos)
-    if not line_str.startswith('--',pos):
-        return ParseResult(f"Expected long flag starting with '--' at line {line}")
+        return ParseResult(("Expected long flag but reached end of input.",line,pos,inp))
+    inp[line] = inp[line]
+    pos += skip_whitespace(inp[line],pos)
+    if not inp[line].startswith('--',pos):
+        return ParseResult(("Expected long flag starting with a '--'.",line,pos,inp))
     pos += 2
     flag_ident = ""
-    while pos < len(line_str) and is_alnumdash(line_str[pos]):
-        flag_ident += line_str[pos]
+    while pos < len(inp[line]) and is_alnumdash(inp[line][pos]):
+        flag_ident += inp[line][pos]
         pos += 1
     if len(flag_ident) < 2 or not is_alpha(flag_ident[0]) or not is_alnumus(flag_ident[-1]):
-        return ParseResult(f"Expected long flag identifier at line {line}")
-    long_flag_ast = Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,flag_ident)])
-    return ParseResult((long_flag_ast,line,pos))
+        return ParseResult(("Invalid long flag identifier.",line,pos,inp))
+    return ParseResult((Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,flag_ident)]),line,pos))
 
 def parse_short_flag(inp : List[str], line: int, pos: int) -> ParseResult:
-    """ A short flag starts with a single dash followed by a single character identifier.
-        - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
+    """ EBNF: `<short_flag> ::= "-" ( [a-z] | [A-Z] )`
     """
     if line >= len(inp):
-        return ParseResult("Expected short flag but reached end of inp")
-    line_str = inp[line]
-    if not line_str.startswith('-',pos) or line_str.startswith('--',pos):
-        return ParseResult(f"Expected short flag starting with '-' at line {line}")
+        return ParseResult(("Expected short flag but reached end of inp.",line,pos,inp))
+    inp[line] = inp[line]
+    if not inp[line].startswith('-',pos) or inp[line].startswith('--',pos):
+        return ParseResult(("Expected short flag starting with a '-'.",line,pos,inp))
     pos += 1
-    if pos >= len(line_str) or not is_alpha(line_str[pos]):
-        return ParseResult(f"Expected single character short flag identifier at line {line}")
-    flag_ident = line_str[pos]
+    if pos >= len(inp[line]) or not is_alpha(inp[line][pos]):
+        return ParseResult(("Invalid short flag identifier.",line,pos,inp))
+    flag_ident = inp[line][pos]
     pos += 1
-    short_flag_ast = Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,flag_ident)])
-    return ParseResult((short_flag_ast,line,pos))
+    return ParseResult((Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,flag_ident)]),line,pos))
 
 def parse_optional_arg(inp : List[str], line: int, pos: int) -> ParseResult:
     """ An optional argument is enclosed in square brackets.
         - Returns a tuple of (Ast, end_line, end_col) on success, or an error message string on failure.
     """
-    curr_line = line
-    curr_pos = pos
-    if curr_line >= len(inp):
+    pos = pos
+    if line >= len(inp):
         return ParseResult("Expected optional argument but reached end of inp")
-    line_str = inp[curr_line]
-    curr_pos += skip_whitespace(line_str,curr_pos)
-    if not line_str.startswith('[',curr_pos):
-        return ParseResult(f"Expected optional argument starting with '[' at line {curr_line}")
-    curr_pos += 1
+    inp[line] = inp[line]
+    pos += skip_whitespace(inp[line],pos)
+    if not inp[line].startswith('[',pos):
+        return ParseResult(f"Expected optional argument starting with '[' at line {line}")
+    pos += 1
     arg_ident = ""
-    while curr_pos < len(line_str) and is_alnumus(line_str[curr_pos]):
-        arg_ident += line_str[curr_pos]
-        curr_pos += 1
+    while pos < len(inp[line]) and is_alnumus(inp[line][pos]):
+        arg_ident += inp[line][pos]
+        pos += 1
     if len(arg_ident) < 1 or not is_alpha(arg_ident[0]) or not is_alnumus(arg_ident[-1]):
-        return ParseResult(f"Expected optional argument identifier at line {curr_line}")
-    curr_pos += skip_whitespace(line_str,curr_pos)
-    if curr_pos >= len(line_str) or not line_str.startswith(']',curr_pos):
-        return ParseResult(f"Expected closing ']' for optional argument at line {curr_line}")
-    curr_pos += 1
+        return ParseResult(f"Expected optional argument identifier at line {line}")
+    pos += skip_whitespace(inp[line],pos)
+    if pos >= len(inp[line]) or not inp[line].startswith(']',pos):
+        return ParseResult(f"Expected closing ']' for optional argument at line {line}")
+    pos += 1
     optional_arg_ast = Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,arg_ident)])
-    return ParseResult((optional_arg_ast,curr_line,curr_pos))
+    return ParseResult((optional_arg_ast,line,pos))
 
 def parse_required_arg(inp : List[str], line: int, pos: int) -> ParseResult:
     """ A required argument is enclosed in angle brackets.
@@ -651,67 +655,32 @@ class ParserError(Exception):
     """ Exception raised for parser errors.
         - Pass the parser instance to `prs` arg to print context.
     """
-    def __init__(self, message: str, line: int = 0, col: int = 0,prs = None) -> None:
-        super().__init__(f"ParserError at line {line}, col {col}: {message}")
+    def __init__(self, message: str, line: int = 0, col: int = 0,inp = None) -> None:
+        super().__init__(f"[CommandLineHelpText][ERROR][L:{line},C:{col}] {message}")
         self.line = line
         self.col = col
-        if prs is not None:
+        if inp is not None:
             # Print the current line with a marker at the error position.
-            curr_line = prs.curr_line()
-            print_error(curr_line)
-            print_action(" " * (prs.pos) + "^")
+            print_error(inp[line],1)
+            print_action(" " * (col) + "^")
 
-class Parser:
-    """ LL Recursive descent parser for CMHN grammar.
-        - Initialize `Parser` with an input string, or pass the input to `parse_syntax` method.
-        - Call `parse_syntax` method to parse.
-        - Parse result will be the stored in `output` attribute as an `Ast` class.
-    """
 
-    def __init__(self, inp: str = "") -> None:
-        self.inp = inp
-        self.inp_lines = []
-        self.pos = 0
-        self.line = 0
-        self.output = []
 
-    def advance(self, count : int = 1):
-        """ Advance current position by count. """
-        self.pos += count
 
-    def curr_line(self) -> str:
-        """ Return the current line from inp_lines or empty string if out of range. """
-        if 0 <= self.in_lines(self.line):
-            return self.inp_lines[self.line]
-        return ""
+class CommandLineHelpText:
+    """ Command line help text intermediate representation"""
 
-    def line_at(self, line: int) -> str:
-        """ Return the line at the given index from inp_lines or empty string if out of range. """
-        if self.in_lines(line):
-            return self.inp_lines[line]
-        return ""
+    def __init__(self) -> None:
+        self.ir : Ast = Ast(Tk.NOTHING)
 
-    def in_lines(self, line: int) -> bool:
-        """ Check if the given line index is in range of inp_lines. """
-        return 0 <= line < len(self.inp_lines)
-
-    def try_parse(self, parse_func, append_to ,from_line: int, from_pos: int) -> ParseResult:
-        """ Try to parse using the given parse function from the specified line and position.
-            - If parsing fails, restore the parser state to the original line and position.
-        """
-        orig_line = from_line
-        orig_pos = from_pos
-        result = parse_func(from_line, from_pos)
+    def parse(self, inp: str) -> Ast:
+        """ Parse the input string and return the AST. """
+        inp_lines = split_lines(inp)
+        result = parse_help_text(inp_lines,0,0)
         if result.is_error():
-            # Restore original state on failure
-            self.line = orig_line
-            self.pos = orig_pos
-        else:
-            append_to.append(result.ast)
-            self.line = result.end_line
-            self.pos = result.end_col
-        return result
-
+            raise ParserError(result.get_error())
+        self.ir = result.get_ast()
+        return self.ir
 
 
 ###############################################################################
@@ -811,16 +780,12 @@ def compare_asts(input_ast, expected_ast):
 def test_parser(test_name, parser_input, expected_output):
     """ Run a parser test and compare the output AST to the expected AST."""
     try:
-        prs = Parser()
-        ast = prs.parse_syntax(parser_input)
+        prs = CommandLineHelpText()
+        ast = prs.parse(parser_input)
         did_test_pass = ast == expected_output
         if not did_test_pass:
             print_error(f"Test {test_name} failed.",1)
-            # print_action(f"Test {test_name} : Expected :")
-            # print_ascii_tree_simple(expected_output)
-            # print_action(f"Test {test_name} : Got :")
-            # print_ascii_tree_simple(prs.output)
-            compare_asts(prs.output, expected_output)
+            compare_asts(prs.ir, expected_output)
         else:
             print_action(f"Test {test_name} passed.",1)
     except ParserError as e:
@@ -892,7 +857,9 @@ def ut_parser_usage_paragraph_section():
                 Ast(Tk.TEXT_LINE,"This is the second line.")
             ]),
             Ast(Tk.SECTION,"Details",branches = [
-                Ast(Tk.TEXT_LINE,"These are the details.")
+                Ast(Tk.PARAGRAPH,None,branches = [
+                    Ast(Tk.TEXT_LINE,"These are the details.")
+                ])
             ])
         ])
     )
@@ -1346,7 +1313,7 @@ def run_unit_tests():
     """ Run all unit tests. """
     print_action("Running unit tests...")
 
-    print_action("      Testing parser functions:")
+    print_action("Testing parser bottom-up:")
     ut_parsefunc_long_flag()
     ut_parsefunc_short_flag()
     ut_parsefunc_optional_arg()
@@ -1366,20 +1333,20 @@ def run_unit_tests():
     ut_parsefunc_usage_section()
     ut_parsefunc_help_text()
 
-    # print_action("      Testing parser end-to-end:")
-    # ut_parser_usage_line()
-    # ut_parser_paragraph()
-    # ut_parser_usage_and_paragraph()
-    # ut_parser_usage_paragraph_section()
-    # ut_parser_arg_long_flag()
-    # ut_parser_arg_short_flag()
-    # ut_parser_arg_short_and_long_flag()
-    # ut_parser_arg_optional_arg()
-    # ut_parser_arg_required_arg()
-    # ut_parser_arg_indented_brief_following_arg()
-    # ut_parser_arg_indented_multiline_brief_following_arg()
-    # ut_parser_simple()
-    # ut_parser_basic()
+    print_action("Testing parser end-to-end:",1)
+    ut_parser_usage_line()
+    ut_parser_paragraph()
+    ut_parser_usage_and_paragraph()
+    ut_parser_usage_paragraph_section()
+    ut_parser_arg_long_flag()
+    ut_parser_arg_short_flag()
+    ut_parser_arg_short_and_long_flag()
+    ut_parser_arg_optional_arg()
+    ut_parser_arg_required_arg()
+    ut_parser_arg_indented_brief_following_arg()
+    ut_parser_arg_indented_multiline_brief_following_arg()
+    ut_parser_simple()
+    ut_parser_basic()
 
     print_action("All unit tests completed.")
 
