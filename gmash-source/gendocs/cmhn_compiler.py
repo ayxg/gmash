@@ -13,36 +13,12 @@ def is_alnumus(c: str) -> bool:
     return c.isalnum() or c == '_'
 
 def is_alnumdash(c: str) -> bool:
-    """ Is alpha, numeric or underscore."""
+    """ Is alpha, numeric , underscore or dash."""
     return c.isalnum() or c == '_' or c == '-'
 
 def is_alpha(c: str) -> bool:
     """ Is alpha or underscore."""
     return c.isalpha() or c == '_'
-
-def is_numeric(c: str) -> bool:
-    """ Is numeric."""
-    return c.isdigit()
-
-def is_indent(c: str) -> bool:
-    """ Is indent character (4 spaces or a tab)."""
-    return c in ("\n    " or "\n  " or "\n\t")
-
-def is_text(c: str) -> bool:
-    """ Is any character except newline."""
-    return c not in ('\n')
-
-def is_dash(c: str) -> bool:
-    """ Is dash character."""
-    return c == '-'
-
-def is_newline(c: str) -> bool:
-    """ Is newline character."""
-    return c == '\n'
-
-def is_whitespace(c: str) -> bool:
-    """ Is whitespace character (space or tab)."""
-    return c in (' ', '\t')
 
 def is_usage_keyword(s: str) -> bool:
     """ Check if a line starts with 'Usage', 'USAGE' or 'usage'. """
@@ -56,7 +32,7 @@ def is_usage_keyword(s: str) -> bool:
     return is_usage
 
 def is_indented_line(s: str, indent_level: int = 1) -> bool:
-    """ Check if a line starts with the specified indent level (spaces or tabs). """
+    """ Check if a line starts with the specified indent level (4 spaces or a tab). """
     if indent_level < 1:
         # make sure the line has no leading spaces or tabs
         if s.startswith(' ') or s.startswith('\t'):
@@ -291,11 +267,10 @@ def skip_chars(s: str, pos: int, char: str, count: int = 1) -> int:
     return curr - beg
 
 def skip_whitespace(s: str, pos: int = 0) -> int:
-    """ Skip whitespace characters from the given position in the string.
-        - Returns the number of characters skipped.
+    """ Count the number of concecutive whitespaces(or tabs) in a `str`, starting from `pos`.
     """
     beg = pos
-    while beg < len(s) and is_whitespace(s[beg]):
+    while beg < len(s) and (s[beg] in (' ', '\t')):
         beg += 1
     return beg - pos
 
@@ -1483,11 +1458,12 @@ if __name__ == "__main__":
 
     help_text = sys.argv[0]
 
+
     print_action("Parsing input.")
     verbose_print(help_text)
 
-    parser = Parser()
-    parser.parse_syntax(help_text)
+    parser = CommandLineHelpText()
+    parser.parse(help_text)
 
 
     if print_raw_repr:
