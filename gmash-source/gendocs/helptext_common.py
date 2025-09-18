@@ -3,23 +3,32 @@
     - Colorful print functions shared across all `helptext` submodules.
 """
 
-_TITLE = "CMHN - Command Line Help Notation Parser"
+_TITLE = "helptext"
 _VERSION = "v0.0.0"
 _LICENSE = "AGPL-3.0-or-later Copyright(c) 2025 Anton Yashchenko"
 HELP_TEXT = """Usage: py helptext.py <helpTextToParse> [-o <outputFile>]
 Usage: <pipedInput> | py helptext.py [-o <outputFile>]
 
-Parse the provided help text into a Command Line Help Notation (CMHN) object.
+Generate formatted markdown documentation from command line help text.
+See "Command Line Help Notation" grammar for details on accepted help text formats.
 
+Parameters:
+    <helpTextToParse>           Help text to parse. If not provided, will check stdin for piped input.
+    -o, --output <outputFile>   Target codegen output file. If not provided, output is piped to stdout.
 Options:
-    -t, --test            Run unit tests and exit.
-    -v, --version         Show version information and exit.
-    -h, --help            Show this help message and exit.
-    -d, --debug           Enable debug mode for detailed output.
-    -V, --verbose         Enable verbose output for more detailed information.
-    -r, --raw             Print the raw Python object representation of the AST.
-    -a, --ascii           Print the AST as a simple ASCII tree.
-    -f, --fancy           Print the AST as a fancy ASCII tree with boxes and connection lines.
+    -h, --help                  Display this help message.
+    -v, --version               Display version string.
+    -V, --verbose               Enable verbose output.
+    -r, --raw                   Print parsed nodes as a raw Python class (`__repr__`).
+    -a, --ascii                 Print parsed nodes as a simple ASCII tree.
+    -f, --fancy                 Print parsed nodes as a decorated ASCII tree.
+
+Developer Arguments:
+    -t, --test [[testNameOrPattern]...]
+        Run all unit tests.
+        If any test names/pattern are provided, run only matching tests.
+    -d, --debug
+        Enable developer debug output. Implicitly enables verbose output.
 """
 
 _verbose_mode : bool = False   # [INTERNAL][GLOBAL] verbose flag for `helptext` module.
@@ -58,7 +67,7 @@ def debug_print(msg: str) -> None:
 
 def get_help_str() -> str:
     """ Get this scripts(`helptext.py`) help text as a string. """
-    return _TITLE + "\n" + _VERSION + "\n" + _LICENSE + "\n" + HELP_TEXT
+    return _TITLE + " " + _VERSION + "\n" + _LICENSE + "\n" + HELP_TEXT
 
 def get_version_str() -> str:
     """ Get this scripts(`helptext.py`) version as a string. """
