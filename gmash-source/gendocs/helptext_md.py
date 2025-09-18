@@ -42,7 +42,71 @@ def generate_md(ast : Ast) -> GeneratorResult:
     for br in ast.branches:
         if br.tk == Tk.USAGE:
             outp.append("### Usage")
-        outp.append(f"`{br.value.strip()}`\n")
+            outp.append(f"`{br.value.strip()}`\n")
+
+    # Get the brief description if any.
+    for br in ast.branches:
+        if br.tk == Tk.BRIEF:
+            for ln in br.branches[0].branches: # tk.PARAGRAPH
+                    outp.append(ln.value.strip())
+
+    # If there is a paragraph at the root level, before any section, its a brief.
+    no_preceding_section = True
+    for br in ast.branches:
+        if br.tk == Tk.PARAGRAPH:
+            if no_preceding_section:
+                outp.append("### Brief")
+                for ln in br.branches:
+                    outp.append(ln.value.strip())
+                outp.append("")
+        elif br.tk == Tk.SECTION:
+            no_preceding_section = False
+
+    for br in ast.branches:
+        # -> Section
+        if br.tk == Tk.SECTION:
+            section = br
+            if section.value is not None and section.value.strip() != "":
+                outp.append(f"### {section.value.strip()}")
+            # -> Section -> Paragraph
+            if section.branches[0].tk == Tk.PARAGRAPH:
+                for sec_br in section.branches:
+                    if sec_br.tk == Tk.PARAGRAPH:
+                        for ln in sec_br.branches:
+                            outp.append("    " + ln.value.strip())
+                outp.append("")
+            # -> Section -> Argument_List
+            elif section.branches[0].tk == Tk.ARGUMENT_LIST:
+                arg_list = section.branches[0]
+                if arg_list.value is not None and arg_list.value.strip() != "":
+                    outp.append(f"### {arg_list.value.strip()}")
+                # -> Section -> Argument_List -> Argument
+                for arg in arg_list.branches:
+                    arg_line = "    "
+                    for flag in arg.branches:
+                        if flag.tk == Tk.SHORT_FLAG:
+                            arg_line += f"**-{flag.branches[0].value}** "
+                        elif flag.tk == Tk.LONG_FLAG:
+                            arg_line += f"**--{flag.branches[0].value}** "
+                        elif flag.tk == Tk.OPTIONAL_ARG:
+                            arg_line += f"*<{flag.branches[0].value}>* "
+                        elif flag.tk == Tk.REQUIRED_ARG:
+                            arg_line += f"**<{flag.branches[0].value}>** "
+                        elif flag.tk == Tk.TEXT_LINE:
+                            pass
+                        else:
+                            return GeneratorResult(("Unexpected token in argument list:" + flag.tk.name ,line,col))
 
 
+                    arg_brief = ""
+                    for text in arg.branches:
+                        if text.tk == Tk.TEXT_LINE:
+                            arg_brief += "\n        " + text.value.strip()
+                    if arg_brief.strip() != "":
+                        arg_line += arg_brief
+                    outp.append(arg_line)
+                    outp.append("")
+
+        # Process arguments
+        #elif br.tk == Tk.ARG:
     return GeneratorResult("\n".join(outp))
