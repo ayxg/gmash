@@ -410,6 +410,11 @@ def parse_usage_section(inp : List[str], line: int, pos: int) -> ParseResult:
             line += 1
         else:
             return ParseResult(("Expected indented usage text after usage keyword.",line,pos,inp))
+
+        if line < len(inp) and is_indented_line(inp[line],1):
+            usage_text += inp[line].strip() + "\n"
+            line += 1
+
     else: # inline usage
         line += 1 # move past usage line
 

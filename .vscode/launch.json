@@ -7,7 +7,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
-            "args": ["-t","ut_parsefunc_argument_list"],
+            "args": ["-t","parser_usage_with_multiline"],
         }
     ]
 }

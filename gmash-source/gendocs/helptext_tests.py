@@ -629,6 +629,16 @@ def ut_parser_full():
         ])
     )
 
+def ut_parser_usage_with_multiline():
+    """Usage line and paragraph"""
+    test_parser("ut_parser_usage_and_paragraph",
+        parser_input="Usage:\n    myprogram [options] <input_file>\n    second line of usage text\n\n",
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"myprogram [options] <input_file>\nsecond line of usage text")
+        ])
+    )
+
+
 def run_unit_tests():
     """ Run all unit tests. """
     print_action("Running unit tests...")
@@ -701,5 +711,6 @@ CMNH_TEST_MAP : dict = {
     ,"ut_parser_arg_indented_multiline_brief_following_arg": ut_parser_arg_indented_multiline_brief_following_arg
     ,"ut_parser_simple" : ut_parser_simple
     ,"ut_parser_full": ut_parser_full
+    ,"ut_parser_usage_with_multiline": ut_parser_usage_with_multiline
 
 }

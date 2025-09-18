@@ -4,7 +4,7 @@ from helptext_common import print_help_text, print_error, verbose_print, \
 from helptext_ast import Tk, Ast, print_ascii_tree, print_ascii_tree_simple
 from helptext_parser import Parser
 from helptext_tests import run_unit_tests, CMNH_TEST_MAP
-from helptext_md import MdGenerator
+import helptext_md
 
 class HelpText():
     def run(self) -> None:
@@ -67,10 +67,8 @@ class HelpText():
         if _debug_mode :
             _verbose_mode = True
 
-        # Pop the script name
+        # Pop the script name & remove flags
         sys.argv.pop(0)
-
-        # Remove all flags from args
         sys.argv = [arg for arg in sys.argv if not arg.startswith('-')]
 
         # If no args left, check stdin for piped input
@@ -81,25 +79,32 @@ class HelpText():
                     print_help_text()
                 sys.argv.append(help_text)
 
-        help_text = sys.argv[0]
-
-
+        # Parse
         print_action("Parsing input.")
+        help_text = sys.argv[0]
         verbose_print(help_text)
-
         parser = Parser()
-        parser.parse(help_text)
-
-
+        parse_res = parser.parse(help_text)
+        if parse_res.is_error():
+            print_error(parse_res.get_error(),1)
+            sys.exit(1)
+        # Print ast if requested.
         if _print_ast_raw:
             print_action("Displaying raw AST.")
-            print(parser.ir)
+            print(parse_res.get_ast())
         if _print_ast_tree:
             print_action("Displaying ascii AST.")
-            print_ascii_tree_simple(parser.ir)
+            print_ascii_tree_simple(parse_res.get_ast())
         if _print_ast_fancy:
             print_action("Displaying fancy AST.")
-            print_ascii_tree(parser.ir)
+            print_ascii_tree(parse_res.get_ast())
+
+        gen_res = helptext_md.generate_md(parse_res.get_ast())
+        if gen_res.is_error():
+            print_error(gen_res.get_error(),1)
+            sys.exit(1)
+        else:
+            print(gen_res.get_md())
 
     def parse(self, text: str):
         """Parse a help text into an intermediate abstract syntax tree.
