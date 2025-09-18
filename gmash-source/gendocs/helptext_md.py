@@ -4,5 +4,13 @@
 # @brief Generates markdown doc pages from command line help output.
 #        Help text format must be follow the CMHN(Command Line Help Notation) grammar.
 
-def help_to_markdown(help_text: str) -> str:
+def helptext_to_md(help_text: str) -> str:
   pass
+
+
+class MdGenerator:
+    def __init__(self) -> None:
+        pass
+
+    def generate(self, ast) -> str:
+        return ""
