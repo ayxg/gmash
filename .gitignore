@@ -4,5 +4,5 @@
 
 /.vs
 gmash.code-workspace
-.vscode/launch.json
-gmash-source/gendocs/__pycache__
+/.vscode/launch.json
+/.gmash-source/gendocs/__pycache__
