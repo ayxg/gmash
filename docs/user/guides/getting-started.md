@@ -25,12 +25,14 @@ echo 'export PATH="~/path/to/gmash:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 ### 3. Compile Parsers
-gmash uses gengetopt to generate CLI parsers for its commands. Run the compile script:
+**Only necessary IF you changed the parser definition source code**
+Requires `getoptions` shell library.
 ```bash
 gmash --compile-parser
 ```
 This produces updated parser source files under `gmash-source/parser/`
 and integrates them into the main dispatcher.
+
 ### 4. Verify Installation
 Check that `gmash` is on your `PATH` and that parsers load correctly:
 ```bash
