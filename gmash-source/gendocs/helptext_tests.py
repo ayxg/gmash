@@ -5,6 +5,7 @@ from helptext_parser import                                     \
     parse_long_flag,parse_short_flag,parse_argument,            \
     parse_optional_arg,parse_required_arg,parse_argument_list,  \
     parse_section,parse_usage_section,parse_help_text
+from helptext_md import generate_md
 ###############################################################################
 # Unit Test Utils
 ###############################################################################
@@ -126,6 +127,34 @@ def test_parser_function(funct,test_name,parser_input,expected_output):
         compare_asts(ast, expected_output)
     else:
         print_action(f"Test {test_name} passed.",1)
+
+def test_generator(test_name, input_string, expected_md):
+    """ Run a generator test and compare the output markdown to the expected markdown."""
+    prs = Parser().parse(input_string)
+    if prs.is_error():
+        print_error(f"Test {test_name} failed during parsing with error:\n\t{prs.get_error()}",1)
+        return
+    gen_res = generate_md(prs.get_ast())
+    if gen_res.is_error():
+        print_error(f"Test {test_name} failed with error:\n\t{gen_res.get_error()}",1)
+    else:
+        md = gen_res.get_md()
+        did_test_pass = md.strip() == expected_md.strip()
+        if not did_test_pass:
+            print_error(f"Test {test_name} failed.",1)
+            # Print the differences
+            print("Generated MD:")
+            print(md)
+            print("Expected MD:")
+            print(expected_md)
+
+            for i, (gen_line, exp_line) in enumerate(zip(md.splitlines(), expected_md.splitlines()), start=1):
+                if gen_line != exp_line:
+                    print(f"Line {i} differs:")
+                    print(f"  Generated: '{gen_line}'")
+                    print(f"  Expected : '{exp_line}'")
+        else:
+            print_action(f"Test {test_name} passed.",1)
 
 # ###############################################################################
 # # Unit Tests
@@ -638,6 +667,36 @@ def ut_parser_usage_with_multiline():
         ])
     )
 
+def ut_generator_basic():
+    """ Hello world generator test """
+    test_generator("ut_generator_hello_world",
+        input_string="""
+Usage: hello-world
+
+Says hello to the world.
+
+Parameters:
+    -l --loud         Be very loud and scream instead.
+
+Details:
+    The world needs a friend, so im saying hello to it.
+        """,
+        expected_md=
+"""### Usage
+`hello-world`
+
+### Brief
+Says hello to the world.
+
+### Parameters:
+    **-l** **--loud**
+        Be very loud and scream instead.
+
+### Details:
+    The world needs a friend, so im saying hello to it.
+"""
+    )
+
 
 def run_unit_tests():
     """ Run all unit tests. """
@@ -677,6 +736,10 @@ def run_unit_tests():
     ut_parser_arg_indented_multiline_brief_following_arg()
     ut_parser_simple()
     ut_parser_full()
+
+    # Generator tests
+    print_action("Testing markdown generator:")
+    ut_generator_basic()
 
     print_action("All unit tests completed.")
 
