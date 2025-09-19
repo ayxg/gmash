@@ -5,10 +5,10 @@ from helptext_parser import Parser
 from helptext_tests import run_unit_tests, CMNH_TEST_MAP
 import helptext_md
 
-_TITLE = "helptext"
+_TITLE = "\033[1mhelptext\033[0m"
 _VERSION = "v0.0.0"
-_LICENSE = "AGPL-3.0-or-later Copyright(c) 2025 Anton Yashchenko"
-_HELP_TEXT = _TITLE + " " + _VERSION + "\n" + _LICENSE + "\n" \
+_LICENSE = "AGPL-3.0-or-later\nCopyright(c) 2025 Anton Yashchenko"
+_HELP_TEXT = _TITLE + "\n" + _VERSION + "\n" + _LICENSE + "\n\n" \
     + """Usage:
     py helptext.py <helpTextToParse> [-o <outputFile>]
 
@@ -19,7 +19,7 @@ See "Command Line Help Notation" grammar for details on accepted help text forma
 
 Parameters:
     <helpTextToParse>           Help text to parse. If not provided, will check stdin for piped input.
-    -o, --output <outputFile>   Target codegen output file. If not provided, output is piped to stdout.
+    -o, --output <outputFile>   Target markdown output file. If not provided, output is piped to stdout.
 
 Options:
     -h, --help                  Display this help message.
@@ -33,24 +33,6 @@ Developer Arguments:
         Run all unit tests.
         If any test names/pattern are provided, run only matching tests.
 """
-
-# _verbose_mode : bool = False   # [INTERNAL][GLOBAL] verbose flag for `helptext` module.
-# _debug_mode : bool = False     # [INTERNAL][GLOBAL] debug flag for `helptext` module.
-
-# def _verbose_print(msg: str) -> None:
-#     """ Print message if `_verbose_mode` is on.
-#         The `HelpText` class will set global `_verbose_mode` after parsing.
-#         TODO: Refactoring to avoid global state ??? possible ???
-#     """
-#     if _verbose_mode:
-#         print(msg)
-
-# def _debug_print(msg: str) -> None:
-#     """ Print message if debug_mode is true. This function may be "unused" in production.
-#         For temporary dev debug messages only.
-#     """
-#     if _debug_mode:
-#         print(msg)
 
 class HelpText():
     def run(self) -> None:
@@ -70,12 +52,12 @@ class HelpText():
 
         # Display help and exit
         if any(arg == '-h' or arg == '--help' for arg in sys.argv):
-            print_help_text()
+            print(_HELP_TEXT)
             sys.exit(0)
 
         # Display version and exit
         if any(arg == '-v' or arg == '--version' for arg in sys.argv):
-            print(get_version_str())
+            print(_VERSION)
             sys.exit(0)
 
         # Run unit tests and exit
@@ -106,13 +88,6 @@ class HelpText():
             _print_ast_tree = True
         if any(arg == '-f' or arg == '--fancy' for arg in sys.argv):
             _print_ast_fancy = True
-
-        # Enable debug mode
-        # !! Warning : `_verbose_mode` and `_debug_mode` are globals from `helptext_common`
-        _verbose_mode = any(arg == '-V' or arg == '--verbose' for arg in sys.argv)
-        _debug_mode = any(arg == '-d' or arg == '--debug' for arg in sys.argv)
-        if _debug_mode :
-            _verbose_mode = True
 
         # Pop the script name & remove flags
         sys.argv.pop(0)
@@ -154,7 +129,7 @@ class HelpText():
         else:
             print(gen_res.get_md())
 
-    def parse(self, text: str):
+    def parse(self, text: str) -> Ast:
         """Parse a help text into an intermediate abstract syntax tree.
 
         Args:
@@ -168,7 +143,7 @@ class HelpText():
             return Ast(Tk.POSION, parse_res.error)
         return parse_res.get_ast()
 
-    def gen(self, ast):
+    def gen(self, ast) -> tuple[bool,str]:
         """ Generate `Markdown` documentation from the provided `Ast`.
         On error, returns an empty string.
         Error messages are piped to stderr by default.
@@ -178,13 +153,14 @@ class HelpText():
             ast (Ast): Input ast. Should be produced by `HelpText.parse()`.
 
         Returns:
-            md_docs(str): Generated markdown docs as a `str`. On error, returns an empty string.
-                        Error messages are piped to stderr.
+            tuple[bool,str]: Generated markdown docs or error message.
+                - bool : True if generation was successful, False on error.
+                - str  : Generated markdown docs if successful, error message otherwise.
         """
-        gen_res = MdGenerator().generate(ast)
+        gen_res = helptext_md.generate_md(ast)
         if gen_res.is_error():
-            return ""
-        return gen_res.get()
+            return (False,gen_res.get_error())
+        return (True,gen_res.get_md())
 
 if __name__ == "__main__":
     HelpText().run()
