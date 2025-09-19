@@ -6,3 +6,9 @@
 gmash.code-workspace
 /.vscode/launch.json
 /.gmash-source/gendocs/__pycache__
+gmash-source/gendocs/helptext_parser.py
+gmash-source/gendocs/__pycache__/helptext_ast.cpython-313.pyc
+gmash-source/gendocs/__pycache__/helptext_common.cpython-313.pyc
+gmash-source/gendocs/__pycache__/helptext_md.cpython-313.pyc
+gmash-source/gendocs/__pycache__/helptext_parser.cpython-313.pyc
+gmash-source/gendocs/__pycache__/helptext_tests.cpython-313.pyc

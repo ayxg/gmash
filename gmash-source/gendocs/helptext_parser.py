@@ -55,9 +55,10 @@ def is_indented_line(s: str, indent_level: int = 1) -> bool:
             return False
         else :
             return True
+    half_indent = ' ' * (2 * indent_level)
     space_indent = ' ' * (4 * indent_level)
     tab_indent = '\t' * indent_level
-    return s.startswith(space_indent) or s.startswith(tab_indent)
+    return s.startswith(space_indent) or s.startswith(tab_indent) or s.startswith(half_indent) 
 
 def split_lines(s: str) -> List[str]:
     """ Split the input string into lines, keeping line endings. """
@@ -389,6 +390,9 @@ def parse_section(inp : List[str], line: int, pos: int) -> ParseResult:
 
 def parse_paragraph(inp : List[str], line: int, pos: int,indent_level = 0) -> ParseResult:
     """ A paragraph is one or more indented text lines. """
+        # Skip any empty lines beforehand
+    if inp[line].strip() == "":
+        line += 1
     if line >= len(inp):
         return ParseResult(("Expected paragraph but reached end of input.",line,pos,inp))
     if not is_indented_line(inp[line],indent_level):
@@ -431,10 +435,11 @@ def parse_usage_section(inp : List[str], line: int, pos: int) -> ParseResult:
         else:
             return ParseResult(("Expected indented usage text after usage keyword.",line,pos,inp))
 
-        while line < len(inp) and is_indented_line(inp[line],1):
+        while line < len(inp) and is_indented_line(inp[line],1) \
+              or inp[line].strip() == "":
             usage_text += "\n" + inp[line].strip()
             line += 1
-
+        
     else: # inline usage
         line += 1 # move past usage line
 

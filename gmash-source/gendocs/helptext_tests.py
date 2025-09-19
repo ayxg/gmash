@@ -713,6 +713,45 @@ Says hello to the world.
 """
     )
 
+def ut_generator_self():
+    test_generator("ut_generator_hello_world",
+        input_string="""  
+helptext
+v0.0.0
+AGPL-3.0-or-later
+Copyright(c) 2025 Anton Yashchenko
+
+Usage:
+    py helptext.py <helpTextToParse> [-o <outputFile>]
+
+    <pipedInput> | py helptext.py [-o <outputFile>]
+
+Generate formatted markdown documentation from command line help text.
+See "Command Line Help Notation" grammar for details on accepted help text formats.
+
+Parameters:
+    <helpTextToParse>           Help text to parse. If not provided, will check stdin for piped input.
+    -o, --output <outputFile>   Target markdown output file. If not provided, output is piped to stdout.
+
+Options:
+    -h, --help                  Display this help message.
+    -v, --version               Display version string.
+    -r, --raw                   Print parsed nodes as a raw Python class (`__repr__`).
+    -a, --ascii                 Print parsed nodes as a simple ASCII tree.
+    -f, --fancy                 Print parsed nodes as a decorated ASCII tree.
+
+Developer Arguments:
+    -t, --test [[testNameOrPattern]...]
+        Run all unit tests.
+        If any test names/pattern are provided, run only matching tests.
+
+        """,
+        expected_md="""
+### Usage:
+    `py helptext.py <helpTextToParse> [-o <outputFile>]`
+"""
+        ) 
+
 def run_unit_tests():
     """ Run all unit tests. """
     print_action("Running unit tests...")
@@ -756,6 +795,7 @@ def run_unit_tests():
     # Generator tests
     print_action("Testing markdown generator:")
     ut_generator_basic()
+    ut_generator_self()
 
     print_action("All unit tests completed.")
 
@@ -798,5 +838,6 @@ CMNH_TEST_MAP : dict = {
 
     # Generator tests
     ,"ut_generator_basic": ut_generator_basic
+    , "ut_generator_self" : ut_generator_self
 
 }
