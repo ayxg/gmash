@@ -25,7 +25,7 @@ git-subtree-split: d06e02c
 ### [0.2] Use Case : Add all your public gists as a subtrees.
 To add multiple gists at once, you can use this basic bash script. This script iterates over an array of names and hashes, adding each one as
 as a new subtree. The **key is to keep every gist in a unique path**, to
-avoid any duplicate names. By default, subtree new denies overwrite. For this script, the path format is : `gist/[name]-[hash]`. You may change it to suit your needs. You can see the result of such an operation in [my gist monorepo](https://github.com/ayzg/gists). Notice that each `revision` in your gist is reflected in as a commit in the monorepo. If you decide to use a `--squashed` commit history, you cannot pull unsquashed commits from that subtree or it will result in a **history mismatch** conflict.
+avoid any duplicate names. By default, `gmash subtree new` denies overwrite. For this script, the path format is : `gist/[name]-[hash]`. You may change it to suit your needs. You can see the result of such an operation in [my gist monorepo](https://github.com/ayzg/gists). Notice that each `revision` in your gist is reflected in as a commit in the monorepo. If you decide to use a `--squashed` commit history, you cannot pull unsquashed commits from that subtree or it will result in a **history mismatch** conflict.
 
 ``` bash
 #!/bin/bash
@@ -43,6 +43,6 @@ for i in "${!_hashes[@]}"; do
     echo "Hash: $_hash, Name: $_name"
     gmash subtree new -l "https://gist.github.com/$_user/$_hash.git" \
     --path "gist/$_name-$_hash" -b master -B main -R "$_name-$_hash"
-    sleep 2
+    sleep 2 # Don't overload github api
 done
 ```

@@ -713,9 +713,9 @@ Says hello to the world.
     )
 
 def ut_generator_self():
-    test_generator("ut_generator_hello_world",
-        input_string="""  
-helptext
+    test_generator("ut_generator_self",
+        input_string=  
+"""helptext
 v0.0.0
 AGPL-3.0-or-later
 Copyright(c) 2025 Anton Yashchenko
@@ -743,6 +743,7 @@ Developer Arguments:
     -t, --test [testNameOrPattern]
         Run all unit tests.
         If any test names/pattern are provided, run only matching tests.
+
 
         """,
         expected_md="""### Usage
