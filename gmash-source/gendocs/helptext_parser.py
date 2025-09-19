@@ -435,15 +435,21 @@ def parse_usage_section(inp : List[str], line: int, pos: int) -> ParseResult:
         else:
             return ParseResult(("Expected indented usage text after usage keyword.",line,pos,inp))
 
-        while line < len(inp) and is_indented_line(inp[line],1) \
-              or inp[line].strip() == "":
+        while line < len(inp) and (is_indented_line(inp[line],1) \
+              or inp[line].strip() == ""):
             usage_text += "\n" + inp[line].strip()
             line += 1
-        
+        # Delete any following empty lines
+        while usage_text[-1] == " " or usage_text[-1] == '\t' \
+            or usage_text[-1] == '\n':
+            usage_text = usage_text[0:len(usage_text)-1]
     else: # inline usage
         line += 1 # move past usage line
-
-    pos = 0  # reset pos for next line, always end at start of next line
+        # Delete any following empty lines
+        while usage_text[-1] == " " or usage_text[-1] == '\t' \
+            or usage_text[-1] == '\n':
+            usage_text = usage_text[0:len(usage_text)-1]
+        pos = 0  # reset pos for next line, always end at start of next line
     return ParseResult((Ast(Tk.USAGE,usage_text),line,pos))
 
 def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
@@ -452,6 +458,7 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
         `<cli_help> ::= <usage_section>? ( <section> | <paragraph> )*`
     """
     # TODO: add support for indented line with 2 spaces (current only tabs and 4 spaces)
+    # TODO: <prelude> grammar rule for app title/license
     # Configure parser state
     output = Ast(Tk.SYNTAX)
     pos = 0

@@ -578,8 +578,7 @@ def ut_parser_simple():
     """ut_parser_simple"""
     test_parser("ut_parser_simple",
         parser_input="USAGE:\n"
-            +"    py cmhn_compiler.py [ [ -v | --verbose ] | [ -d | --debug ] ] <helpTextInput>\n"
-            +"\n"
+            +"    py cmhn_compiler.py [ [ -v | --verbose ] | [ -d | --debug ] ] <helpTextInput>"
             +"\n"
             +"BRIEF:\n"
             +"    This is a brief.\n"
@@ -741,14 +740,51 @@ Options:
     -f, --fancy                 Print parsed nodes as a decorated ASCII tree.
 
 Developer Arguments:
-    -t, --test [[testNameOrPattern]...]
+    -t, --test [testNameOrPattern]
         Run all unit tests.
         If any test names/pattern are provided, run only matching tests.
 
         """,
-        expected_md="""
-### Usage:
-    `py helptext.py <helpTextToParse> [-o <outputFile>]`
+        expected_md="""### Usage
+`py helptext.py <helpTextToParse> [-o <outputFile>]
+
+<pipedInput> | py helptext.py [-o <outputFile>]`
+
+### Brief
+helptext
+v0.0.0
+AGPL-3.0-or-later
+Copyright(c) 2025 Anton Yashchenko
+
+### Brief
+Generate formatted markdown documentation from command line help text.
+See "Command Line Help Notation" grammar for details on accepted help text formats.
+
+### Parameters:
+    <helpTextToParse>           Help text to parse. If not provided, will check stdin for piped input.
+    -o, --output <outputFile>   Target markdown output file. If not provided, output is piped to stdout.
+
+### Options:
+    **-h** **--help**
+        Display this help message.
+
+    **-v** **--version**
+        Display version string.
+
+    **-r** **--raw**
+        Print parsed nodes as a raw Python class (`__repr__`).
+
+    **-a** **--ascii**
+        Print parsed nodes as a simple ASCII tree.
+
+    **-f** **--fancy**
+        Print parsed nodes as a decorated ASCII tree.
+
+### Developer Arguments:
+    **-t** **--test** **<testNameOrPattern>**
+        Run all unit tests.
+        If any test names/pattern are provided, run only matching tests.
+
 """
         ) 
 
