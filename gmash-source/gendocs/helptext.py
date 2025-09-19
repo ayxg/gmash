@@ -1,10 +1,56 @@
 import sys
-from helptext_common import print_help_text, print_error, verbose_print, \
-    print_action , get_version_str, _verbose_mode, _debug_mode
+from helptext_common import  print_error, print_action
 from helptext_ast import Tk, Ast, print_ascii_tree, print_ascii_tree_simple
 from helptext_parser import Parser
 from helptext_tests import run_unit_tests, CMNH_TEST_MAP
 import helptext_md
+
+_TITLE = "helptext"
+_VERSION = "v0.0.0"
+_LICENSE = "AGPL-3.0-or-later Copyright(c) 2025 Anton Yashchenko"
+_HELP_TEXT = _TITLE + " " + _VERSION + "\n" + _LICENSE + "\n" \
+    + """Usage:
+    py helptext.py <helpTextToParse> [-o <outputFile>]
+
+    <pipedInput> | py helptext.py [-o <outputFile>]
+
+Generate formatted markdown documentation from command line help text.
+See "Command Line Help Notation" grammar for details on accepted help text formats.
+
+Parameters:
+    <helpTextToParse>           Help text to parse. If not provided, will check stdin for piped input.
+    -o, --output <outputFile>   Target codegen output file. If not provided, output is piped to stdout.
+
+Options:
+    -h, --help                  Display this help message.
+    -v, --version               Display version string.
+    -r, --raw                   Print parsed nodes as a raw Python class (`__repr__`).
+    -a, --ascii                 Print parsed nodes as a simple ASCII tree.
+    -f, --fancy                 Print parsed nodes as a decorated ASCII tree.
+
+Developer Arguments:
+    -t, --test [[testNameOrPattern]...]
+        Run all unit tests.
+        If any test names/pattern are provided, run only matching tests.
+"""
+
+# _verbose_mode : bool = False   # [INTERNAL][GLOBAL] verbose flag for `helptext` module.
+# _debug_mode : bool = False     # [INTERNAL][GLOBAL] debug flag for `helptext` module.
+
+# def _verbose_print(msg: str) -> None:
+#     """ Print message if `_verbose_mode` is on.
+#         The `HelpText` class will set global `_verbose_mode` after parsing.
+#         TODO: Refactoring to avoid global state ??? possible ???
+#     """
+#     if _verbose_mode:
+#         print(msg)
+
+# def _debug_print(msg: str) -> None:
+#     """ Print message if debug_mode is true. This function may be "unused" in production.
+#         For temporary dev debug messages only.
+#     """
+#     if _debug_mode:
+#         print(msg)
 
 class HelpText():
     def run(self) -> None:
@@ -16,10 +62,11 @@ class HelpText():
         _print_ast_tree = False
         _print_ast_fancy = False
 
-        # No args, show help and exit.
+        # No args,no piped input, show help and exit.
         if len(sys.argv) < 2:
-            print_help_text()
-            sys.exit(0)
+            if sys.stdin.isatty():
+                print(_HELP_TEXT)
+                sys.exit(0)
 
         # Display help and exit
         if any(arg == '-h' or arg == '--help' for arg in sys.argv):
@@ -76,13 +123,14 @@ class HelpText():
             if not sys.stdin.isatty():
                 help_text = sys.stdin.read()
                 if help_text.strip() == "":
-                    print_help_text()
+                    print(_HELP_TEXT)
                 sys.argv.append(help_text)
+        else:
+            help_text = sys.argv[0]
+        if help_text.strip() == "":
+            sys.exit(0)
 
         # Parse
-        print_action("Parsing input.")
-        help_text = sys.argv[0]
-        verbose_print(help_text)
         parser = Parser()
         parse_res = parser.parse(help_text)
         if parse_res.is_error():
