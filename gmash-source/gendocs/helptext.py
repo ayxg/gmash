@@ -1,9 +1,26 @@
+"""
+#@doc-------------------------------------------------------------------------#
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright(c) 2025 Anton Yashchenko
+#-----------------------------------------------------------------------------#
+@project: [gmash] Git Smash
+@author(s): Anton Yashchenko
+@website: https://www.acpp.dev
+#-----------------------------------------------------------------------------#
+@file `helptext.py`
+@created: 2025/09/13
+@brief Command line help text to markdown documentation converter.
+       See "Command Line Help Notation" grammar for details on accepted help\
+       text formats.
+#-----------------------------------------------------------------------------#
+"""
+
 import sys
 from helptext_common import  print_error, print_action
 from helptext_ast import Tk, Ast, print_ascii_tree, print_ascii_tree_simple
 from helptext_parser import Parser
 from helptext_tests import run_unit_tests, CMNH_TEST_MAP
-import helptext_md
+from helptext_md import generate_md
 
 _TITLE = "\033[1mhelptext\033[0m"
 _VERSION = "v0.0.0"
@@ -35,6 +52,8 @@ Developer Arguments:
 """
 
 class HelpText():
+    """ Command line help text to markdown documentation converter.
+    """
     def run(self) -> None:
         """ Parses current command line args from `sys.argv`, and handles them.
 
@@ -122,7 +141,7 @@ class HelpText():
             print_action("Displaying fancy AST.")
             print_ascii_tree(parse_res.get_ast())
 
-        gen_res = helptext_md.generate_md(parse_res.get_ast())
+        gen_res = generate_md(parse_res.get_ast())
         if gen_res.is_error():
             print_error(gen_res.get_error(),1)
             sys.exit(1)
@@ -157,7 +176,7 @@ class HelpText():
                 - bool : True if generation was successful, False on error.
                 - str  : Generated markdown docs if successful, error message otherwise.
         """
-        gen_res = helptext_md.generate_md(ast)
+        gen_res = generate_md(ast)
         if gen_res.is_error():
             return (False,gen_res.get_error())
         return (True,gen_res.get_md())

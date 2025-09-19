@@ -1,3 +1,17 @@
+"""
+#@doc-------------------------------------------------------------------------#
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright(c) 2025 Anton Yashchenko
+#-----------------------------------------------------------------------------#
+@project: [gmash] Git Smash
+@author(s): Anton Yashchenko
+@website: https://www.acpp.dev
+#-----------------------------------------------------------------------------#
+@file `helptext_ast.py`
+@created: 2025/09/13
+@brief Command Line Help Notation token and abstract syntax tree.
+#-----------------------------------------------------------------------------#
+"""
 import enum
 import typing
 
@@ -61,7 +75,10 @@ class Ast:
                 self.end_col == other.end_col and
                 self.branches == other.branches)
 
+# TODO: (pylint disable doesnt seem to work...?)
+# pylint: disable=W0613
 def print_ascii_tree(astnode: Ast, prefix: str = "", is_last: bool = True) -> None:
+    # pylint: enable=W0613
     """Print the AST as a compact ASCII tree with boxes and connection lines"""
     content = astnode.tk.name + " : " + astnode.value if astnode.value is not None else astnode.tk.name
     lines = content.split('\n')
@@ -117,26 +134,26 @@ def print_ascii_tree_simple(astnode: Ast, indent: int = 0) -> None:
         print_ascii_tree_simple(child, indent + 1)
 
 def print_ast_detailed(node, indent=0):
-        """More detailed recursive AST printer"""
-        if node is None:
-                return
+    """More detailed recursive AST printer"""
+    if node is None:
+        return
 
-        indent_str = "  " * indent
-        arrow = "├── " if indent > 0 else ""
+    indent_str = "  " * indent
+    arrow = "├── " if indent > 0 else ""
 
-        # Build node description
-        parts = []
-        parts.append(f"{node.type.name}")
-        if node.value is not None:
-                parts.append(f"value={repr(node.value)}")
-        parts.append(f"pos=({node.line}:{node.col}-{node.end_line}:{node.end_col})")
+    # Build node description
+    parts = []
+    parts.append(f"{node.type.name}")
+    if node.value is not None:
+        parts.append(f"value={repr(node.value)}")
+    parts.append(f"pos=({node.line}:{node.col}-{node.end_line}:{node.end_col})")
 
-        print(f"{indent_str}{arrow}{', '.join(parts)}")
+    print(f"{indent_str}{arrow}{', '.join(parts)}")
 
-        # Print branches
-        for i, branch in enumerate(node.branches):
-                if i == len(node.branches) - 1:
-                        # Last branch
-                        print_ast_detailed(branch, indent + 1)
-                else:
-                        print_ast_detailed(branch, indent + 1)
+    # Print branches
+    for i, branch in enumerate(node.branches):
+        if i == len(node.branches) - 1:
+            # Last branch
+            print_ast_detailed(branch, indent + 1)
+        else:
+            print_ast_detailed(branch, indent + 1)

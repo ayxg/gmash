@@ -1,8 +1,21 @@
 """
-Copyright(c) Anton Yashchenko 2025
-@created : 2025/09/13
-@project CMHN : Command Line Help Notation Parser
-@brief Grammar for parsing 'help' manuals displayed by command line applications.
+#@doc-------------------------------------------------------------------------#
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright(c) 2025 Anton Yashchenko
+#-----------------------------------------------------------------------------#
+@project: [gmash] Git Smash
+@author(s): Anton Yashchenko
+@website: https://www.acpp.dev
+#-----------------------------------------------------------------------------#
+@file `helptext_parser.py`
+@created: 2025/09/13
+@brief Command Line Help Notation parser.
+    - Approximatley models a recursive descent LL parser directly from the
+    input string, no tokenizer step.
+    - Each parse function(automaton) models a grammar rule from the CMNH EBNF.
+    - ParseResult class encapsulates the result of a parse operation.
+    - Parser will split input lines and trim all extraneous whitespace.
+#-----------------------------------------------------------------------------#
 """
 from typing import List, Optional, Union
 from helptext_ast import Ast, Tk
@@ -344,6 +357,10 @@ def parse_argument_list(inp : List[str], line: int, pos: int) -> ParseResult:
     return ParseResult((node,line,pos))
 
 def parse_section(inp : List[str], line: int, pos: int) -> ParseResult:
+    """
+    EBNF:
+        `<section> ::= <text_line> "\\n" <indented_line> ( <argument_list> | <paragraph> )`
+    """
     if line > len(inp):
         return ParseResult(("Expected section but reached end of input.",line,pos,inp))
     if is_indented_line(inp[line]):
@@ -377,10 +394,13 @@ def parse_paragraph(inp : List[str], line: int, pos: int,indent_level = 0) -> Pa
     if not is_indented_line(inp[line],indent_level):
         return ParseResult(("Expected indented paragraph.",line,pos,inp))
     para = Ast(Tk.PARAGRAPH)
-    while line < len(inp) and ( is_indented_line(inp[line],indent_level) or inp[line].strip() == "" ):
-        # When indent level is 0, disambiguate from a section title by looking forward for an indented line.
-        if indent_level == 0 and not is_indented_line(inp[line],1) and inp[line].strip() != ""\
-                and line + 1 < len(inp) and is_indented_line(inp[line + 1],1):
+    while line < len(inp) and                                                  \
+        ( is_indented_line(inp[line],indent_level) or inp[line].strip() == "" ):
+        # When indent level is 0, disambiguate from a section title by looking
+        # forward for an indented line.
+        if indent_level == 0                                                   \
+            and not is_indented_line(inp[line],1) and inp[line].strip() != ""  \
+            and line + 1 < len(inp) and is_indented_line(inp[line + 1],1):
             break
         para.append(Ast(Tk.TEXT_LINE,inp[line].strip()))
         line += 1
@@ -426,6 +446,7 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
     Grammar Rule:
         `<cli_help> ::= <usage_section>? ( <section> | <paragraph> )*`
     """
+    # TODO: add support for indented line with 2 spaces (current only tabs and 4 spaces)
     # Configure parser state
     output = Ast(Tk.SYNTAX)
     pos = 0

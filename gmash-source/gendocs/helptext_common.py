@@ -1,6 +1,19 @@
-""" `HelpText` Common Utils & Constants
-    - Colorful print functions shared across all `helptext` modules.
 """
+#@doc-------------------------------------------------------------------------#
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright(c) 2025 Anton Yashchenko
+#-----------------------------------------------------------------------------#
+@project: [gmash] Git Smash
+@author(s): Anton Yashchenko
+@website: https://www.acpp.dev
+#-----------------------------------------------------------------------------#
+@file `helptext_common.py`
+@created: 2025/09/13
+@brief `HelpText` Common Utils
+    - Colorful print functions shared across all `helptext` modules.
+#-----------------------------------------------------------------------------#
+"""
+
 def print_action(msg: str,indent_level = 0,indent_type = False) -> None:
     """ Print an action message in green color.
         - indent_level : number of indents to add before the message.

@@ -1,3 +1,18 @@
+"""
+#@doc-------------------------------------------------------------------------#
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright(c) 2025 Anton Yashchenko
+#-----------------------------------------------------------------------------#
+@project: [gmash] Git Smash
+@author(s): Anton Yashchenko
+@website: https://www.acpp.dev
+#-----------------------------------------------------------------------------#
+@file `helptext_tests.py`
+@created: 2025/09/13
+@brief Unit tests for `helptext` module.
+#-----------------------------------------------------------------------------#
+"""
+
 from helptext_common import print_error,print_action
 from helptext_ast import Ast,Tk
 from helptext_parser import Parser,split_lines
@@ -105,43 +120,43 @@ def test_parser(test_name, parser_input, expected_output):
     prs = Parser()
     ast = prs.parse(parser_input)
     if ast.is_error():
-        print_error(f"Test {test_name} failed with error:\n\t{ast.get_error()}",1)
+        print_error(f"[FAIL] {test_name}:\n\t{ast.get_error()}",1)
     else:
         did_test_pass = ast.get_ast() == expected_output
         if not did_test_pass:
-            print_error(f"Test {test_name} failed.",1)
+            print_error(f"[FAIL] {test_name}. Expected ast does not match.",1)
             compare_asts(ast.get_ast(), expected_output)
         else:
-            print_action(f"Test {test_name} passed.",1)
+            print_action(f"[PASS] {test_name}.",1)
 
 def test_parser_function(funct,test_name,parser_input,expected_output):
     """ Run a specific parser function test and compare the output AST to the expected AST."""
     result = funct(split_lines(parser_input),0,0)
     if result.is_error():
-        print_error(f"Test {test_name} failed with error:\n\t{result.error}",1)
+        print_error(f"[FAIL] {test_name}:\n\t{result.error}",1)
         return
     ast = result.get_ast()
     did_test_pass = ast == expected_output
     if not did_test_pass:
-        print_error(f"Test {test_name} failed.",1)
+        print_error(f"[FAIL] {test_name} failed. Expected ast does not match.",1)
         compare_asts(ast, expected_output)
     else:
-        print_action(f"Test {test_name} passed.",1)
+        print_action(f"[PASS] {test_name}.",1)
 
 def test_generator(test_name, input_string, expected_md):
     """ Run a generator test and compare the output markdown to the expected markdown."""
     prs = Parser().parse(input_string)
     if prs.is_error():
-        print_error(f"Test {test_name} failed during parsing with error:\n\t{prs.get_error()}",1)
+        print_error(f"[FAIL] {test_name}:\n\t{prs.get_error()}",1)
         return
     gen_res = generate_md(prs.get_ast())
     if gen_res.is_error():
-        print_error(f"Test {test_name} failed with error:\n\t{gen_res.get_error()}",1)
+        print_error(f"[FAIL] {test_name}:\n\t{gen_res.get_error()}",1)
     else:
         md = gen_res.get_md()
         did_test_pass = md.strip() == expected_md.strip()
         if not did_test_pass:
-            print_error(f"Test {test_name} failed.",1)
+            print_error(f"[FAIL] {test_name}. Expected markdown does not match.",1)
             # Print the differences
             print("Generated MD:")
             print(md)
@@ -150,11 +165,11 @@ def test_generator(test_name, input_string, expected_md):
 
             for i, (gen_line, exp_line) in enumerate(zip(md.splitlines(), expected_md.splitlines()), start=1):
                 if gen_line != exp_line:
-                    print(f"Line {i} differs:")
+                    print_error(f"Line {i} differs:")
                     print(f"  Generated: '{gen_line}'")
                     print(f"  Expected : '{exp_line}'")
         else:
-            print_action(f"Test {test_name} passed.",1)
+            print_action(f"[PASS] {test_name}.",1)
 
 # ###############################################################################
 # # Unit Tests
@@ -560,6 +575,7 @@ def ut_parser_arg_indented_multiline_brief_following_arg():
     )
 
 def ut_parser_simple():
+    """ut_parser_simple"""
     test_parser("ut_parser_simple",
         parser_input="USAGE:\n"
             +"    py cmhn_compiler.py [ [ -v | --verbose ] | [ -d | --debug ] ] <helpTextInput>\n"
@@ -660,7 +676,7 @@ def ut_parser_full():
 
 def ut_parser_usage_with_multiline():
     """Usage line and paragraph"""
-    test_parser("ut_parser_usage_and_paragraph",
+    test_parser("ut_parser_usage_with_multiline",
         parser_input="Usage:\n    myprogram [options] <input_file>\n    second line of usage text\n\n",
         expected_output=Ast(Tk.SYNTAX,None,branches = [
             Ast(Tk.USAGE,"myprogram [options] <input_file>\nsecond line of usage text")
@@ -696,7 +712,6 @@ Says hello to the world.
     The world needs a friend, so im saying hello to it.
 """
     )
-
 
 def run_unit_tests():
     """ Run all unit tests. """
@@ -736,6 +751,7 @@ def run_unit_tests():
     ut_parser_arg_indented_multiline_brief_following_arg()
     ut_parser_simple()
     ut_parser_full()
+    ut_parser_usage_with_multiline()
 
     # Generator tests
     print_action("Testing markdown generator:")
@@ -759,6 +775,10 @@ CMNH_TEST_MAP : dict = {
     , "ut_parsefunc_argument_full" : ut_parsefunc_argument_full
     , "ut_parsefunc_argument_full_with_commas" : ut_parsefunc_argument_full_with_commas
     ,"ut_parsefunc_argument_list": ut_parsefunc_argument_list
+    ,"ut_parsefunc_section_paragraph": ut_parsefunc_section_paragraph
+    ,"ut_parsefunc_section_arguments": ut_parsefunc_section_arguments
+    ,"ut_parsefunc_usage_section": ut_parsefunc_usage_section
+    ,"ut_parsefunc_help_text": ut_parsefunc_help_text
 
     # Top down tests
     ,"ut_parser_usage_line": ut_parser_usage_line
@@ -775,5 +795,8 @@ CMNH_TEST_MAP : dict = {
     ,"ut_parser_simple" : ut_parser_simple
     ,"ut_parser_full": ut_parser_full
     ,"ut_parser_usage_with_multiline": ut_parser_usage_with_multiline
+
+    # Generator tests
+    ,"ut_generator_basic": ut_generator_basic
 
 }

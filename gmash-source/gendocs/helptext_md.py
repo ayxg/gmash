@@ -1,13 +1,25 @@
-# Copyright(c) Anton Yashchenko 2025
-# @created : 2025/09/13
-# @project CMHN : Command Line Help Notation Parser
-# @brief Generates markdown doc pages from command line help output.
-#        Help text format must be follow the CMHN(Command Line Help Notation) grammar.
-from helptext_ast import Tk, Ast
-from typing import Union, List, Optional
+"""
+#@doc-------------------------------------------------------------------------#
+SPDX-License-Identifier: AGPL-3.0-or-later
+Copyright(c) 2025 Anton Yashchenko
+#-----------------------------------------------------------------------------#
+@project: [gmash] Git Smash
+@author(s): Anton Yashchenko
+@website: https://www.acpp.dev
+#-----------------------------------------------------------------------------#
+@file `helptext_md.py`
+@created: 2025/09/13
+@brief Use `generate_md` to generate markdown documentation from a command
+# line
+       help notation abstract syntax tree.
+#-----------------------------------------------------------------------------#
+"""
 
+from typing import Union, List
+from helptext_ast import Tk, Ast
 
 class GeneratorResult:
+    """GeneratorResult"""
     def __init__(self, res : Union[str,tuple[str,int,int]]) -> None:
         if isinstance(res, str):
             self.md = res
@@ -20,18 +32,22 @@ class GeneratorResult:
             self.line = res[1]
             self.col = res[2]
 
-
     def is_error(self) -> bool:
+        """ Check if the result is an error. """
         return self.error is not None
 
-
     def get_md(self) -> str:
+        """ Get the generated markdown, or empty string if there was an error. """
         return self.md if self.md is not None else ""
 
     def get_error(self) -> tuple[str,int,int]:
+        """ Get the error message, line and column, or `"No error"` if there was no error. """
         return self.error if self.error is not None else ("No error",0,0)
 
 def generate_md(ast : Ast) -> GeneratorResult:
+    """ Generate markdown documentation from the command line help notation
+        abstract syntax tree.
+    """
     outp : List[str] = []
     line = 0
     col = 0
@@ -48,7 +64,7 @@ def generate_md(ast : Ast) -> GeneratorResult:
     for br in ast.branches:
         if br.tk == Tk.BRIEF:
             for ln in br.branches[0].branches: # tk.PARAGRAPH
-                    outp.append(ln.value.strip())
+                outp.append(ln.value.strip())
 
     # If there is a paragraph at the root level, before any section, its a brief.
     no_preceding_section = True
@@ -112,7 +128,8 @@ def generate_md(ast : Ast) -> GeneratorResult:
                         elif flag.tk == Tk.TEXT_LINE:
                             pass # All text lines appended at end.
                         else:
-                            return GeneratorResult(("Unexpected token in argument list:" + flag.tk.name ,line,col))
+                            return GeneratorResult(\
+                                ("Unexpected token in argument list:" + flag.tk.name ,line,col))
 
 
                     arg_brief = ""
