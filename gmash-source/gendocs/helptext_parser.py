@@ -557,6 +557,10 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
                 line += 1
     return ParseResult((output,line,pos))
 
+def parse(inp: str) -> ParseResult:
+    """ Parse the input string and return the AST. """
+    inp_lines = split_lines(inp)
+    return parse_help_text(inp_lines,0,0)
 
 ###############################################################################
 # Parser
