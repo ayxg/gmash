@@ -60,6 +60,10 @@ def is_indented_line(s: str, indent_level: int = 1) -> bool:
     tab_indent = '\t' * indent_level
     return s.startswith(space_indent) or s.startswith(tab_indent) or s.startswith(half_indent)
 
+def is_whitespace(c: str) -> bool:
+    """ Check if a character is a whitespace or tab. """
+    return c == ' ' or c == '\t'
+
 def split_lines(s: str) -> List[str]:
     """ Split the input string into lines, keeping line endings. """
     return s.splitlines()
@@ -86,6 +90,14 @@ def skip_whitespace(s: str, pos: int = 0) -> int:
 def line_startswith(s: str, prefix: str, pos : int = 0) -> bool:
     """ Check if line starts with a given prefix, ignoring leading whitespace."""
     return s.startswith(prefix,pos + skip_whitespace(s,pos))
+
+def in_line(pos: int, s: str) -> bool:
+    """ Check if the position is within the line bounds. """
+    return pos >= 0 and pos < len(s)
+
+def in_range(line: int, inp: List[str]) -> bool:
+    """ Check if the line and column are within the input bounds. """
+    return line >= 0 and line < len(inp)
 
 ###############################################################################
 # Parsing Automatons
@@ -129,7 +141,7 @@ class ParseResult:
         """ Get the column number where the parse ended. """
         return self.end_col
 
-def parse_long_flag(inp : List[str], line: int, pos: int) -> ParseResult:
+def parse_long_flag(inp : List[str], line: int, col: int) -> ParseResult:
     """
     EBNF:
         `<long_flag_ident> ::= ( [a-z] | [A-Z] )+ ( [a-z] | [A-Z] | "-" )+ ( [a-z] | [A-Z] | [0-9] )`
@@ -140,39 +152,55 @@ def parse_long_flag(inp : List[str], line: int, pos: int) -> ParseResult:
         - May contain alpha, numeric or dash.
         - Ends with alpha or numeric.
     """
-    if line >= len(inp):
-        return ParseResult(("Expected long flag but reached end of input.",line,pos,inp))
-    inp[line] = inp[line]
-    pos += skip_whitespace(inp[line],pos)
-    if not inp[line].startswith('--',pos):
-        return ParseResult(("Expected long flag starting with a '--'.",line,pos,inp))
-    pos += 2
+    beg_line = line
+    beg_col = col
+    if not in_line(col,inp[line]):
+        return ParseResult(("Expected long flag but reached end of input.",line,col,inp))
+    col += skip_whitespace(inp[line],col)
+    if not inp[line].startswith('--',col):
+        return ParseResult(("Expected long flag starting with a '--'.",line,col,inp))
+    col += 2
+    flag_beg_line = line
+    flag_beg_col = col
     flag_ident = ""
-    while pos < len(inp[line]) and is_alnumdash(inp[line][pos]):
-        flag_ident += inp[line][pos]
-        pos += 1
+    while in_line(col,inp[line]) and is_alnumdash(inp[line][col]):
+        flag_ident += inp[line][col]
+        col += 1
     if len(flag_ident) < 2 or not is_alpha(flag_ident[0]) or not is_alnumus(flag_ident[-1]):
-        return ParseResult(("Invalid long flag identifier.",line,pos,inp))
-    return ParseResult((Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,flag_ident)]),line,pos))
+        return ParseResult(("Invalid long flag identifier.",line,col,inp))
+    if in_line(col,inp[line]) and not (is_whitespace(inp[line][col]) or inp[line][col] == ','):
+        return ParseResult(("Expected whitespace or comma after long flag.",line,col,inp))
+    return ParseResult((Ast(Tk.LONG_FLAG,None,beg_line,beg_col,line,col,\
+                            [Ast(Tk.LONG_FLAG_IDENT,flag_ident,flag_beg_line,flag_beg_col,line,col)]),
+                        line,
+                        col))
 
-def parse_short_flag(inp : List[str], line: int, pos: int) -> ParseResult:
+def parse_short_flag(inp : List[str], line: int, col: int) -> ParseResult:
     """
     EBNF:
         `<short_flag> ::= "-" ( [a-z] | [A-Z] )`
     """
-    if line >= len(inp):
-        return ParseResult(("Expected short flag but reached end of inp.",line,pos,inp))
-    inp[line] = inp[line]
-    if not inp[line].startswith('-',pos) or inp[line].startswith('--',pos):
-        return ParseResult(("Expected short flag starting with a '-'.",line,pos,inp))
-    pos += 1
-    if pos >= len(inp[line]) or not is_alpha(inp[line][pos]):
-        return ParseResult(("Invalid short flag identifier.",line,pos,inp))
-    flag_ident = inp[line][pos]
-    pos += 1
-    return ParseResult((Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,flag_ident)]),line,pos))
+    beg_line = line
+    beg_col = col
+    if not in_line(col,inp[line]):
+        return ParseResult(("Expected short flag but reached end of inp.",line,col,inp))
+    if not inp[line].startswith('-',col) or inp[line].startswith('--',col):
+        return ParseResult(("Expected short flag starting with a '-'.",line,col,inp))
+    col += 1
+    if not in_line(col,inp[line]) or not is_alpha(inp[line][col]):
+        return ParseResult(("Invalid short flag identifier.",line,col,inp))
+    flag_beg_line = line
+    flag_beg_col = col
+    flag_ident = inp[line][col]
+    col += 1
+    if in_line(col,inp[line]) and not (is_whitespace(inp[line][col]) or inp[line][col] == ','):
+        return ParseResult(("Expected whitespace or comma after short flag.",line,col,inp))
+    return ParseResult((Ast(Tk.SHORT_FLAG,None,beg_line,beg_col,line,col,\
+                            [Ast(Tk.SHORT_FLAG_IDENT,flag_ident,flag_beg_line,flag_beg_col,line,col)])
+                        ,line
+                        ,col))
 
-def parse_optional_arg(inp : List[str], line: int, pos: int) -> ParseResult:
+def parse_optional_arg(inp : List[str], line: int, col: int) -> ParseResult:
     """
     EBNF:
         `<shell_ident> ::= ( [a-z] | [A-Z] ) ( [a-z] | [A-Z] | [0-9] )+ ( [a-z] | [A-Z] )`
@@ -182,24 +210,30 @@ def parse_optional_arg(inp : List[str], line: int, pos: int) -> ParseResult:
         - Begin with alpha or underscore.
         - May contain alpha, numeric or underscore.
     """
-    if line >= len(inp):
-        return ParseResult(("Expected optional argument but reached end of input.",line,pos,inp))
-    inp[line] = inp[line]
-    pos += skip_whitespace(inp[line],pos)
-    if not inp[line].startswith('[',pos):
-        return ParseResult(("Expected optional argument starting with a '['.",line,pos,inp))
-    pos += 1
+    beg_line = line
+    beg_col = col
+    if not in_range(line,inp):
+        return ParseResult(("Expected optional argument but reached end of input.",line,col,inp))
+    col += skip_whitespace(inp[line],col)
+    if not inp[line].startswith('[',col):
+        return ParseResult(("Expected optional argument starting with a '['.",line,col,inp))
+    col += 1
+    ident_beg_line = line
+    ident_beg_col = col
     arg_ident = ""
-    while pos < len(inp[line]) and is_alnumus(inp[line][pos]):
-        arg_ident += inp[line][pos]
-        pos += 1
-    if len(arg_ident) < 1 or not is_alpha(arg_ident[0]) or not is_alnumus(arg_ident[-1]):
-        return ParseResult(("Expected optional argument identifier.",line,pos,inp))
-    pos += skip_whitespace(inp[line],pos)
-    if pos >= len(inp[line]) or not inp[line].startswith(']',pos):
-        return ParseResult(("Expected closing ']' for optional argument.",line,pos,inp))
-    pos += 1
-    return ParseResult((Ast(Tk.OPTIONAL_ARG,None,branches = [Ast(Tk.SHELL_IDENT,arg_ident)]),line,pos))
+    while in_line(col,inp[line]) and inp[line][col] != ']': # is_alnumus(inp[line][col]):
+        arg_ident += inp[line][col]
+        col += 1
+    if len(arg_ident) < 1:
+        return ParseResult(("Expected optional argument identifier.",line,col,inp))
+    col += skip_whitespace(inp[line],col)
+    if not in_line(col,inp[line]) or not inp[line].startswith(']',col):
+        return ParseResult(("Expected closing ']' for optional argument.",line,col,inp))
+    col += 1
+    return ParseResult((Ast(Tk.OPTIONAL_ARG,None,beg_line,beg_col,line,col,\
+                            [Ast(Tk.SHELL_IDENT,arg_ident,ident_beg_line,ident_beg_col,line,col)])
+                        ,line
+                        ,col))
 
 def parse_required_arg(inp : List[str], line: int, pos: int) -> ParseResult:
     """
@@ -457,7 +491,6 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
     Grammar Rule:
         `<cli_help> ::= <usage_section>? ( <section> | <paragraph> )*`
     """
-    # TODO: add support for indented line with 2 spaces (current only tabs and 4 spaces)
     # TODO: <prelude> grammar rule for app title/license
     # Configure parser state
     output = Ast(Tk.SYNTAX)

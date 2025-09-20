@@ -118,7 +118,7 @@ def generate_md(ast : Ast) -> GeneratorResult:
                                 arg_line += " "
                             else:
                                 is_first_flag = False
-                            arg_line += f"**<{flag.branches[0].value}>**"
+                            arg_line += f"**[{flag.branches[0].value}]**"
                         elif flag.tk == Tk.REQUIRED_ARG:
                             if not is_first_flag:
                                 arg_line += " "
