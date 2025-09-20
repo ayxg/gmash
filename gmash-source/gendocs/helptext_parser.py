@@ -221,7 +221,7 @@ def parse_optional_arg(inp : List[str], line: int, col: int) -> ParseResult:
     ident_beg_line = line
     ident_beg_col = col
     arg_ident = ""
-    while in_line(col,inp[line]) and inp[line][col] != ']': # is_alnumus(inp[line][col]):
+    while in_line(col,inp[line]) and inp[line][col] != ']':
         arg_ident += inp[line][col]
         col += 1
     if len(arg_ident) < 1:
@@ -235,30 +235,36 @@ def parse_optional_arg(inp : List[str], line: int, col: int) -> ParseResult:
                         ,line
                         ,col))
 
-def parse_required_arg(inp : List[str], line: int, pos: int) -> ParseResult:
+def parse_required_arg(inp : List[str], line: int, col: int) -> ParseResult:
     """
     EBNF:
         `<shell_ident> ::= ( [a-z] | [A-Z] ) ( [a-z] | [A-Z] | [0-9] )+ ( [a-z] | [A-Z] )`
         `<required_arg> ::= "<" <shell_ident> ">"`
     """
-    if line >= len(inp):
-        return ParseResult(("Expected required argument but reached end of input.",line,pos,inp))
-    inp = inp[line]
-    pos += skip_whitespace(inp,pos)
-    if not inp.startswith('<',pos):
-        return ParseResult(("Expected required argument starting with a '<'.",line,pos,inp))
-    pos += 1
+    beg_line = line
+    beg_col = col
+    if not in_range(line,inp):
+        return ParseResult(("Expected required argument but reached end of input.",line,col,inp))
+    col += skip_whitespace(inp[line],col)
+    if not inp[line].startswith('<',col):
+        return ParseResult(("Expected required argument starting with a '<'.",line,col,inp[line]))
+    col += 1
+    ident_beg_line = line
+    ident_beg_col = col
     arg_ident = ""
-    while pos < len(inp) and is_alnumus(inp[pos]):
-        arg_ident += inp[pos]
-        pos += 1
+    while in_line(col,inp[line]) and inp[line][col] != '>':
+        arg_ident += inp[line][col]
+        col += 1
     if len(arg_ident) < 1 or not is_alpha(arg_ident[0]) or not is_alnumus(arg_ident[-1]):
-        return ParseResult(("Expected required argument identifier.",line,pos,inp))
-    pos += skip_whitespace(inp,pos)
-    if pos >= len(inp) or not inp.startswith('>',pos):
-        return ParseResult(("Expected closing '>' for required argument.",line,pos,inp))
-    pos += 1
-    return ParseResult((Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,arg_ident)]),line,pos))
+        return ParseResult(("Expected required argument identifier.",line,col,inp[line]))
+    col += skip_whitespace(inp[line],col)
+    if not in_line(col,inp[line]) or not inp[line].startswith('>',col):
+        return ParseResult(("Expected closing '>' for required argument.",line,col,inp[line]))
+    col += 1
+    return ParseResult((Ast(Tk.REQUIRED_ARG,None,beg_line,beg_col,line,col,\
+                            [Ast(Tk.SHELL_IDENT,arg_ident,ident_beg_line,ident_beg_col,line,col)])
+                        ,line
+                        ,col))
 
 def parse_argument(inp : List[str], line: int, pos: int) -> ParseResult:
     """
