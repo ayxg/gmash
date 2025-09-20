@@ -46,7 +46,7 @@ Options:
     -f, --fancy                 Print parsed nodes as a decorated ASCII tree.
 
 Developer Arguments:
-    -t, --test [[testNameOrPattern]...]
+    -t, --test [testNamesOrPatterns]
         Run all unit tests.
         If any test names/pattern are provided, run only matching tests.
 """

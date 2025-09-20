@@ -714,7 +714,7 @@ Says hello to the world.
 
 def ut_generator_self():
     test_generator("ut_generator_self",
-        input_string=  
+        input_string=
 """helptext
 v0.0.0
 AGPL-3.0-or-later
@@ -782,12 +782,12 @@ See "Command Line Help Notation" grammar for details on accepted help text forma
         Print parsed nodes as a decorated ASCII tree.
 
 ### Developer Arguments:
-    **-t** **--test** **<testNameOrPattern>**
+    **-t** **--test** **[testNameOrPattern]**
         Run all unit tests.
         If any test names/pattern are provided, run only matching tests.
 
 """
-        ) 
+        )
 
 def run_unit_tests():
     """ Run all unit tests. """

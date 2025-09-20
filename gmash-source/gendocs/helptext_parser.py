@@ -58,7 +58,7 @@ def is_indented_line(s: str, indent_level: int = 1) -> bool:
     half_indent = ' ' * (2 * indent_level)
     space_indent = ' ' * (4 * indent_level)
     tab_indent = '\t' * indent_level
-    return s.startswith(space_indent) or s.startswith(tab_indent) or s.startswith(half_indent) 
+    return s.startswith(space_indent) or s.startswith(tab_indent) or s.startswith(half_indent)
 
 def split_lines(s: str) -> List[str]:
     """ Split the input string into lines, keeping line endings. """
