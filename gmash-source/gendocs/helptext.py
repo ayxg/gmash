@@ -27,9 +27,9 @@ _VERSION = "v0.0.0"
 _LICENSE = "AGPL-3.0-or-later\nCopyright(c) 2025 Anton Yashchenko"
 _HELP_TEXT = _TITLE + "\n" + _VERSION + "\n" + _LICENSE + "\n\n" \
     + """Usage:
-    py helptext.py <helpTextToParse> [-o <outputFile>]
+    helptext <helpTextToParse> [-o <outputFile>]
 
-    <pipedInput> | py helptext.py [-o <outputFile>]
+    <pipedInput> | helptext [-o <outputFile>]
 
 Generate formatted markdown documentation from command line help text.
 Pass help text to parse. If not provided, will check stdin for piped input.

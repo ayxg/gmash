@@ -44,6 +44,63 @@ class GeneratorResult:
         """ Get the error message, line and column, or `"No error"` if there was no error. """
         return self.error if self.error is not None else ("No error",0,0)
 
+
+def generate_argument(arg : Ast) -> GeneratorResult:
+    """ Generate markdown documentation for a single argument node.
+    """
+    if arg.tk != Tk.ARGUMENT:
+        return GeneratorResult(("Expected argument node",arg.line,arg.col))
+    if len(arg.branches) == 0:
+        return GeneratorResult(("Invalid ARGUMENT node format.",arg.line,arg.col))
+
+    outp : str = ""
+    # Check for a short flag. Must be first if present.
+    next_branch = 0
+    if arg.branches[0].tk == Tk.SHORT_FLAG:
+        outp += f"`-{arg.branches[next_branch].branches[next_branch].value}` "
+        next_branch += 1
+
+    # Check for a long flag and any optional/required args.
+    has_long_flag : bool = False
+    if next_branch < len(arg.branches) and arg.branches[next_branch].tk == Tk.LONG_FLAG:
+        has_long_flag = True
+        if len(outp) > 0:
+            outp += " "
+        # The last backtick is added later.
+        outp += f"`--{arg.branches[next_branch].branches[0].value}"
+        next_branch += 1
+
+    has_positional : bool = False
+    while next_branch < len(arg.branches) \
+            and (arg.branches[next_branch].tk == Tk.OPTIONAL_ARG \
+            or arg.branches[next_branch].tk == Tk.REQUIRED_ARG):
+        has_positional = True
+        if len(outp) > 0:
+            outp += " "
+        if arg.branches[next_branch].tk == Tk.OPTIONAL_ARG:
+            outp += f" [{arg.branches[next_branch].branches[0].value}]` "
+        else:
+            outp += f" <{arg.branches[next_branch].branches[0].value}>` "
+        next_branch += 1
+
+    if not has_positional and has_long_flag:
+        # Close the long flag backtick if no positional args were added.
+        outp += "` "
+
+    # Look for any text lines.
+    if next_branch < len(arg.branches) and arg.branches[next_branch].tk != Tk.TEXT_LINE:
+        return GeneratorResult(("Unexpected token in argument list:" \
+            + arg.branches[next_branch].tk.name ,arg.line,arg.col))
+
+    arg_brief : str = ""
+    for text in arg.branches:
+        if text.tk == Tk.TEXT_LINE:
+            arg_brief += "\\\n&nbsp;&nbsp;&nbsp;&nbsp;" + text.value.strip()
+    if arg_brief.strip() != "":
+        outp += arg_brief
+
+    return GeneratorResult(outp)
+
 def generate_md(ast : Ast) -> GeneratorResult:
     """ Generate markdown documentation from the command line help notation
         abstract syntax tree.
@@ -57,8 +114,24 @@ def generate_md(ast : Ast) -> GeneratorResult:
     # Find the all usage sections and place them at the top.
     for br in ast.branches:
         if br.tk == Tk.USAGE:
+            # Extract the first line of usage up to the first occurrence of a flag
+            # and set it as the title of the markdown page.
+            if br.value is not None and br.value.strip() != "":
+                first_line = br.value.split("\n")[0]
+                title : str = ""
+                for ch in first_line:
+                    if ch.isspace():
+                        title += " "
+                    elif ch == "-" or ch == "[" or ch == "<":
+                        break
+                    else:
+                        title += ch
+                outp.append(f"# {title}\n")
             outp.append("### Usage")
-            outp.append(f"`{br.value.strip()}`\n")
+            # If there are multiple usage lines, put each on its own line surrounded by backticks.
+            for ln in br.value.split("\n"):
+                if ln.strip() != "":
+                    outp.append(f"`{ln.strip()}`\n")
 
     # Get the brief description if any.
     for br in ast.branches:
@@ -98,46 +171,9 @@ def generate_md(ast : Ast) -> GeneratorResult:
                     outp.append(f"### {arg_list.value.strip()}")
                 # -> Section -> Argument_List -> Argument
                 for arg in arg_list.branches:
-                    arg_line = "    "
-                    is_first_flag = True
-                    for flag in arg.branches:
-                        if flag.tk == Tk.SHORT_FLAG:
-                            if not is_first_flag:
-                                arg_line += " "
-                            else:
-                                is_first_flag = False
-                            arg_line += f"**-{flag.branches[0].value}**"
-                        elif flag.tk == Tk.LONG_FLAG:
-                            if not is_first_flag:
-                                arg_line += " "
-                            else:
-                                is_first_flag = False
-                            arg_line += f"**--{flag.branches[0].value}**"
-                        elif flag.tk == Tk.OPTIONAL_ARG:
-                            if not is_first_flag:
-                                arg_line += " "
-                            else:
-                                is_first_flag = False
-                            arg_line += f"**[{flag.branches[0].value}]**"
-                        elif flag.tk == Tk.REQUIRED_ARG:
-                            if not is_first_flag:
-                                arg_line += " "
-                            else:
-                                is_first_flag = False
-                            arg_line += f"**<{flag.branches[0].value}>**"
-                        elif flag.tk == Tk.TEXT_LINE:
-                            pass # All text lines appended at end.
-                        else:
-                            return GeneratorResult(\
-                                ("Unexpected token in argument list:" + flag.tk.name ,line,col))
-
-
-                    arg_brief = ""
-                    for text in arg.branches:
-                        if text.tk == Tk.TEXT_LINE:
-                            arg_brief += "\n        " + text.value.strip()
-                    if arg_brief.strip() != "":
-                        arg_line += arg_brief
-                    outp.append(arg_line)
+                    arg_res = generate_argument(arg)
+                    if arg_res.is_error():
+                        return arg_res
+                    outp.append(arg_res.get_md())
                     outp.append("")
     return GeneratorResult("\n".join(outp))
