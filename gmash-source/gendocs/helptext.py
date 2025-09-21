@@ -120,7 +120,7 @@ class HelpText():
         if '--skip' in sys.argv:
             skip_index = sys.argv.index('--skip')
             is_skipping = True
-        else:
+        elif '-s' in sys.argv:
             skip_index = sys.argv.index('-s')
             is_skipping = True
         if is_skipping:
