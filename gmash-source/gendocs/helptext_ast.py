@@ -69,10 +69,10 @@ class Ast:
             return NotImplemented
         return (self.tk == other.tk and
                 self.value == other.value and
-                self.line == other.line and
-                self.col == other.col and
-                self.end_line == other.end_line and
-                self.end_col == other.end_col and
+                #self.line == other.line and
+                #self.col == other.col and
+                #self.end_line == other.end_line and
+                #self.end_col == other.end_col and
                 self.branches == other.branches)
 
 # TODO: (pylint disable doesnt seem to work...?)
