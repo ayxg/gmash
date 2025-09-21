@@ -44,8 +44,7 @@ class GeneratorResult:
         """ Get the error message, line and column, or `"No error"` if there was no error. """
         return self.error if self.error is not None else ("No error",0,0)
 
-
-def generate_argument(arg : Ast) -> GeneratorResult:
+def _generate_argument(arg : Ast) -> GeneratorResult:
     """ Generate markdown documentation for a single argument node.
     """
     if arg.tk != Tk.ARGUMENT:
@@ -119,11 +118,14 @@ def generate_md(ast : Ast) -> GeneratorResult:
             if br.value is not None and br.value.strip() != "":
                 first_line = br.value.split("\n")[0]
                 title : str = ""
-                for ch in first_line:
+                for idx,ch in enumerate(first_line):
                     if ch.isspace():
                         title += " "
-                    elif ch == "-" or ch == "[" or ch == "<":
-                        break
+                        if idx + 1 < len(first_line)            \
+                            and (first_line[idx + 1] == "-"     \
+                                or first_line[idx + 1]  == "["  \
+                                or first_line[idx + 1]  == "<"):
+                            break
                     else:
                         title += ch
                 outp.append(f"# {title}\n")
@@ -171,7 +173,7 @@ def generate_md(ast : Ast) -> GeneratorResult:
                     outp.append(f"### {arg_list.value.strip()}")
                 # -> Section -> Argument_List -> Argument
                 for arg in arg_list.branches:
-                    arg_res = generate_argument(arg)
+                    arg_res = _generate_argument(arg)
                     if arg_res.is_error():
                         return arg_res
                     outp.append(arg_res.get_md())

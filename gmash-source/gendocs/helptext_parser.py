@@ -275,7 +275,6 @@ def parse_argument(inp : List[str], line: int, pos: int) -> ParseResult:
         `<argument> ::= (( <short_flag> ) " ")? (( <long_flag> ) " " ) +
         ( <optional_arg> |  <required_arg> )? <indented_line> ": " <text_line>`
     """
-    print(f"DEBUG argument: line={line}, pos={pos}, content='{inp[line][pos:] if line < len(inp) else 'EOF'}'")
     if not in_range(line,inp):
         return ParseResult(("Expected argument but reached end of input.",line,pos,inp))
     node = Ast(Tk.ARGUMENT) # Argument root node
@@ -360,9 +359,7 @@ def parse_argument(inp : List[str], line: int, pos: int) -> ParseResult:
                 line += 1
                 text = inp[line].strip()
                 line += 1
-                # if text == "":
-                #     return ParseResult(("Expected argument description text.",line,pos,inp))
-                # node.append(Ast(Tk.TEXT_LINE,text))
+
                 if not text == "":
                     node.append(Ast(Tk.TEXT_LINE,text))
                     line += 1
@@ -386,7 +383,6 @@ def parse_argument_list(inp : List[str], line: int, pos: int) -> ParseResult:
     EBNF:
         `<argument_list> ::= ( <argument> "\\n" )+`
     """
-    print(f"DEBUG argument_list: line={line}, pos={pos}, content='{inp[line][pos:] if line < len(inp) else 'EOF'}'")
     node = Ast(Tk.ARGUMENT_LIST)
     while in_range(line,inp) and line_startswith(inp[line],'-'):
         arg_result = parse_argument(inp,line,pos)
@@ -564,7 +560,6 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
             while line < len(inp) and inp[line].strip() == "":
                 line += 1
     return ParseResult((output,line,pos))
-
 
 ###############################################################################
 # Parser
