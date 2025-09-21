@@ -1,0 +1,67 @@
+# Copyright(c) Anton Yashchenko 2025
+# Created : 2025/09/10
+# CMHN : Command Line Help Notation
+# Grammar for parsing 'help' manuals displayed by command line applications.
+# @see `cmhn-playground.ebnf` and https://bnfplayground.pauliankline.com/
+#      for testing and debugging the grammar.
+
+# Help text's running shell variable identifier format.
+#   - Begin with alpha or underscore.
+#   - May contain alpha, numeric or underscore.
+<shell_ident> ::= ( [a-z] | [A-Z] ) ( [a-z] | [A-Z] | [0-9] )+ ( [a-z] | [A-Z] )
+
+# Long cli argument flag format.
+#   - Begin with alpha.
+#   - May contain alpha, numeric or dash.
+#   - End with alpha or numeric.
+<long_flag_ident> ::= ( [a-z] | [A-Z] )+ ( [a-z] | [A-Z] | "-" )+ ( [a-z] | [A-Z] | [0-9] )
+
+# New line which beings a new sub-paragraph. Like python's newlines.
+<indented_line> ::= ( "\n    " | "\n  " | "\n\t" )
+
+<ignored_whitespace> ::= ( " " | "\t" )+
+
+# Optional colon following a section title.
+<optional_colon> ::= ":" | E
+
+# A line of text which ends on a newline.
+<text_line> ::= ( " " | "!" | "\"" | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" |
+"0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | ":" | ";" | "<" | "=" | ">" | "?" |
+"@" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" |
+"P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "[" | "\\" | "]" | "^" | "_" |
+"`" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" |
+"p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "{" | "|" | "}" | "~" )*
+
+# Cli argument list
+<short_flag> ::= "-" ( [a-z] | [A-Z] )
+<long_flag> ::= "--" <long_flag_ident>
+<optional_arg> ::= "[" <shell_ident> "]"
+<required_arg> ::= "<" <shell_ident> ">"
+<argument> ::= (( <short_flag> ) " ")? (( <long_flag> ) " " )+
+	( <optional_arg> |  <required_arg> )? <indented_line>  ":"? <ignored_whitespace> <text_line>
+<argument_list> ::= ( <argument> "\n" )+
+
+# Paragraph
+<paragraph> ::= ( <text_line> "\n"+ )+
+
+# Help Section
+# A regular help section starting with a title. May be a paragraph of text or a list of arguments.
+<section> ::= <shell_ident> <indented_line> ( <argument_list> | <paragraph> )
+
+# Usage Line & Title
+# Usage title is expected at the start of the help text. All other sections with a title matching
+# this pattern are interpreted as paragraphs.
+<usage_title> ::= ( ( "Usage" | "usage" | "USAGE" |  "use" | "Use" | "USE" )
+	<ignored_whitespace> <optional_colon> <ignored_whitespace> ) | E
+
+<usage_line> ::= <usage_title> <text_line> "\n"+ | E
+
+# Brief Section
+# Optional brief paragraph which does not require a title.
+# Must be the first paragraph following the usage line.
+<brief_title> ::= ( ( "Brief" | "brief" | "BRIEF" )
+	<ignored_whitespace> <optional_colon> <ignored_whitespace> ) | E
+
+<brief_section> ::= <brief_title> <paragraph> | E
+
+<cli_help> ::= <usage_line> <brief_section> <section>*

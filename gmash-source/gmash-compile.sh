@@ -57,25 +57,25 @@ compile_parser(){
 # the altered parser source. If you change a subcommand, you must
 # regenerate the entire command group source.
 compile_parser
-  # compile_parser dirs
-  #   compile_parser dirs prefix
-  #   compile_parser dirs same
-  #   compile_parser dirs separate
-  #   compile_parser dirs squash
-  # compile_parser find
-  #   compile_parser find duplicate_code
-  #   compile_parser find gits
-  #   compile_parser find sources
+  compile_parser dirs
+    compile_parser dirs prefix
+    compile_parser dirs same
+    compile_parser dirs separate
+    compile_parser dirs squash
+  compile_parser find
+    compile_parser find duplicate_code
+    compile_parser find gits
+    compile_parser find sources
   compile_parser gist
     compile_parser gist clone
     compile_parser gist create
     compile_parser gist prepare
     compile_parser gist recover
     compile_parser gist upload
-  # compile_parser lineage
-  #   compile_parser lineage merge
-  # compile_parser mono
-  #   compile_parser mono patch
-  # compile_parser subtree
-  #   compile_parser subtree new
-  #   compile_parser subtree patch
+  compile_parser lineage
+    compile_parser lineage merge
+  compile_parser mono
+    compile_parser mono patch
+  compile_parser subtree
+    compile_parser subtree new
+    compile_parser subtree patch

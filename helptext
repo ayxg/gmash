@@ -1,0 +1,16 @@
+#!/bin/bash
+#@doc##########################################################################
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright(c) 2025 Anton Yashchenko
+###############################################################################
+# @project: [gmash] Git Smash
+# @author(s): Anton Yashchenko
+# @website: https://www.acpp.dev
+###############################################################################
+# @file helptext
+# @created: 2025/09/19
+# @brief Bash wrapper script for `gmash-source/gendocs/helptext.py`,
+#        Forwards args to `py helptext.py`.
+#@enddoc#######################################################################
+set -eu
+py "$(dirname "$(readlink -f "$0")")/gmash-source/gendocs/helptext.py" "$@"

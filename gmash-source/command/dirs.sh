@@ -63,10 +63,10 @@ gmash_dirs_prefix(){
 gmash_dirs_same(){
   if [ $# == 0 ]; then
     local _path1="${GMASH_DIRS_SAME_PATH:-$(pwd)}"
-    local _path2="${GMASH_DIRS_SAME_TGTPATH:-''}"
+    local _path2="${GMASH_DIRS_SAME_TGTPATH:-""}"
   else
     local _path1="${1:-$(pwd)}"
-    local _path2="${2:-''}"
+    local _path2="${2:-""}"
   fi
 
   vecho_func "gmash->dirs->same"
@@ -105,7 +105,7 @@ gmash_dirs_separate(){
       _dirname="${_fname%.*}"
       mkdir -p "$_path/$_dirname"
       mv "$_fp" "$_path/$_dirname/"
-      vecho_action "'$_fp' -> '$_path/$_dirname/'"
+      vecho_action "'$_fp' -> '$_path/$_dirname'"
     fi
   done
 

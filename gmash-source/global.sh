@@ -18,12 +18,11 @@
 #@enddoc------------------------------------------------------------------------------------------#
 
 # Source path (used for relative sources)
-export GMASH_SOURCE=""
-GMASH_SOURCE="$(dirname "$(readlink -f "$0")")/gmash-source"
+export GMASH_SOURCE="$(dirname "$(readlink -f "$0")")/gmash-source"
 
 # Program Metadata
 export GMASH_PROGRAM="${0##*/}"
-export GMASH_LICENSE="MIT Copyright(c) Anton Yashchenko"
+export GMASH_LICENSE="AGPL-3.0-or-later Copyright(c) 2025 Anton Yashchenko"
 
 # Global Vars.
 export GMASH_ARGV=("$@")  # Initial input args.

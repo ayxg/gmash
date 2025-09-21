@@ -51,9 +51,9 @@ Follow these steps to install gmash, compile its parsers, verify your setup, and
 
 ### Prerequisites
 
-- Bash shell  
-- gengetopt (or gengetoptions) installed  
-- Git client  
+- `git-bash` 
+- `gh` (GitHub CLI)
+- `getoptions` library (Only required if you are planning on modifying the source files) 
 
 Verify gengetopt:  
 ```bash

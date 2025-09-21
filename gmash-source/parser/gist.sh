@@ -858,7 +858,7 @@ Optional Flags:
   -a,     --asone                       Push each dir's files as a single gist.
   -l,     --limit GMASH_GIST_UPLOAD_LIMIT 
                                         Maximum number of gists to create. Defaults to 100 (in-case of   unintentional overload).
-  -e,     --no-extension                on:1
+  -e,     --no-extension                Ignore source file extensions when naming gists and grouping gist   sources.
   
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
@@ -869,7 +869,7 @@ Case 1 : Create a gist from one or more files.
             $ gmash gist upload -f file1 -f file2 -n 'foo-gist'   -d 'description of my gist'
  
 Case 2 : Create a separate gist for every file in a path, merge   files with the same base name.
-            $ gmash gist upload -A -e -f dir1 -f dir2
+            $ gmash gist upload -A --no-readme --no-extension
     Given 'dir1' and 'dir2' contain files 'foo.cpp', 'bar.cpp',   and 'foo.hpp', 'bar.hpp' respectively,
       2 gists will be created and cloned to dirs: 'foo' and 'bar' relative to   '--path'.
  
