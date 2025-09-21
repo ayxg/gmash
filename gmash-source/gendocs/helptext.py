@@ -16,11 +16,11 @@ Copyright(c) 2025 Anton Yashchenko
 """
 
 import sys
-from helptext_common import  print_error, print_action
+from helptext_common import  print_error
 from helptext_ast import Tk, Ast, print_ascii_tree, print_ascii_tree_simple
 from helptext_parser import parse
-from helptext_tests import run_unit_tests, CMNH_TEST_MAP
 from helptext_md import generate_md
+from helptext_tests import run_unit_tests, CMNH_TEST_MAP
 
 _TITLE = "\033[1mhelptext\033[0m"
 _VERSION = "v0.0.0"
@@ -32,6 +32,7 @@ _BASE_HELP_TEXT = """Usage:
 
 Generate formatted markdown documentation from command line help text.
 Pass help text to parse. If not provided, will check stdin for piped input.
+Prints generated markdown to stdout or to the provided output file.
 See "Command Line Help Notation" grammar for details on accepted help text formats.
 
 Parameters:
@@ -169,16 +170,17 @@ class HelpText():
         if parse_res.is_error():
             print_error(parse_res.get_error(),1)
             sys.exit(1)
-        # Print ast if requested.
+
+        # Print ast and exit if requested.
         if _print_ast_raw:
-            print_action("Displaying raw AST.")
             print(parse_res.get_ast())
+            sys.exit(0)
         if _print_ast_tree:
-            print_action("Displaying ascii AST.")
             print_ascii_tree_simple(parse_res.get_ast())
+            sys.exit(0)
         if _print_ast_fancy:
-            print_action("Displaying fancy AST.")
             print_ascii_tree(parse_res.get_ast())
+            sys.exit(0)
 
         gen_res = generate_md(parse_res.get_ast())
         if gen_res.is_error():
