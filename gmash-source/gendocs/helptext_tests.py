@@ -750,94 +750,94 @@ Details:
     The world needs a friend, so im saying hello to it.
         """,
         expected_md=
-"""### Usage
+"""# hello-world
+
+### Usage
 `hello-world`
 
 ### Brief
 Says hello to the world.
 
 ### Parameters:
-    **-l** **--loud**
-        Be very loud and scream instead.
+`-l`  `--loud` \\
+&nbsp;&nbsp;&nbsp;&nbsp;Be very loud and scream instead.
 
 ### Details:
-    The world needs a friend, so im saying hello to it.
+The world needs a friend, so im saying hello to it.
+
 """
     )
 
 def ut_generator_self():
     test_generator("ut_generator_self",
-        input_string=
-"""helptext
-v0.0.0
-AGPL-3.0-or-later
-Copyright(c) 2025 Anton Yashchenko
+        input_string="""Usage:
+    helptext <helpTextToParse> [-o <outputFile>]
 
-Usage:
-    py helptext.py <helpTextToParse> [-o <outputFile>]
-
-    <pipedInput> | py helptext.py [-o <outputFile>]
+    <pipedInput> | helptext [-o <outputFile>]
 
 Generate formatted markdown documentation from command line help text.
+Pass help text to parse. If not provided, will check stdin for piped input.
 See "Command Line Help Notation" grammar for details on accepted help text formats.
 
 Parameters:
-    <helpTextToParse>           Help text to parse. If not provided, will check stdin for piped input.
     -o, --output <outputFile>   Target markdown output file. If not provided, output is piped to stdout.
 
 Options:
-    -h, --help                  Display this help message.
-    -v, --version               Display version string.
+    -s, --skip <lineCount>
+        Skip the first <lineCount> lines of the provided help text.
+        Useful for skipping license headers or other non-help text.
     -r, --raw                   Print parsed nodes as a raw Python class (`__repr__`).
     -a, --ascii                 Print parsed nodes as a simple ASCII tree.
     -f, --fancy                 Print parsed nodes as a decorated ASCII tree.
 
+Display:
+    -h, --help                  Display this help message.
+    -v, --version               Display version string.
+
 Developer Arguments:
-    -t, --test [testNameOrPattern]
+    -t, --test [testNamesOrPatterns]
         Run all unit tests.
         If any test names/pattern are provided, run only matching tests.
+""",
+        expected_md="""# helptext
 
+### Usage
+`helptext <helpTextToParse> [-o <outputFile>]`
 
-        """,
-        expected_md="""### Usage
-`py helptext.py <helpTextToParse> [-o <outputFile>]
-
-<pipedInput> | py helptext.py [-o <outputFile>]`
-
-### Brief
-helptext
-v0.0.0
-AGPL-3.0-or-later
-Copyright(c) 2025 Anton Yashchenko
+`<pipedInput> | helptext [-o <outputFile>]`
 
 ### Brief
 Generate formatted markdown documentation from command line help text.
+Pass help text to parse. If not provided, will check stdin for piped input.
 See "Command Line Help Notation" grammar for details on accepted help text formats.
 
 ### Parameters:
-    <helpTextToParse>           Help text to parse. If not provided, will check stdin for piped input.
-    -o, --output <outputFile>   Target markdown output file. If not provided, output is piped to stdout.
+`-o`  `--output  <outputFile>` \\
+&nbsp;&nbsp;&nbsp;&nbsp;Target markdown output file. If not provided, output is piped to stdout.
 
 ### Options:
-    **-h** **--help**
-        Display this help message.
+`-s`  `--skip  <lineCount>` \\
+&nbsp;&nbsp;&nbsp;&nbsp;Skip the first <lineCount> lines of the provided help text.
 
-    **-v** **--version**
-        Display version string.
+`-r`  `--raw` \\
+&nbsp;&nbsp;&nbsp;&nbsp;Print parsed nodes as a raw Python class (`__repr__`).
 
-    **-r** **--raw**
-        Print parsed nodes as a raw Python class (`__repr__`).
+`-a`  `--ascii` \\
+&nbsp;&nbsp;&nbsp;&nbsp;Print parsed nodes as a simple ASCII tree.
 
-    **-a** **--ascii**
-        Print parsed nodes as a simple ASCII tree.
+`-f`  `--fancy` \\
+&nbsp;&nbsp;&nbsp;&nbsp;Print parsed nodes as a decorated ASCII tree.
 
-    **-f** **--fancy**
-        Print parsed nodes as a decorated ASCII tree.
+### Display:
+`-h`  `--help` \\
+&nbsp;&nbsp;&nbsp;&nbsp;Display this help message.
+
+`-v`  `--version` \\
+&nbsp;&nbsp;&nbsp;&nbsp;Display version string.
 
 ### Developer Arguments:
-    **-t** **--test** **[testNameOrPattern]**
-        Run all unit tests.
-        If any test names/pattern are provided, run only matching tests.
+`-t`  `--test  [testNamesOrPatterns]` \\
+&nbsp;&nbsp;&nbsp;&nbsp;Run all unit tests.
 
 """
         )

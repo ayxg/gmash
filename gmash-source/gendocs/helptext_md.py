@@ -128,7 +128,7 @@ def generate_md(ast : Ast) -> GeneratorResult:
                             break
                     else:
                         title += ch
-                outp.append(f"# {title}\n")
+                outp.append(f"# {title.strip()}\n")
             outp.append("### Usage")
             # If there are multiple usage lines, put each on its own line surrounded by backticks.
             for ln in br.value.split("\n"):

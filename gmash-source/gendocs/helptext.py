@@ -25,8 +25,7 @@ from helptext_md import generate_md
 _TITLE = "\033[1mhelptext\033[0m"
 _VERSION = "v0.0.0"
 _LICENSE = "AGPL-3.0-or-later\nCopyright(c) 2025 Anton Yashchenko"
-_HELP_TEXT = _TITLE + "\n" + _VERSION + "\n" + _LICENSE + "\n\n" \
-    + """Usage:
+_BASE_HELP_TEXT = """Usage:
     helptext <helpTextToParse> [-o <outputFile>]
 
     <pipedInput> | helptext [-o <outputFile>]
@@ -55,6 +54,7 @@ Developer Arguments:
         Run all unit tests.
         If any test names/pattern are provided, run only matching tests.
 """
+_HELP_TEXT = _TITLE + "\n" + _VERSION + "\n" + _LICENSE + "\n\n" + _BASE_HELP_TEXT
 
 class HelpText():
     """ Command line help text to markdown documentation converter.
