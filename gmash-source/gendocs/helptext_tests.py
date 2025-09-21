@@ -15,7 +15,7 @@ Copyright(c) 2025 Anton Yashchenko
 
 from helptext_common import print_error,print_action
 from helptext_ast import Ast,Tk
-from helptext_parser import Parser,split_lines
+from helptext_parser import split_lines, parse
 from helptext_parser import                                     \
     parse_long_flag,parse_short_flag,parse_argument,            \
     parse_optional_arg,parse_required_arg,parse_argument_list,  \
@@ -117,8 +117,7 @@ def compare_asts(input_ast, expected_ast):
 
 def test_parser(test_name, parser_input, expected_output):
     """ Run a parser test and compare the output AST to the expected AST."""
-    prs = Parser()
-    ast = prs.parse(parser_input)
+    ast = parse(parser_input)
     if ast.is_error():
         print_error(f"[FAIL] {test_name}:\n\t{ast.get_error()}",1)
     else:
@@ -145,7 +144,7 @@ def test_parser_function(funct,test_name,parser_input,expected_output):
 
 def test_generator(test_name, input_string, expected_md):
     """ Run a generator test and compare the output markdown to the expected markdown."""
-    prs = Parser().parse(input_string)
+    prs = parse(input_string)
     if prs.is_error():
         print_error(f"[FAIL] {test_name}:\n\t{prs.get_error()}",1)
         return

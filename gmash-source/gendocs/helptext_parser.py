@@ -272,9 +272,8 @@ def parse_argument(inp : List[str], line: int, pos: int) -> ParseResult:
         `<argument> ::= (( <short_flag> ) " ")? (( <long_flag> ) " " ) +
         ( <optional_arg> |  <required_arg> )? <indented_line> ": " <text_line>`
     """
-    if line >= len(inp):
+    if not in_range(line,inp):
         return ParseResult(("Expected argument but reached end of input.",line,pos,inp))
-    inp[line] = inp[line]            # Current line string
     node = Ast(Tk.ARGUMENT) # Argument root node
     has_short_flag = False          # Whether a short flag was parsed
     has_long_flag = False           # Whether a long flag was parsed
@@ -381,17 +380,17 @@ def parse_argument_list(inp : List[str], line: int, pos: int) -> ParseResult:
         `<argument_list> ::= ( <argument> "\\n" )+`
     """
     node = Ast(Tk.ARGUMENT_LIST)
-    while line < len(inp) and line_startswith(inp[line],'-'):
+    while in_range(line,inp) and line_startswith(inp[line],'-'):
         arg_result = parse_argument(inp,line,pos)
         if arg_result.is_error():
             return arg_result
         node.append(arg_result.get_ast())
         line = arg_result.get_line()
         pos = 0 # Reset the column position for the newline. Assuming each argument starts on a new line.
-        #line += 1 # Go to the next line.
         # Skip any empty lines between arguments.
         while line < len(inp) and inp[line].strip() == "":
             line += 1
+
     # Programmer error, you should detect an argument dash before calling this function.
     if len(node.branches) == 0:
         return ParseResult(("Attempting to parse non-existing argument list.",line,pos,inp))
