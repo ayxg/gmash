@@ -681,6 +681,60 @@ def ut_parser_usage_with_multiline():
         ])
     )
 
+def ut_parser_gmash_dirs_same():
+    """Gmash dirs same as in README"""
+    test_parser("ut_parser_gmash_dirs_same",
+        parser_input="""Usage: gmash dirs same -p <srcPath> -P <tgtPath>
+
+Get a diff of 2 directories.
+
+Parameters:
+  -p,     --path <srcPath>              Source path.
+  -P,     --tgt-path <tgtPath>          Target path.
+
+Display:
+  -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
+  -v,     --version                     [v0-0-0] Display command group version.
+
+        """,
+        expected_output=Ast(Tk.SYNTAX,None,branches = [
+            Ast(Tk.USAGE,"gmash dirs same -p <srcPath> -P <tgtPath>"),
+            Ast(Tk.PARAGRAPH,None,branches = [
+                Ast(Tk.TEXT_LINE,"Get a diff of 2 directories.")
+            ]),
+            Ast(Tk.SECTION,"Parameters:",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'p')]),
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'path')]),
+                        Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'srcPath')]),
+                        Ast(Tk.TEXT_LINE,"Source path.")
+                    ]),
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'P')]),
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'tgt-path')]),
+                        Ast(Tk.REQUIRED_ARG,None,branches = [Ast(Tk.SHELL_IDENT,'tgtPath')]),
+                        Ast(Tk.TEXT_LINE,"Target path.")
+                    ])
+                ])
+            ]),
+            Ast(Tk.SECTION,"Display:",branches = [
+                Ast(Tk.ARGUMENT_LIST,None,branches = [
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'h')]),
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'help')]),
+                        Ast(Tk.TEXT_LINE,"Display gmash, command or subcommand help. Use -h or --help.")
+                    ]),
+                    Ast(Tk.ARGUMENT,None,branches = [
+                        Ast(Tk.SHORT_FLAG,None,branches = [Ast(Tk.SHORT_FLAG_IDENT,'v')]),
+                        Ast(Tk.LONG_FLAG,None,branches = [Ast(Tk.LONG_FLAG_IDENT,'version')]),
+                        Ast(Tk.TEXT_LINE,"[v0-0-0] Display command group version.")
+                    ])
+                ])
+            ])
+        ])
+    )
+
 def ut_generator_basic():
     """ Hello world generator test """
     test_generator("ut_generator_hello_world",
@@ -788,6 +842,32 @@ See "Command Line Help Notation" grammar for details on accepted help text forma
 """
         )
 
+def ut_generator_gmash_dirs_same():
+    test_generator("ut_generator_gmash_dirs_same",
+        input_string="""
+""", expected_md="""### Usage
+`gmash dirs same -p <srcPath> -P <tgtPath>`
+
+### Brief
+Get a diff of 2 directories.
+
+### Parameters:
+    **-p** **--path** **<srcPath>**
+        Source path.
+
+    **-P** **--tgt-path** **<tgtPath>**
+        Target path.
+
+### Display:
+    **-h** **--help**
+        Display gmash, command or subcommand help. Use -h or --help.
+
+    **-v** **--version** **[v0-0-0]**
+        Display command group version.
+
+""")
+
+
 def run_unit_tests():
     """ Run all unit tests. """
     print_action("Running unit tests...")
@@ -871,9 +951,11 @@ CMNH_TEST_MAP : dict = {
     ,"ut_parser_simple" : ut_parser_simple
     ,"ut_parser_full": ut_parser_full
     ,"ut_parser_usage_with_multiline": ut_parser_usage_with_multiline
+    ,"ut_parser_gmash_dirs_same": ut_parser_gmash_dirs_same
 
     # Generator tests
     ,"ut_generator_basic": ut_generator_basic
     , "ut_generator_self" : ut_generator_self
+    , "ut_generator_gmash_dirs_same" : ut_generator_gmash_dirs_same
 
 }

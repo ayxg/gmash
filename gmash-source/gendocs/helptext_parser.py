@@ -49,6 +49,9 @@ def is_usage_keyword(s: str) -> bool:
 
 def is_indented_line(s: str, indent_level: int = 1) -> bool:
     """ Check if a line starts with the specified indent level (4 spaces or a tab). """
+    if not s.strip():
+        return False
+
     if indent_level < 1:
         # make sure the line has no leading spaces or tabs
         if s.startswith(' ') or s.startswith('\t'):
@@ -534,7 +537,8 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
         if not is_usage:
             section_begin = inp[line + 1] if line + 1 < len(inp) else ""
             if is_indented_line(section_begin,1):
-                is_section = True
+                if section_begin.strip() != "": # next line is empty, paragraph
+                    is_section = True
 
         if is_section:
             section_result = parse_section(inp,line,pos)
@@ -556,27 +560,12 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
                 line += 1
     return ParseResult((output,line,pos))
 
-def parse(inp: str) -> ParseResult:
-    """ Parse the input string and return the AST. """
-    inp_lines = split_lines(inp)
-    return parse_help_text(inp_lines,0,0)
 
 ###############################################################################
 # Parser
 # Models an LL Recursive parser directly from the raw input string, no tokenizer.
 ###############################################################################
-
-class Parser:
-    """ Command line help text intermediate representation"""
-
-    def __init__(self) -> None:
-        self.ir : Ast = Ast(Tk.NOTHING)
-
-    def parse(self, inp: str) -> ParseResult:
-        """ Parse the input string and return the AST. """
-        inp_lines = split_lines(inp)
-        result = parse_help_text(inp_lines,0,0)
-        if result.is_error():
-            return result
-        self.ir = result.get_ast()
-        return result
+def parse(inp: str) -> ParseResult:
+    """ Parse the input string and return the AST. """
+    inp_lines = split_lines(inp)
+    return parse_help_text(inp_lines,0,0)

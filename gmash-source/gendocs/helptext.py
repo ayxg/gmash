@@ -18,7 +18,7 @@ Copyright(c) 2025 Anton Yashchenko
 import sys
 from helptext_common import  print_error, print_action
 from helptext_ast import Tk, Ast, print_ascii_tree, print_ascii_tree_simple
-from helptext_parser import Parser
+from helptext_parser import parse
 from helptext_tests import run_unit_tests, CMNH_TEST_MAP
 from helptext_md import generate_md
 
@@ -125,8 +125,7 @@ class HelpText():
             sys.exit(0)
 
         # Parse
-        parser = Parser()
-        parse_res = parser.parse(help_text)
+        parse_res = parse(help_text)
         if parse_res.is_error():
             print_error(parse_res.get_error(),1)
             sys.exit(1)
@@ -157,7 +156,7 @@ class HelpText():
         Returns:
             node(Ast): Produced ast. On error, returns a `Tk.POSION` `Ast` w/error as value.
         """
-        parse_res = Parser().parse(text)
+        parse_res = parse(text)
         if parse_res.is_error():
             return Ast(Tk.POSION, parse_res.error)
         return parse_res.get_ast()

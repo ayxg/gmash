@@ -319,7 +319,7 @@ cat<<'GETOPTIONSHERE'
 Usage: gmash dirs same -p <srcPath> -P <tgtPath>
   
 Brief:
-Get a diff of 2 directories.
+  Get a diff of 2 directories.
   
 Parameters:
   -p,     --path <srcPath>              Source path.
@@ -435,7 +435,7 @@ cat<<'GETOPTIONSHERE'
 Usage: gmash dirs separate [path]
   
 Brief:
-Separate each top-level file into its own folder of the same name.
+  Separate each top-level file into its own folder of the same name.
   
 Parameters:
   -p,     --path [path]                 Path to separate files from. Defaults to current.

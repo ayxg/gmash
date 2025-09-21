@@ -75,10 +75,10 @@ class Ast:
                 #self.end_col == other.end_col and
                 self.branches == other.branches)
 
-# TODO: (pylint disable doesnt seem to work...?)
+
 # pylint: disable=W0613
 def print_ascii_tree(astnode: Ast, prefix: str = "", is_last: bool = True) -> None:
-    # pylint: enable=W0613
+# pylint: enable=W0613
     """Print the AST as a compact ASCII tree with boxes and connection lines"""
     content = astnode.tk.name + " : " + astnode.value if astnode.value is not None else astnode.tk.name
     lines = content.split('\n')
