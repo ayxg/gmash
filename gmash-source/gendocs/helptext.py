@@ -32,18 +32,23 @@ _HELP_TEXT = _TITLE + "\n" + _VERSION + "\n" + _LICENSE + "\n\n" \
     <pipedInput> | py helptext.py [-o <outputFile>]
 
 Generate formatted markdown documentation from command line help text.
+Pass help text to parse. If not provided, will check stdin for piped input.
 See "Command Line Help Notation" grammar for details on accepted help text formats.
 
 Parameters:
-    <helpTextToParse>           Help text to parse. If not provided, will check stdin for piped input.
     -o, --output <outputFile>   Target markdown output file. If not provided, output is piped to stdout.
 
 Options:
-    -h, --help                  Display this help message.
-    -v, --version               Display version string.
+    -s, --skip <lineCount>
+        Skip the first <lineCount> lines of the provided help text.
+        Useful for skipping license headers or other non-help text.
     -r, --raw                   Print parsed nodes as a raw Python class (`__repr__`).
     -a, --ascii                 Print parsed nodes as a simple ASCII tree.
     -f, --fancy                 Print parsed nodes as a decorated ASCII tree.
+
+Display:
+    -h, --help                  Display this help message.
+    -v, --version               Display version string.
 
 Developer Arguments:
     -t, --test [testNamesOrPatterns]
@@ -108,6 +113,33 @@ class HelpText():
         if any(arg == '-f' or arg == '--fancy' for arg in sys.argv):
             _print_ast_fancy = True
 
+        # Skip first N lines of help text
+        lines_to_skip = 0
+        is_skipping = False
+        skip_index = -1
+        if '--skip' in sys.argv:
+            skip_index = sys.argv.index('--skip')
+            is_skipping = True
+        else:
+            skip_index = sys.argv.index('-s')
+            is_skipping = True
+        if is_skipping:
+            if skip_index + 1 < len(sys.argv):
+                try:
+                    skip_count = int(sys.argv[skip_index + 1])
+                    if skip_count < 0:
+                        raise ValueError()
+                except ValueError:
+                    print_error("Invalid skip line count provided.",1)
+                    sys.exit(1)
+                # Remove the -s and the count from args
+                sys.argv.pop(skip_index)  # -s | --skip
+                sys.argv.pop(skip_index)  # count
+                lines_to_skip = skip_count
+            else:
+                print_error("No skip line count provided.",1)
+                sys.exit(1)
+
         # Pop the script name & remove flags
         sys.argv.pop(0)
         sys.argv = [arg for arg in sys.argv if not arg.startswith('-')]
@@ -123,6 +155,14 @@ class HelpText():
             help_text = sys.argv[0]
         if help_text.strip() == "":
             sys.exit(0)
+
+        # Skip first N lines if requested
+        if lines_to_skip > 0:
+            help_text_lines = help_text.splitlines()
+            if lines_to_skip >= len(help_text_lines):
+                print_error("Skip line count exceeds total help text line count.",1)
+                sys.exit(1)
+            help_text = "\n".join(help_text_lines[lines_to_skip:])
 
         # Parse
         parse_res = parse(help_text)
