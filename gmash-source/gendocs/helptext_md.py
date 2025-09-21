@@ -162,7 +162,7 @@ def generate_md(ast : Ast) -> GeneratorResult:
                 for sec_br in section.branches:
                     if sec_br.tk == Tk.PARAGRAPH:
                         for ln in sec_br.branches:
-                            outp.append("    " + ln.value.strip())
+                            outp.append(ln.value.strip())
                 outp.append("")
             # -> Section -> Argument_List
             elif section.branches[0].tk == Tk.ARGUMENT_LIST:
