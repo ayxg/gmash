@@ -84,7 +84,6 @@ gmash_dirs_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash [[global-args]...] dirs <sub-command> [[args]...]
   
-Brief:
 High level path/file manipulation and analysis.
   
 Sub-commands:
@@ -202,7 +201,6 @@ gmash_dirs_prefix_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]
   
-Brief:
 Add a prefix to each top-level file in a directory.
   
 Parameters:
@@ -318,8 +316,7 @@ gmash_dirs_same_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash dirs same -p <srcPath> -P <tgtPath>
   
-Brief:
-  Get a diff of 2 directories.
+Get a diff of 2 directories.
   
 Parameters:
   -p,     --path <srcPath>              Source path.
@@ -434,15 +431,13 @@ gmash_dirs_separate_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash dirs separate [path]
   
-Brief:
-  Separate each top-level file into its own folder of the same name.
+Separate each top-level file into its own folder of the same name.
   
 Parameters:
   -p,     --path [path]                 Path to separate files from. Defaults to current.
   
 Options:
-  -n,     --no-extension GMASH_DIRS_SEPARATE_NOEXTENSION 
-                                        Separate files with the same base name, ignoring extensions.
+  -n,     --no-extension                Separate files with the same base name, ignoring extensions.
   
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
@@ -553,7 +548,6 @@ gmash_dirs_squash_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash dirs squash [path]
   
-Brief:
 Squash empty directories in the specified path.
   
 Parameters:

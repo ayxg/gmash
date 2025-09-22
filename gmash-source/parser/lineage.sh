@@ -194,8 +194,9 @@ gmash_parser_lineage_merge() {
 gmash_lineage_merge_help() {
 cat<<'GETOPTIONSHERE'
 gmash lineage merge -r [repo] -b [branch]
-Description:
+  
 Merge git commits from multiple git repos in a straight lineage.
+  
 Parameters:
   -r,     --repo <repo>                 Target repository.
   -b,     --branch <branch>             Target branch.

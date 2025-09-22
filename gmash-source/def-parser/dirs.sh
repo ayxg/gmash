@@ -18,7 +18,6 @@ gmash_def_parser_dirs(){
   standard_parser_setup GMASH_DIRS_ARGR gmash_dirs_help \
     "Usage: gmash [[global-args]...] dirs <sub-command> [[args]...]"
   msg -- "  "
-  msg -- "Brief:"
   msg -- "High level path/file manipulation and analysis."
   msg -- "  "
   msg -- "Sub-commands:"
@@ -38,7 +37,6 @@ gmash_def_parser_dirs_prefix(){
   standard_parser_setup GMASH_DIRS_PREFIX_ARGR gmash_dirs_prefix_help \
     "Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]"
   msg -- "  "
-  msg -- "Brief:"
   msg -- "Add a prefix to each top-level file in a directory."
   msg -- "  "
   msg -- "Parameters:"
@@ -57,8 +55,7 @@ gmash_def_parser_dirs_same(){
   standard_parser_setup GMASH_DIRS_SAME_ARGR gmash_dirs_same_help \
     "Usage: gmash dirs same -p <srcPath> -P <tgtPath>"
   msg -- "  "
-  msg -- "Brief:"
-  msg -- "  Get a diff of 2 directories."
+  msg -- "Get a diff of 2 directories."
   msg -- "  "
   msg -- "Parameters:"
     param GMASH_DIRS_SAME_PATH -p --path var:"<srcPath>" -- "Source path."
@@ -75,14 +72,13 @@ gmash_def_parser_dirs_separate(){
   standard_parser_setup GMASH_DIRS_SEPARATE_ARGR gmash_dirs_separate_help \
     "Usage: gmash dirs separate [path]"
   msg -- "  "
-  msg -- "Brief:"
-  msg -- "  Separate each top-level file into its own folder of the same name."
+  msg -- "Separate each top-level file into its own folder of the same name."
   msg -- "  "
   msg -- "Parameters:"
     param GMASH_DIRS_SEPARATE_PATH -p --path var:"[path]" -- "Path to separate files from. Defaults to current."
   msg -- "  "
   msg -- "Options:"
-    param GMASH_DIRS_SEPARATE_NOEXTENSION -n --no-extension \
+    param GMASH_DIRS_SEPARATE_NOEXTENSION -n --no-extension var:""\
       -- "Separate files with the same base name, ignoring extensions."
   msg -- "  "
   msg -- "Display:"
@@ -96,7 +92,6 @@ gmash_def_parser_dirs_squash(){
   standard_parser_setup GMASH_DIRS_SQUASH_ARGR gmash_dirs_squash_help \
     "Usage: gmash dirs squash [path]"
   msg -- "  "
-  msg -- "Brief:"
   msg -- "Squash empty directories in the specified path."
   msg -- "  "
   msg -- "Parameters:"

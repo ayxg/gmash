@@ -392,8 +392,9 @@ gmash_parser_subtree_patch() {
 gmash_subtree_patch_help() {
 cat<<'GETOPTIONSHERE'
 gmash subtree patch -r [repo] -b [branch]
-Description:
+  
 Patch subtree changes to monorepo.
+  
 Parameters:
   -R,     --remote [remote = "origin"]  
   -b,     --branch [branch = "main"]    

@@ -114,6 +114,33 @@ class HelpText():
         if any(arg == '-f' or arg == '--fancy' for arg in sys.argv):
             _print_ast_fancy = True
 
+
+        # Check for "-o | --output" argument for target output file.
+        output_file = None
+        output_index = -1
+        if '--output' in sys.argv:
+            output_index = sys.argv.index('--output')
+        elif '-o' in sys.argv:
+            output_index = sys.argv.index('-o')
+        if output_index != -1:
+            if output_index + 1 < len(sys.argv):
+                output_file = sys.argv[output_index + 1]
+                # assrt file is valid
+                try:
+                    with open(output_file, 'w',encoding = 'utf-8') as f:
+                        pass
+                except Exception as e:
+                    print_error(f"Cannot open output file '{output_file}' for writing: {e}",1)
+                    sys.exit(1)
+
+                # Remove the -o/--output and the file from args
+                sys.argv.pop(output_index)  # -o | --output
+                sys.argv.pop(output_index)  # file
+            else:
+                print_error("No output file provided.",1)
+                sys.exit(1)
+
+
         # Skip first N lines of help text
         lines_to_skip = 0
         is_skipping = False
@@ -187,7 +214,15 @@ class HelpText():
             print_error(gen_res.get_error(),1)
             sys.exit(1)
         else:
-            print(gen_res.get_md())
+            if output_file is not None:
+                try:
+                    with open(output_file, 'w',encoding = 'utf-8') as f:
+                        f.write(gen_res.get_md())
+                except Exception as e:
+                    print_error(f"Cannot write to output file '{output_file}': {e}",1)
+                    sys.exit(1)
+            else:
+                print(gen_res.get_md())
 
     def parse(self, text: str) -> Ast:
         """Parse a help text into an intermediate abstract syntax tree.
