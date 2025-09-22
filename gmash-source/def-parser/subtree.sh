@@ -63,8 +63,9 @@ gmash_def_parser_subtree_patch(){
   extend_parser
   standard_parser_setup GMASH_SUBTREE_PATCH_ARGR gmash_subtree_patch_help \
     "gmash subtree patch -r [repo] -b [branch]"
-  msg -- "Description:"
+  msg -- "  "
   msg -- "Patch subtree changes to monorepo."
+  msg -- "  "
   msg -- "Parameters:"
     param GMASH_SUBTREE_PATCH_REMOTE -R --remote var:"[remote = \"origin\"]" \
       -- ""

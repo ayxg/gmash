@@ -194,8 +194,9 @@ gmash_parser_mono_patch() {
 gmash_mono_patch_help() {
 cat<<'GETOPTIONSHERE'
 gmash mono patch -r [repo] -b [branch]
-Description:
+  
 Patch a git repository with changes from another branch.
+  
 Parameters:
   -r,     --repo <repo>                 Target repository.
   -b,     --branch <branch>             Target branch.

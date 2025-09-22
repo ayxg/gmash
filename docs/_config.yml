@@ -1,0 +1,17 @@
+title: GMash Documentation
+remote_theme: just-the-docs/just-the-docs
+
+# Configure search
+search_enabled: true
+
+# Configure navigation
+nav_order: 1
+nav:
+  - Home: index.html
+  - Commands:
+      - Dirs: cli/cmd-dirs.html
+      - Find: cli/cmd-find.html
+      - Gist: cli/cmd-gist.html
+      - Lineage: cli/cmd-lineage.html
+      - Mono: cli/cmd-mono.html
+      - Subtree: cli/cmd-subtree.html

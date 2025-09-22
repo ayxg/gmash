@@ -35,10 +35,17 @@ gmash_dev_debug_echo(){
 # Global vars shared across parser-def && main script.
 source "$(dirname "$(readlink -f "$0")")/gmash-source/global.sh"
 
-# ! Early exit.
+# !!! Early exit.
 # Special case for --compile-parser developer arg.
 if [ "$#" -ge 1 ] && [ "$1" == "--compile-parser" ]; then
   eval "$GMASH_SOURCE/gmash-compile.sh"
+  exit 0
+fi
+
+# !!! Early exit.
+# Special case for --compile-docs developer arg.
+if [ "$#" -ge 1 ] && [ "$1" == "--compile-docs" ]; then
+  eval "$GMASH_SOURCE/gmash-docs.sh"
   exit 0
 fi
 
@@ -62,12 +69,14 @@ fi
     source "$GMASH_SOURCE/parser/dirs.sh"
     source "$GMASH_SOURCE/parser/find.sh"
     source "$GMASH_SOURCE/parser/gist.sh"
+    source "$GMASH_SOURCE/parser/lineage.sh"
     source "$GMASH_SOURCE/parser/mono.sh"
     source "$GMASH_SOURCE/parser/subtree.sh"
   # gmash commands impl.
     source "$GMASH_SOURCE/command/dirs.sh"
     source "$GMASH_SOURCE/command/find.sh"
     source "$GMASH_SOURCE/command/gist.sh"
+    source "$GMASH_SOURCE/command/lineage.sh"
     source "$GMASH_SOURCE/command/mono.sh"
     source "$GMASH_SOURCE/command/subtree.sh"
 

@@ -30,8 +30,9 @@ gmash_def_parser_mono_patch(){
   extend_parser
   standard_parser_setup GMASH_MONO_PATCH_ARGR gmash_mono_patch_help \
     "gmash mono patch -r [repo] -b [branch]"
-  msg -- "Description:"
+  msg -- "  "
   msg -- "Patch a git repository with changes from another branch."
+  msg -- "  "
   msg -- "Parameters:"
     param GMASH_MONO_PATCH_REPO -r --repo var:"<repo>" \
       -- "Target repository."

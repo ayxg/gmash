@@ -97,8 +97,7 @@ gmash_gist_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash [[global-args]...] gist <sub-command> [[args]...]
   
-Brief:
-    Manage GitHub Gists with git-like functionality.
+Manage GitHub Gists with git-like functionality.
       Use 'upload' to create gists from local files and clone them back as git   repos.
       Use 'recover' to create mono-subtree repo from a set of selected gists.
       Use 'gmash mono' and 'gmash subtree' command groups for management of the  gist mono-repo.
@@ -253,8 +252,7 @@ gmash_gist_clone_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash gist clone [[args]...]
   
-Brief:
-    Clones a gist to the local filesystem as a git repository.
+Clones a gist to the local filesystem as a git repository.
   
 Params:
   -u,     --user <githubUser>           Target Gist GitHub username (owner).
@@ -276,6 +274,181 @@ export GMASH_GIST_CREATE_TITLE=''
 export GMASH_GIST_CREATE_NAME=''
 export GMASH_GIST_CREATE_README=''
 export GMASH_GIST_CREATE_DESC=''
+export GMASH_GIST_CREATE_NOREADME='0'
+export GMASH_GIST_CREATE_NOTITLE='0'
+export GMASH_GIST_CREATE_PUBLIC='0'
+GMASH_GIST_CREATE_ARGR=''
+gmash_parser_gist_create() {
+	OPTIND=$(($#+1))
+	while OPTARG= && [ "${GMASH_GIST_CREATE_ARGR}" != x ] && [ $# -gt 0 ]; do
+		set -- "${1%%\=*}" "${1#*\=}" "$@"
+		while [ ${#1} -gt 2 ]; do
+			case $1 in (*[!a-zA-Z0-9_-]*) break; esac
+			case '--file' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --file"
+			esac
+			case '--title' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --title"
+			esac
+			case '--name' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --name"
+			esac
+			case '--readme' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --readme"
+			esac
+			case '--desc' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --desc"
+			esac
+			case '--no-readme' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --no-readme"
+			esac
+			case '--no-title' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --no-title"
+			esac
+			case '--public' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --public"
+			esac
+			case '--help' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --help"
+			esac
+			case '--version' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --version"
+			esac
+			break
+		done
+		case ${OPTARG# } in
+			*\ *)
+				eval "set -- $OPTARG $1 $OPTARG"
+				OPTIND=$((($#+1)/2)) OPTARG=$1; shift
+				while [ $# -gt "$OPTIND" ]; do OPTARG="$OPTARG, $1"; shift; done
+				set "Ambiguous option: $1 (could be $OPTARG)" ambiguous "$@"
+				parser_error "$@" >&2 || exit $?
+				echo "$1" >&2
+				exit 1 ;;
+			?*)
+				[ "$2" = "$3" ] || OPTARG="$OPTARG=$2"
+				shift 3; eval 'set -- "${OPTARG# }"' ${1+'"$@"'}; OPTARG= ;;
+			*) shift 2
+		esac
+		case $1 in
+			--?*=*) OPTARG=$1; shift
+				eval 'set -- "${OPTARG%%\=*}" "${OPTARG#*\=}"' ${1+'"$@"'}
+				;;
+			--no-*|--without-*) unset OPTARG ;;
+			-[ftnrd]?*) OPTARG=$1; shift
+				eval 'set -- "${OPTARG%"${OPTARG#??}"}" "${OPTARG#??}"' ${1+'"$@"'}
+				;;
+			-[phv]?*) OPTARG=$1; shift
+				eval 'set -- "${OPTARG%"${OPTARG#??}"}" -"${OPTARG#??}"' ${1+'"$@"'}
+				case $2 in --*) set -- "$1" unknown "$2" && GMASH_GIST_CREATE_ARGR=x; esac;OPTARG= ;;
+			+*) unset OPTARG ;;
+		esac
+		case $1 in
+			'-f'|'--file')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				append_array GMASH_GIST_CREATE_FILE
+				shift ;;
+			'-t'|'--title')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_GIST_CREATE_TITLE="$OPTARG"
+				shift ;;
+			'-n'|'--name')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_GIST_CREATE_NAME="$OPTARG"
+				shift ;;
+			'-r'|'--readme')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_GIST_CREATE_README="$OPTARG"
+				shift ;;
+			'-d'|'--desc')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_GIST_CREATE_DESC="$OPTARG"
+				shift ;;
+			'--no-readme')
+				[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break
+				eval '[ ${OPTARG+x} ] &&:' && OPTARG='1' || OPTARG='1'
+				export GMASH_GIST_CREATE_NOREADME="$OPTARG"
+				;;
+			'--no-title')
+				[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break
+				eval '[ ${OPTARG+x} ] &&:' && OPTARG='1' || OPTARG='1'
+				export GMASH_GIST_CREATE_NOTITLE="$OPTARG"
+				;;
+			'-p'|'--public')
+				[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break
+				eval '[ ${OPTARG+x} ] &&:' && OPTARG='1' || OPTARG='1'
+				export GMASH_GIST_CREATE_PUBLIC="$OPTARG"
+				;;
+			'-h'|'--help')
+				gmash_gist_create_help
+				exit 0 ;;
+			'-v'|'--version')
+				echo "${GMASH_GIST_CREATE_VERSION}"
+				exit 0 ;;
+			--)
+				shift
+				while [ $# -gt 0 ]; do
+					GMASH_GIST_CREATE_ARGR="${GMASH_GIST_CREATE_ARGR} \"\${$(($OPTIND-$#))}\""
+					shift
+				done
+				break ;;
+			[-+]?*) set "unknown" "$1"; break ;;
+			*)
+				GMASH_GIST_CREATE_ARGR="${GMASH_GIST_CREATE_ARGR} \"\${$(($OPTIND-$#))}\""
+		esac
+		shift
+	done
+	[ $# -eq 0 ] && { OPTIND=1; unset OPTARG; return 0; }
+	case $1 in
+		unknown) set "Unrecognized option: $2" "$@" ;;
+		noarg) set "Does not allow an argument: $2" "$@" ;;
+		required) set "Requires an argument: $2" "$@" ;;
+		pattern:*) set "Does not match the pattern (${1#*:}): $2" "$@" ;;
+		notcmd) set "Not a command: $2" "$@" ;;
+		*) set "Validation error ($1): $2" "$@"
+	esac
+	parser_error "$@" >&2 || exit $?
+	echo "$1" >&2
+	exit 1
+}
+gmash_gist_create_help() {
+cat<<'GETOPTIONSHERE'
+gmash gist create [<-f <file>>...] [-t [titleFile] | -n [name]]   [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title]   [-p(--public)]
+  
+Sets up an empty gist with a 'title.md' and 'readme.md' file.
+  
+Params:
+  -f,     --file <filePath>             File(s) to upload to the gist.
+  -t,     --title <titleFile>           File to upload as the 'title.md'. Generates a default if not set.
+  -n,     --name <gistName>             Title for the gist. Will set the name of the title file to   '[title].md'. Otherwise, --title file name.
+  -r,     --readme <readmeFile>         File to upload as the 'README.md'. Generates a default if not set.
+  -d,     --desc <gistDescription>      Description for the new gist.
+  
+Flags:
+          --no-readme                   Don't generate or add a 'readme.md' file.
+          --no-title                    Don't add a 'title.md' file. Implicitly disables 'readme.md' file. Creates an empty gist.
+  -p,     --public                      Create a public gist. Default is secret.
+  
+Display:
+  -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
+  -v,     --version                     [v0-0-0] Display subcommand version.
+GETOPTIONSHERE
+}
 # Generated by getoptions (END)
 # Generated by getoptions (BEGIN)
 # URL: https://github.com/ko1nksm/getoptions (v3.3.2)
@@ -430,7 +603,7 @@ gmash_gist_prepare_help() {
 cat<<'GETOPTIONSHERE'
 gmash gist prepare [-t [titleFile] | -n [name]] [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title] [-p(--public)]
   
-Brief:
+  
 Sets up an empty gist with a 'title.md' and 'readme.md' file.
   
 Params:
@@ -583,7 +756,6 @@ gmash_gist_recover_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash gist recover [[args]...]
   
-Brief:
 Recover a user's gist(s) from GitHub remotes as git repos.
   
 Params:
@@ -833,14 +1005,13 @@ Usage: gmash gist upload  <<-f <fileOrPath>> [-f <fileOrPath>]...>
                           [-l <limit>]
                           
   
-Brief:
 Create gists from given file paths and clone them as a local git
   repository. If '--all' is passed, push all files inside dir paths as
   separate gists to GitHub. Use '--no-extension' to combine files with the
   same base name into one gist. Pass '--as-one' to push each dir's files as
   a single gist. Adds a 'title.md' and 'readme.md' by default.
- 
-Required(at least 1):
+  
+Required:
   -f,     --file <filePath>             File(s) to upload to the gist.
 Optional Params:
   -t,     --title <titleFile>           File to upload as the 'title.md'. Generates a default if not set.

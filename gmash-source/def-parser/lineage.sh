@@ -31,8 +31,9 @@ gmash_def_parser_lineage_merge(){
   extend_parser
   standard_parser_setup GMASH_LINEAGE_MERGE_ARGR gmash_lineage_merge_help \
     "gmash lineage merge -r [repo] -b [branch]"
-  msg -- "Description:"
+  msg -- "  "
   msg -- "Merge git commits from multiple git repos in a straight lineage."
+  msg -- "  "
   msg -- "Parameters:"
     param GMASH_LINEAGE_MERGE_REPO -r --repo var:"<repo>" \
       -- "Target repository."

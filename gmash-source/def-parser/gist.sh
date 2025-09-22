@@ -17,9 +17,8 @@ gmash_def_parser_gist(){
     extend_parser
     standard_parser_setup GMASH_GIST_ARGR gmash_gist_help \
       "Usage: gmash [[global-args]...] gist <sub-command> [[args]...]"
-    msg -- "  "
-    msg -- "Brief:"
-    msg -- "    Manage GitHub Gists with git-like functionality.
+  msg -- "  "
+  msg -- "Manage GitHub Gists with git-like functionality.
       Use 'upload' to create gists from local files and clone them back as git \
   repos.
       Use 'recover' to create mono-subtree repo from a set of selected gists.
@@ -65,8 +64,7 @@ gmash_def_parser_gist_clone(){
     standard_parser_setup GMASH_GIST_CLONE_ARGR gmash_gist_clone_help \
       "Usage: gmash gist clone [[args]...]"
     msg -- "  "
-    msg -- "Brief:"
-    msg -- "    Clones a gist to the local filesystem as a git repository."
+    msg -- "Clones a gist to the local filesystem as a git repository."
     msg -- "  "
     msg -- "Params:"
       param GMASH_GIST_CLONE_USER -u --user var:"<githubUser>" \
@@ -100,8 +98,7 @@ gmash_def_parser_gist_create(){
   [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title] \
   [-p(--public)]"
     msg -- "  "
-    msg -- "Brief:"
-    msg -- "    Sets up an empty gist with a 'title.md' and 'readme.md' file."
+    msg -- "Sets up an empty gist with a 'title.md' and 'readme.md' file."
     msg -- "  "
     msg -- "Params:"
       array GMASH_GIST_CREATE_FILE -f --file init:'GMASH_GIST_CREATE_FILE=()'\
@@ -122,10 +119,10 @@ gmash_def_parser_gist_create(){
 
     msg -- "  "
     msg -- "Flags:"
-      gmash_flag GMASH_GIST_CREATE_NOREADME --no-readme \
+      gmash_flag GMASH_GIST_CREATE_NOREADME " " --no-readme \
         "Don't generate or add a 'readme.md' file."
 
-      gmash_flag GMASH_GIST_CREATE_NOTITLE --no-title \
+      gmash_flag GMASH_GIST_CREATE_NOTITLE " " --no-title \
         "Don't add a 'title.md' file. Implicitly disables 'readme.md' file.\
  Creates an empty gist."
 
@@ -147,7 +144,7 @@ gmash_def_parser_gist_prepare(){
   "gmash gist prepare [-t [titleFile] | -n [name]] [-r [readmeFile]]\
  [-d [description]] [--no-readme] [--no-title] [-p(--public)]"
   msg -- "  "
-  msg -- "Brief:"
+  msg -- "  "
   msg -- "Sets up an empty gist with a 'title.md' and 'readme.md' file."
   msg -- "  "
   msg -- "Params:"
@@ -184,7 +181,6 @@ gmash_def_parser_gist_recover(){
       standard_parser_setup GMASH_GIST_RECOVER_ARGR gmash_gist_recover_help \
         "Usage: gmash gist recover [[args]...]"
       msg -- "  "
-      msg -- "Brief:"
       msg -- "Recover a user's gist(s) from GitHub remotes as git repos."
       msg -- "  "
       msg -- "Params:"
@@ -228,14 +224,13 @@ gmash_def_parser_gist_upload(){
                           [-l <limit>]
                           "
     msg -- "  "
-    msg -- "Brief:"
     msg -- "Create gists from given file paths and clone them as a local git
   repository. If '--all' is passed, push all files inside dir paths as
   separate gists to GitHub. Use '--no-extension' to combine files with the
   same base name into one gist. Pass '--as-one' to push each dir's files as
   a single gist. Adds a 'title.md' and 'readme.md' by default."
-    msg -- " "
-    msg -- "Required(at least 1):"
+    msg -- "  "
+    msg -- "Required:"
       # $1
       array GMASH_GIST_UPLOAD_FILE -f --file init:'GMASH_GIST_UPLOAD_FILE=()'\
   var:"<filePath>" -- "File(s) to upload to the gist."

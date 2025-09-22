@@ -18,7 +18,6 @@ gmash_def_parser_find(){
   standard_parser_setup GMASH_FIND_ARGR gmash_find_help \
     "Usage: gmash [[global-args]...] find <sub-command> [[args]...]"
   msg -- "  "
-  msg -- "Brief:"
   msg -- "High level path/file manipulation and analysis."
   msg -- "  "
   msg -- "Sub-commands:"
@@ -36,13 +35,15 @@ gmash_def_parser_find_duplicate_code(){
   extend_parser
   standard_parser_setup GMASH_FIND_DUPLICATE_CODE_ARGR gmash_find_duplicate_code_help \
     "gmash find duplicate-code -p [path] -t [threshold]"
-  msg -- "Description:"
+  msg -- "  "
   msg -- "Uses 'simian' java lib to detect duplicate C++ files in a directory tree."
+  msg -- "  "
   msg -- "Parameters:"
     param GMASH_FIND_DUPLICATE_CODE_PATH -p --path var:"<path>"\
       -- "Target path."
     param GMASH_FIND_DUPLICATE_CODE_THRESHOLD -t --threshold var:"<threshold>" \
       -- "Duplicate line threshold."
+  msg -- "  "
   msg -- "'simian' java lib additional options:"
   msg -- "$(java -jar /c/lib/simian-4.0.0/simian-4.0.0.jar --help | sed 's/^/  /')"
   msg -- "  "
@@ -56,8 +57,9 @@ gmash_def_parser_find_sources(){
   extend_parser
   standard_parser_setup GMASH_FIND_SOURCES_ARGR gmash_find_sources_help \
     "gmash find sources -p [path]"
-  msg -- "Description:"
+  msg -- "  "
   msg -- "Find source files in a directory tree."
+  msg -- "  "
   msg -- "Parameters:"
     param GMASH_FIND_SOURCES_PATH -p --path var:"<path>" \
       -- "Target path."
@@ -72,8 +74,9 @@ gmash_def_parser_find_gits(){
   extend_parser
   standard_parser_setup GMASH_FIND_GITS_ARGR gmash_find_gits_help \
     "gmash find gits -p [path]"
-  msg -- "Description:"
+  msg -- "  "
   msg -- "Find git repositories in a directory tree."
+  msg -- "  "
   msg -- "Parameters:"
     param GMASH_FIND_GITS_PATH -p --path var:"<path>" \
       -- "Target path."

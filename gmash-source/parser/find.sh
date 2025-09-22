@@ -84,7 +84,6 @@ gmash_find_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash [[global-args]...] find <sub-command> [[args]...]
   
-Brief:
 High level path/file manipulation and analysis.
   
 Sub-commands:
@@ -200,11 +199,13 @@ gmash_parser_find_duplicate_code() {
 gmash_find_duplicate_code_help() {
 cat<<'GETOPTIONSHERE'
 gmash find duplicate-code -p [path] -t [threshold]
-Description:
+  
 Uses 'simian' java lib to detect duplicate C++ files in a directory tree.
+  
 Parameters:
   -p,     --path <path>                 Target path.
   -t,     --threshold <threshold>       Duplicate line threshold.
+  
 'simian' java lib additional options:
   Simian Similarity Analyzer 4.0.0 - https://simian.quandarypeak.com
   Copyright (c) 2023 Quandary Peak Research. All rights reserved.
@@ -338,8 +339,9 @@ gmash_parser_find_gits() {
 gmash_find_gits_help() {
 cat<<'GETOPTIONSHERE'
 gmash find gits -p [path]
-Description:
+  
 Find git repositories in a directory tree.
+  
 Parameters:
   -p,     --path <path>                 Target path.
   
@@ -441,8 +443,9 @@ gmash_parser_find_sources() {
 gmash_find_sources_help() {
 cat<<'GETOPTIONSHERE'
 gmash find sources -p [path]
-Description:
+  
 Find source files in a directory tree.
+  
 Parameters:
   -p,     --path <path>                 Target path.
   
