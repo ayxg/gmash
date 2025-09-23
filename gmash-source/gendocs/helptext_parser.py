@@ -47,6 +47,49 @@ def _is_usage_keyword(s: str) -> bool:
         is_usage = True
     return is_usage
 
+def _is_command_keyword(s: str) -> int:
+    """
+    Check if a line starts with the command keyword.
+    Returns the size of the keyword or 0 if not found.
+    """
+    if s.startswith("Command"):
+        return len("Command")
+    elif s.startswith("command"):
+        return len("command")
+    elif s.startswith("COMMAND"):
+        return len("COMMAND")
+    elif s.startswith("Commands"):
+        return len("Commands")
+    elif s.startswith("commands"):
+        return len("commands")
+    elif s.startswith("COMMANDS"):
+        return len("COMMANDS")
+    elif s.startswith("Subcommands"):
+        return len("Subcommands")
+    elif s.startswith("subcommands"):
+        return len("subcommands")
+    elif s.startswith("SUBCOMMANDS"):
+        return len("SUBCOMMANDS")
+    elif s.startswith("Subcommand"):
+        return len("Subcommand")
+    elif s.startswith("subcommand"):
+        return len("subcommand")
+    elif s.startswith("SUBCOMMAND"):
+        return len("SUBCOMMAND")
+    elif s.startswith("sub-command"):
+        return len("sub-command")
+    elif s.startswith("Sub-Command"):
+        return len("Sub-Command")
+    elif s.startswith("SUB-COMMAND"):
+        return len("SUB-COMMAND")
+    elif s.startswith("sub-commands"):
+        return len("sub-commands")
+    elif s.startswith("Sub-Commands"):
+        return len("Sub-Commands")
+    elif s.startswith("SUB-COMMANDS"):
+        return len("SUB-COMMANDS")
+    return 0
+
 def _is_indented_line(s: str, indent_level: int = 1) -> bool:
     """ Check if a line starts with the specified indent level (4 spaces or a tab). """
     if not s.strip():
@@ -491,6 +534,69 @@ def parse_usage_section(inp : List[str], line: int, pos: int) -> ParseResult:
         pos = 0  # reset pos for next line, always end at start of next line
     return ParseResult((Ast(Tk.USAGE,usage_text),line,pos))
 
+def parse_command_section(inp : List[str], line: int, pos: int) -> ParseResult:
+    if line >= len(inp):
+        return ParseResult("Expected usage section but reached end of inp")
+    is_command_section = _is_command_keyword(inp[line])
+    if is_command_section == 0:
+        return ParseResult(("Expected command section starting with command keyword.",line,pos,inp))
+    pos += is_command_section
+    pos += _skip_whitespace(inp[line],pos)
+    pos += _skip_chars(inp[line],pos,':',1)
+    pos += _skip_whitespace(inp[line],pos)
+    # Must be followed by indented list of commands
+    if line + 1 >= len(inp) or not _is_indented_line(inp[line + 1],1):
+        return ParseResult(("Expected indented command list after command keyword.",line,pos,inp))
+    line += 1
+    pos = 0
+    cmd_section = Ast(Tk.COMMAND_SECTION)
+    while line < len(inp) and _is_indented_line(inp[line],1):
+        # parse a command
+        cmd_line = inp[line].strip()
+        if cmd_line == "":
+            line += 1
+            continue
+        cmd_parts = cmd_line.split(' ',1)
+        cmd_name = cmd_parts[0]
+        cmd_desc = cmd_parts[1].strip() if len(cmd_parts) > 1 else ""
+        if cmd_name == "":
+            return ParseResult(("Expected command name.",line,pos,inp))
+        cmd_node = Ast(Tk.COMMAND,cmd_name)
+        if cmd_desc != "":
+            cmd_node.append(Ast(Tk.TEXT_LINE,cmd_desc))
+        line += 1
+        pos = 0
+        # skip any empty lines after command
+        while line < len(inp) and inp[line].strip() == "":
+            line += 1
+
+        # Check for a following indented line, indicating a sub-command.
+        while line < len(inp) and _is_indented_line(inp[line],2):
+            sub_cmd_line = inp[line].strip()
+            if sub_cmd_line == "":
+                line += 1
+                continue
+            sub_cmd_parts = sub_cmd_line.split(' ',1)
+            sub_cmd_name = sub_cmd_parts[0]
+            sub_cmd_desc = sub_cmd_parts[1].strip() if len(sub_cmd_parts) > 1 else ""
+            if sub_cmd_name == "":
+                return ParseResult(("Expected sub-command name.",line,pos,inp))
+            sub_cmd_node = Ast(Tk.COMMAND,sub_cmd_name)
+            if sub_cmd_desc != "":
+                sub_cmd_node.append(Ast(Tk.TEXT_LINE,sub_cmd_desc))
+            cmd_node.append(sub_cmd_node)
+            line += 1
+            pos = 0
+            # skip any empty lines after sub-command
+            while line < len(inp) and inp[line].strip() == "":
+                line += 1
+
+        cmd_section.append(cmd_node)
+
+    if len(cmd_section.branches) == 0:
+        return ParseResult(("Expected at least one command in command section.",line,pos,inp))
+    return ParseResult((cmd_section,line,pos))
+
 def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
     """
     Grammar Rule:
@@ -526,6 +632,21 @@ def parse_help_text(inp : List[str], line: int, pos: int) -> ParseResult:
             line = usage_result.get_line()
             pos = usage_result.get_col()
             # skip any empty lines after usage
+            while line < len(inp) and inp[line].strip() == "":
+                line += 1
+            continue
+
+        # Check for special case command section. Requires a following indent.
+        is_command = _is_command_keyword(sect_title)
+        if is_command != 0:
+            is_command = True
+            command_result = parse_command_section(inp,line,pos)
+            if command_result.is_error():
+                return command_result
+            output.append(command_result.get_ast())
+            line = command_result.get_line()
+            pos = command_result.get_col()
+            # skip any empty lines after command section
             while line < len(inp) and inp[line].strip() == "":
                 line += 1
             continue

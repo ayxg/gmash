@@ -36,6 +36,8 @@ class Tk(enum.Enum):
     REQUIRED_ARG = enum.auto()      # Required argument, e.g. <file>
     ARGUMENT = enum.auto()          # An argument with flags and description
     ARGUMENT_LIST = enum.auto()     # A list of arguments
+    COMMAND_SECTION = enum.auto()   # A section with commands
+    COMMAND = enum.auto()           # A command with description
 
 class Ast:
     """ Abstract syntax tree. """

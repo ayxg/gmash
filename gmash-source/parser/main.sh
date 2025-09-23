@@ -135,22 +135,22 @@ Globals:
   
 Commands:
   dirs                                  High level path/file manipulation and analysis.
-  prefix          Add a prefix to each top-level file in a directory.
-  same            Get a diff of 2 directories.
-  separate        Separate a directory into its constituent parts.
-  squash          Squash empty paths in a directory.
+    prefix          Add a prefix to each top-level file in a directory.
+    same            Get a diff of 2 directories.
+    separate        Separate a directory into its constituent parts.
+    squash          Squash empty paths in a directory.
   
   find                                  High level file/repo/code searching and analysis.
-  duplicate-code  Find duplicate code across files.
-  gits            Find git repositories.
-  sources         Find source files.
+    duplicate-code  Find duplicate code across files.
+    gits            Find git repositories.
+    sources         Find source files.
   
   gist                                  Manage GitHub Gists with git-like functionality, integrates with 'mono' && 'subtree'.
-  prepare         Sets up a new gist with a title.md page with the same name as the target source file(s).
-  create          Push all files in a directory as gists to GitHub. Adds a title.md and readme.md by default.
-  clone           Clones a gist to the local filesystem.
-  recover         Recover a user's gist(s) from GitHub remotes as git repos.
-  upload          Upload files to existing gists.
+    prepare         Sets up a new gist with a title.md page with the same name as the target source file(s).
+    create          Push all files in a directory as gists to GitHub. Adds a title.md and readme.md by default.
+    clone           Clones a gist to the local filesystem.
+    recover         Recover a user's gist(s) from GitHub remotes as git repos.
+    upload          Upload files to existing gists.
   
   lineage                               Amalgamate git commits from archived git repos to a more recent version.
   mono                                  Manage Monorepo->Subtree github git remotes and locals.

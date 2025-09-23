@@ -100,6 +100,53 @@ def _generate_argument(arg : Ast) -> GeneratorResult:
 
     return GeneratorResult(outp)
 
+def _generate_command_section(cmd_section : Ast) -> GeneratorResult:
+    """ Generate markdown documentation for a command section node.
+    """
+    if cmd_section.tk != Tk.COMMAND_SECTION:
+        return GeneratorResult(("Expected command section node",cmd_section.line,cmd_section.col))
+    if len(cmd_section.branches) == 0:
+        return GeneratorResult(("Invalid COMMAND_SECTION node format.",cmd_section.line,cmd_section.col))
+
+    outp : List[str] = []
+    outp.append("### Commands")
+    # -> Command_Section -> Command
+    first_cmd = True
+    for cmd in cmd_section.branches:
+        if cmd.tk != Tk.COMMAND:
+            return GeneratorResult(("Expected command node",cmd.line,cmd.col))
+        if len(cmd.branches) == 0:
+            return GeneratorResult(("Invalid COMMAND node format.",cmd.line,cmd.col))
+        cmd_outp : str = ""
+        if cmd.value is not None and cmd.value.strip() != "":
+            first_cmd = False
+            if first_cmd:
+                cmd_outp += f"`{cmd.value.strip()}` "
+            else:
+                cmd_outp += f"\n`{cmd.value.strip()}` "
+        next_branch = 1
+        # Expect a text line next.
+        if cmd.branches[0].tk != Tk.TEXT_LINE:
+            return GeneratorResult(("Expected text line in command list:" \
+                + cmd.branches[0].tk.name ,cmd.line,cmd.col))
+        cmd_outp += "\\\n&nbsp;&nbsp;&nbsp;&nbsp;" + cmd.branches[0].value.strip()
+        next_branch += 1
+
+        # Check for any sub-commands.
+        while next_branch < len(cmd.branches) and cmd.branches[next_branch].tk == Tk.COMMAND:
+            sub_cmd = cmd.branches[next_branch]
+            if sub_cmd.value is not None and sub_cmd.value.strip() != "":
+                cmd_outp += f"\\\n&nbsp;&nbsp;&nbsp;&nbsp;`{sub_cmd.value.strip()}`"
+            next_branch += 1
+            # Get the sub-command description.
+            if len(sub_cmd.branches) == 0 or sub_cmd.branches[0].tk != Tk.TEXT_LINE:
+                return GeneratorResult(("Expected text line in sub-command list:" \
+                    + sub_cmd.branches[0].tk.name if len(sub_cmd.branches) > 0 else "None",sub_cmd.line,sub_cmd.col))
+            cmd_outp += "\\\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + sub_cmd.branches[0].value.strip()
+
+        outp.append(cmd_outp)
+    return GeneratorResult("\n".join(outp))
+
 def generate_md(ast : Ast) -> GeneratorResult:
     """ Generate markdown documentation from the command line help notation
         abstract syntax tree.
@@ -152,6 +199,15 @@ def generate_md(ast : Ast) -> GeneratorResult:
                 outp.append("")
         elif br.tk == Tk.SECTION:
             no_preceding_section = False
+
+    # Handle special case command sections.
+    for br in ast.branches:
+        if br.tk == Tk.COMMAND_SECTION:
+            cmd_section_res = _generate_command_section(br)
+            if cmd_section_res.is_error():
+                return cmd_section_res
+            outp.append(cmd_section_res.get_md())
+            outp.append("")
 
     for br in ast.branches:
         # -> Section
