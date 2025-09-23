@@ -1,3 +1,9 @@
+---
+title: "gmash gist recover"
+nav_order: 15
+parent: "gmash gist"
+---
+
 # gmash gist recover
 
 ### Usage

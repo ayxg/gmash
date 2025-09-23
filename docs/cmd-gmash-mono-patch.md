@@ -1,7 +1,16 @@
-### Brief
-gmash lineage merge -r [repo] -b [branch]
+---
+title: "gmash mono patch"
+nav_order: 23
+parent: "gmash mono"
+---
 
-Merge git commits from multiple git repos in a straight lineage.
+# gmash mono patch
+
+### Usage
+`gmash mono patch -r [repo] -b [branch]`
+
+### Brief
+Patch a git repository with changes from another branch.
 
 ### Parameters:
 `-r`  `--repo  <repo>` \

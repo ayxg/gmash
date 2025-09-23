@@ -15,11 +15,15 @@ source "$GMASH_SOURCE/parser-extensions.sh"
 gmash_def_parser_lineage(){
   extend_parser
   standard_parser_setup GMASH_LINEAGE_ARGR gmash_lineage_help \
-    "gmash lineage <sub-command> [[args]...]"
+    "Usage: gmash lineage <sub-command> [[args]...]"
+  msg -- " "
+  msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
+  msg -- " "
   msg -- "Sub-commands:"
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
     cmd merge \
       -- "Merge git commits from multiple git repos in a straight lineage."
+  msg -- " "
   msg -- "Display:"
     standard_parser_help gmash_lineage_help
     disp "GMASH_LINEAGE_VERSION" -v --version \
@@ -30,7 +34,7 @@ gmash_def_parser_lineage(){
 gmash_def_parser_lineage_merge(){
   extend_parser
   standard_parser_setup GMASH_LINEAGE_MERGE_ARGR gmash_lineage_merge_help \
-    "gmash lineage merge -r [repo] -b [branch]"
+    "Usage: gmash lineage merge -r [repo] -b [branch]"
   msg -- "  "
   msg -- "Merge git commits from multiple git repos in a straight lineage."
   msg -- "  "

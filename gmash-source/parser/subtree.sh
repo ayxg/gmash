@@ -82,11 +82,14 @@ gmash_parser_subtree() {
 }
 gmash_subtree_help() {
 cat<<'GETOPTIONSHERE'
-gmash subtree <sub-command> [[args]...]
-Sub-commands:
+Usage: gmash subtree <sub-command> [[args]...]
+ 
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
+ 
+Sub-commands:
   new                                   Add and merge a new or existing repo as a subtree to a parent monorepo.
   patch                                 Patch subtree changes to monorepo.
+ 
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
   -v,     --version                     [v0-0-0] Display command group version.
@@ -254,7 +257,7 @@ gmash_parser_subtree_new() {
 }
 gmash_subtree_new_help() {
 cat<<'GETOPTIONSHERE'
-gmash subtree new
+Usage: gmash subtree new
  
 Properly add and merge a new or existing repo as a subtree to a parent monorepo.
  
@@ -391,7 +394,7 @@ gmash_parser_subtree_patch() {
 }
 gmash_subtree_patch_help() {
 cat<<'GETOPTIONSHERE'
-gmash subtree patch -r [repo] -b [branch]
+Usage: gmash subtree patch -r [repo] -b [branch]
   
 Patch subtree changes to monorepo.
   

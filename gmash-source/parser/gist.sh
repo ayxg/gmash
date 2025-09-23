@@ -428,7 +428,7 @@ gmash_parser_gist_create() {
 }
 gmash_gist_create_help() {
 cat<<'GETOPTIONSHERE'
-gmash gist create [<-f <file>>...] [-t [titleFile] | -n [name]]   [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title]   [-p(--public)]
+Usage: gmash gist create [<-f <file>>...] [-t [titleFile] | -n [name]]   [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title]   [-p(--public)]
   
 Sets up an empty gist with a 'title.md' and 'readme.md' file.
   
@@ -601,7 +601,7 @@ gmash_parser_gist_prepare() {
 }
 gmash_gist_prepare_help() {
 cat<<'GETOPTIONSHERE'
-gmash gist prepare [-t [titleFile] | -n [name]] [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title] [-p(--public)]
+Usage: gmash gist prepare [-t [titleFile] | -n [name]] [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title] [-p(--public)]
   
   
 Sets up an empty gist with a 'title.md' and 'readme.md' file.

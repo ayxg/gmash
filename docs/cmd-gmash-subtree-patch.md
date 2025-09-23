@@ -1,6 +1,15 @@
-### Brief
-gmash subtree patch -r [repo] -b [branch]
+---
+title: "gmash subtree patch"
+nav_order: 21
+parent: "gmash subtree"
+---
 
+# gmash subtree patch
+
+### Usage
+`gmash subtree patch -r [repo] -b [branch]`
+
+### Brief
 Patch subtree changes to monorepo.
 
 ### Parameters:

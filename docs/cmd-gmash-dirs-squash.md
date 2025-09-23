@@ -1,3 +1,9 @@
+---
+title: "gmash dirs squash"
+nav_order: 6
+parent: "gmash dirs"
+---
+
 # gmash dirs squash
 
 ### Usage

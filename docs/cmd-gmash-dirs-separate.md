@@ -1,3 +1,9 @@
+---
+title: "gmash dirs separate"
+nav_order: 5
+parent: "gmash dirs"
+---
+
 # gmash dirs separate
 
 ### Usage

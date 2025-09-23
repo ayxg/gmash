@@ -20,11 +20,14 @@ source "$GMASH_SOURCE/parser-extensions.sh"
 gmash_def_parser_main() {
   msg -- "gmash $GMASH_VERSION"
   msg -- "$GMASH_LICENSE"
-  msg -- "Smash keyboard - get git. Bash scripts for high-level git & github repo management."
   msg -- "  "
   extend_parser
   standard_parser_setup GMASH_ARGR gmash_main_help \
     "Usage: gmash [[global-args]...] <main-command> <sub-command> [[args]...]"
+  msg -- "  "
+  msg -- "Smash keyboard - get git. Bash scripts for high-level git & github repo management."
+  msg -- "Call [main-cmd] --help for a list of sub-commands."
+  msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
   msg -- "  "
   msg -- "Globals:"
     flag GMASH_VERBOSE -V --verbose init:=0 -- "Globally enable verbose output."

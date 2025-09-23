@@ -1,3 +1,5 @@
+# Reference:
+# https://just-the-docs.com/docs/configuration/
 title: GMash Documentation
 remote_theme: just-the-docs/just-the-docs
 
@@ -6,3 +8,6 @@ search_enabled: true
 
 # Configure navigation
 nav_order: 1
+
+# Color scheme supports "light" (default) and "dark"
+color_scheme: dark

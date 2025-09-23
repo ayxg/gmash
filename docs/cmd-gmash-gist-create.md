@@ -1,6 +1,15 @@
-### Brief
-gmash gist create [<-f <file>>...] [-t [titleFile] | -n [name]]   [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title]   [-p(--public)]
+---
+title: "gmash gist create"
+nav_order: 13
+parent: "gmash gist"
+---
 
+# gmash gist create
+
+### Usage
+`gmash gist create [<-f <file>>...] [-t [titleFile] | -n [name]]   [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title]   [-p(--public)]`
+
+### Brief
 Sets up an empty gist with a 'title.md' and 'readme.md' file.
 
 ### Params:

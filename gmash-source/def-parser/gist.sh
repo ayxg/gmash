@@ -30,7 +30,6 @@ gmash_def_parser_gist(){
     msg -- "Globals:"
       param GMASH_GIST_USER -u --user var:"<githubUser>" -- "Global gist source(\
   owner) github user."
-
     msg -- "  "
     msg -- "Sub-commands:"
       cmd prepare \
@@ -94,7 +93,7 @@ gmash_def_parser_gist_clone(){
 gmash_def_parser_gist_create(){
     extend_parser
     standard_parser_setup GMASH_GIST_CREATE_ARGR gmash_gist_create_help \
-      "gmash gist create [<-f <file>>...] [-t [titleFile] | -n [name]] \
+      "Usage: gmash gist create [<-f <file>>...] [-t [titleFile] | -n [name]] \
   [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title] \
   [-p(--public)]"
     msg -- "  "
@@ -141,7 +140,7 @@ gmash_def_parser_gist_create(){
 gmash_def_parser_gist_prepare(){
   extend_parser
   standard_parser_setup GMASH_GIST_PREPARE_ARGR gmash_gist_prepare_help \
-  "gmash gist prepare [-t [titleFile] | -n [name]] [-r [readmeFile]]\
+  "Usage: gmash gist prepare [-t [titleFile] | -n [name]] [-r [readmeFile]]\
  [-d [description]] [--no-readme] [--no-title] [-p(--public)]"
   msg -- "  "
   msg -- "  "

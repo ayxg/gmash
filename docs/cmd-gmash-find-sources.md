@@ -1,7 +1,16 @@
-### Brief
-gmash find gits -p [path]
+---
+title: "gmash find sources"
+nav_order: 10
+parent: "gmash find"
+---
 
-Find git repositories in a directory tree.
+# gmash find sources
+
+### Usage
+`gmash find sources -p [path]`
+
+### Brief
+Find source files in a directory tree.
 
 ### Parameters:
 `-p`  `--path  <path>` \

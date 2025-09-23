@@ -1,7 +1,15 @@
+---
+title: "gmash gist prepare"
+nav_order: 14
+parent: "gmash gist"
+---
+
+# gmash gist prepare
+
+### Usage
+`gmash gist prepare [-t [titleFile] | -n [name]] [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title] [-p(--public)]`
+
 ### Brief
-gmash gist prepare [-t [titleFile] | -n [name]] [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title] [-p(--public)]
-
-
 Sets up an empty gist with a 'title.md' and 'readme.md' file.
 
 ### Params:

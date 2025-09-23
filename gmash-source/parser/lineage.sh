@@ -82,10 +82,14 @@ gmash_parser_lineage() {
 }
 gmash_lineage_help() {
 cat<<'GETOPTIONSHERE'
-gmash lineage <sub-command> [[args]...]
+Usage: gmash lineage <sub-command> [[args]...]
+ 
+Call [main-cmd] [sub-cmd] --help for details of each sub-command.
+ 
 Sub-commands:
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
   merge                                 Merge git commits from multiple git repos in a straight lineage.
+ 
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
   -v,     --version                     [v0-0-0] Display command group version.
@@ -193,7 +197,7 @@ gmash_parser_lineage_merge() {
 }
 gmash_lineage_merge_help() {
 cat<<'GETOPTIONSHERE'
-gmash lineage merge -r [repo] -b [branch]
+Usage: gmash lineage merge -r [repo] -b [branch]
   
 Merge git commits from multiple git repos in a straight lineage.
   

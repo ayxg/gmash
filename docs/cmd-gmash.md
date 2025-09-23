@@ -1,7 +1,17 @@
+---
+title: "gmash"
+nav_order: 1
+---
+
 # gmash
 
 ### Usage
 `gmash [[global-args]...] <main-command> <sub-command> [[args]...]`
+
+### Brief
+Smash keyboard - get git. Bash scripts for high-level git & github repo management.
+Call [main-cmd] --help for a list of sub-commands.
+Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 
 ### Commands
 

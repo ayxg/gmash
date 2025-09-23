@@ -1,3 +1,9 @@
+---
+title: "gmash gist clone"
+nav_order: 12
+parent: "gmash gist"
+---
+
 # gmash gist clone
 
 ### Usage

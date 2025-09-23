@@ -1,16 +1,19 @@
-# gmash dirs same
+---
+title: "gmash find gits"
+nav_order: 9
+parent: "gmash find"
+---
+
+# gmash find gits
 
 ### Usage
-`gmash dirs same -p <srcPath> -P <tgtPath>`
+`gmash find gits -p [path]`
 
 ### Brief
-Get a diff of 2 directories.
+Find git repositories in a directory tree.
 
 ### Parameters:
-`-p`  `--path  <srcPath>` \
-&nbsp;&nbsp;&nbsp;&nbsp;Source path.
-
-`-P`  `--tgt-path  <tgtPath>` \
+`-p`  `--path  <path>` \
 &nbsp;&nbsp;&nbsp;&nbsp;Target path.
 
 ### Display:

@@ -34,7 +34,7 @@ gmash_def_parser_find(){
 gmash_def_parser_find_duplicate_code(){
   extend_parser
   standard_parser_setup GMASH_FIND_DUPLICATE_CODE_ARGR gmash_find_duplicate_code_help \
-    "gmash find duplicate-code -p [path] -t [threshold]"
+    "Usage: gmash find duplicate-code -p [path] -t [threshold]"
   msg -- "  "
   msg -- "Uses 'simian' java lib to detect duplicate C++ files in a directory tree."
   msg -- "  "
@@ -56,7 +56,7 @@ gmash_def_parser_find_duplicate_code(){
 gmash_def_parser_find_sources(){
   extend_parser
   standard_parser_setup GMASH_FIND_SOURCES_ARGR gmash_find_sources_help \
-    "gmash find sources -p [path]"
+    "Usage: gmash find sources -p [path]"
   msg -- "  "
   msg -- "Find source files in a directory tree."
   msg -- "  "
@@ -73,7 +73,7 @@ gmash_def_parser_find_sources(){
 gmash_def_parser_find_gits(){
   extend_parser
   standard_parser_setup GMASH_FIND_GITS_ARGR gmash_find_gits_help \
-    "gmash find gits -p [path]"
+    "Usage: gmash find gits -p [path]"
   msg -- "  "
   msg -- "Find git repositories in a directory tree."
   msg -- "  "

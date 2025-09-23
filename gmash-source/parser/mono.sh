@@ -82,10 +82,13 @@ gmash_parser_mono() {
 }
 gmash_mono_help() {
 cat<<'GETOPTIONSHERE'
-gmash mono <sub-command> [[args]...]
-Sub-commands:
+Usage: gmash mono <sub-command> [[args]...]
+ 
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
+ 
+Sub-commands:
   patch                                 Patch a git repository with changes from another branch.
+ 
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
   -v,     --version                     [v0-0-0] Display command group version.
@@ -193,7 +196,7 @@ gmash_parser_mono_patch() {
 }
 gmash_mono_patch_help() {
 cat<<'GETOPTIONSHERE'
-gmash mono patch -r [repo] -b [branch]
+Usage: gmash mono patch -r [repo] -b [branch]
   
 Patch a git repository with changes from another branch.
   

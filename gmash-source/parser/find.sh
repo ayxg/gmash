@@ -198,7 +198,7 @@ gmash_parser_find_duplicate_code() {
 }
 gmash_find_duplicate_code_help() {
 cat<<'GETOPTIONSHERE'
-gmash find duplicate-code -p [path] -t [threshold]
+Usage: gmash find duplicate-code -p [path] -t [threshold]
   
 Uses 'simian' java lib to detect duplicate C++ files in a directory tree.
   
@@ -338,7 +338,7 @@ gmash_parser_find_gits() {
 }
 gmash_find_gits_help() {
 cat<<'GETOPTIONSHERE'
-gmash find gits -p [path]
+Usage: gmash find gits -p [path]
   
 Find git repositories in a directory tree.
   
@@ -442,7 +442,7 @@ gmash_parser_find_sources() {
 }
 gmash_find_sources_help() {
 cat<<'GETOPTIONSHERE'
-gmash find sources -p [path]
+Usage: gmash find sources -p [path]
   
 Find source files in a directory tree.
   

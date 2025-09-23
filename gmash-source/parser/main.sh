@@ -124,9 +124,12 @@ gmash_main_help() {
 cat<<'GETOPTIONSHERE'
 gmash v0-0-0
 AGPL-3.0-or-later Copyright(c) 2025 Anton Yashchenko
-Smash keyboard - get git. Bash scripts for high-level git & github repo management.
   
 Usage: gmash [[global-args]...] <main-command> <sub-command> [[args]...]
+  
+Smash keyboard - get git. Bash scripts for high-level git & github repo management.
+Call [main-cmd] --help for a list of sub-commands.
+Call [main-cmd] [sub-cmd] --help for details of each sub-command.
   
 Globals:
   -V,     --verbose                     Globally enable verbose output.

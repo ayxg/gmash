@@ -1,6 +1,15 @@
-### Brief
-gmash subtree new
+---
+title: "gmash subtree new"
+nav_order: 20
+parent: "gmash subtree"
+---
 
+# gmash subtree new
+
+### Usage
+`gmash subtree new`
+
+### Brief
 Properly add and merge a new or existing repo as a subtree to a parent monorepo.
 
 ### Parameters:

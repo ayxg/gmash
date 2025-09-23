@@ -15,11 +15,14 @@ source "$GMASH_SOURCE/parser-extensions.sh"
 gmash_def_parser_mono(){
   extend_parser
   standard_parser_setup GMASH_MONO_ARGR gmash_mono_help \
-    "gmash mono <sub-command> [[args]...]"
-  msg -- "Sub-commands:"
+    "Usage: gmash mono <sub-command> [[args]...]"
+  msg -- " "
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
+  msg -- " "
+  msg -- "Sub-commands:"
   cmd patch \
       -- "Patch a git repository with changes from another branch."
+  msg -- " "
   msg -- "Display:"
     standard_parser_help gmash_mono_help
     disp "GMASH_MONO_VERSION" -v --version \
@@ -29,7 +32,7 @@ gmash_def_parser_mono(){
 gmash_def_parser_mono_patch(){
   extend_parser
   standard_parser_setup GMASH_MONO_PATCH_ARGR gmash_mono_patch_help \
-    "gmash mono patch -r [repo] -b [branch]"
+    "Usage: gmash mono patch -r [repo] -b [branch]"
   msg -- "  "
   msg -- "Patch a git repository with changes from another branch."
   msg -- "  "

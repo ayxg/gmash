@@ -1,3 +1,9 @@
+---
+title: "gmash dirs prefix"
+nav_order: 3
+parent: "gmash dirs"
+---
+
 # gmash dirs prefix
 
 ### Usage
