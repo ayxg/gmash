@@ -1,6 +1,6 @@
 ---
 title: "gmash lineage"
-nav_order: 17
+nav_order: 500
 parent: "gmash"
 ---
 

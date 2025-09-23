@@ -1,6 +1,6 @@
 ---
 title: "gmash mono patch"
-nav_order: 23
+nav_order: 701
 parent: "gmash mono"
 ---
 

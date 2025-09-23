@@ -1,6 +1,6 @@
 ---
 title: "gmash gist recover"
-nav_order: 15
+nav_order: 405
 parent: "gmash gist"
 ---
 

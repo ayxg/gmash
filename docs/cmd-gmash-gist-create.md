@@ -1,6 +1,6 @@
 ---
 title: "gmash gist create"
-nav_order: 13
+nav_order: 402
 parent: "gmash gist"
 ---
 

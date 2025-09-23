@@ -8,6 +8,7 @@ search_enabled: true
 
 # Configure navigation
 nav_order: 1
+nav_fold: false # Whether to fold navigation items by default
 
 # Color scheme supports "light" (default) and "dark"
 color_scheme: dark

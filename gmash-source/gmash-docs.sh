@@ -73,39 +73,39 @@ generate_doc_page(){
 # Main
 echo "[helptext] gmash -h | helptext -o cmd-gmash.md --skip 3"
 gmash -h | helptext -o "cmd-gmash.md" --skip 3
-add_front_matter "cmd-gmash.md" "1"
+add_front_matter "cmd-gmash.md" "100"
 
 # dirs
-generate_doc_page "gmash dirs" "2" "gmash"
-    generate_doc_page "gmash dirs prefix" "3" "gmash dirs"
-    generate_doc_page "gmash dirs same" "4" "gmash dirs"
-    generate_doc_page "gmash dirs separate" "5" "gmash dirs"
-    generate_doc_page "gmash dirs squash" "6" "gmash dirs"
+generate_doc_page "gmash dirs" "200" "gmash"
+    generate_doc_page "gmash dirs prefix" "201" "gmash dirs"
+    generate_doc_page "gmash dirs same" "202" "gmash dirs"
+    generate_doc_page "gmash dirs separate" "203" "gmash dirs"
+    generate_doc_page "gmash dirs squash" "204" "gmash dirs"
 
 # find
-generate_doc_page "gmash find" "7" "gmash"
+generate_doc_page "gmash find" "300" "gmash"
 #   generate_doc_page "gmash find duplicate-code" "8" "find"
-    generate_doc_page "gmash find gits" "9" "gmash find"
-    generate_doc_page "gmash find sources" "10" "gmash find"
+    generate_doc_page "gmash find gits" "301" "gmash find"
+    generate_doc_page "gmash find sources" "302" "gmash find"
 
 # gist
-generate_doc_page "gmash gist" "11" "gmash"
-    generate_doc_page "gmash gist clone" "12" "gmash gist"
-    generate_doc_page "gmash gist create" "13" "gmash gist"
-    generate_doc_page "gmash gist prepare" "14" "gmash gist"
-    generate_doc_page "gmash gist recover" "15" "gmash gist"
+generate_doc_page "gmash gist" "400" "gmash"
+    generate_doc_page "gmash gist clone" "401" "gmash gist"
+    generate_doc_page "gmash gist create" "402" "gmash gist"
+    generate_doc_page "gmash gist prepare" "403" "gmash gist"
+    generate_doc_page "gmash gist recover" "405" "gmash gist"
 
 # lineage
-generate_doc_page "gmash lineage" "17" "gmash"
-    generate_doc_page "gmash lineage merge" "18" "gmash lineage"
+generate_doc_page "gmash lineage" "500" "gmash"
+    generate_doc_page "gmash lineage merge" "501" "gmash lineage"
 
 # subtree
-generate_doc_page "gmash subtree" "19" "gmash"
-    generate_doc_page "gmash subtree new" "20" "gmash subtree"
-    generate_doc_page "gmash subtree patch" "21" "gmash subtree"
+generate_doc_page "gmash subtree" "600" "gmash"
+    generate_doc_page "gmash subtree new" "601" "gmash subtree"
+    generate_doc_page "gmash subtree patch" "602" "gmash subtree"
 
 # mono
-generate_doc_page "gmash mono" "22" "gmash"
-    generate_doc_page "gmash mono patch" "23" "gmash mono"
+generate_doc_page "gmash mono" "700" "gmash"
+    generate_doc_page "gmash mono patch" "701" "gmash mono"
 
 echo "Documentation generation complete."

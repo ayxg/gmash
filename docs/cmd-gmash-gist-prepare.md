@@ -1,6 +1,6 @@
 ---
 title: "gmash gist prepare"
-nav_order: 14
+nav_order: 403
 parent: "gmash gist"
 ---
 
