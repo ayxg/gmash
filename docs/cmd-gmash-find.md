@@ -1,13 +1,13 @@
 ---
-title: "gmash"
+title: "gmash find"
 nav_order: 7
 parent: "gmash"
 ---
 
-# gmash
+# gmash find
 
 ### Usage
-`gmash [[global-args]...] find <sub-command> [[args]...]`
+`gmash find <sub-command> [[args]...]`
 
 ### Brief
 High level path/file manipulation and analysis.

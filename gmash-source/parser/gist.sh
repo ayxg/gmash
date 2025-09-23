@@ -95,7 +95,7 @@ gmash_parser_gist() {
 }
 gmash_gist_help() {
 cat<<'GETOPTIONSHERE'
-Usage: gmash [[global-args]...] gist <sub-command> [[args]...]
+Usage: gmash gist <sub-command> [[args]...]
   
 Manage GitHub Gists with git-like functionality.
       Use 'upload' to create gists from local files and clone them back as git   repos.

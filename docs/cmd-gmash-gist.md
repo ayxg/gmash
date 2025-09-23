@@ -1,13 +1,13 @@
 ---
-title: "gmash"
+title: "gmash gist"
 nav_order: 11
 parent: "gmash"
 ---
 
-# gmash
+# gmash gist
 
 ### Usage
-`gmash [[global-args]...] gist <sub-command> [[args]...]`
+`gmash gist <sub-command> [[args]...]`
 
 ### Manage GitHub Gists with git-like functionality.
 Use 'upload' to create gists from local files and clone them back as git   repos.

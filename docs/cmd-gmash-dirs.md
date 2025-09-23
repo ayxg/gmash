@@ -1,13 +1,13 @@
 ---
-title: "gmash"
+title: "gmash dirs"
 nav_order: 2
 parent: "gmash"
 ---
 
-# gmash
+# gmash dirs
 
 ### Usage
-`gmash [[global-args]...] dirs <sub-command> [[args]...]`
+`gmash dirs <sub-command> [[args]...]`
 
 ### Brief
 High level path/file manipulation and analysis.

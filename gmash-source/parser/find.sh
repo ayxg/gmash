@@ -82,7 +82,7 @@ gmash_parser_find() {
 }
 gmash_find_help() {
 cat<<'GETOPTIONSHERE'
-Usage: gmash [[global-args]...] find <sub-command> [[args]...]
+Usage: gmash find <sub-command> [[args]...]
   
 High level path/file manipulation and analysis.
   

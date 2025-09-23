@@ -16,7 +16,7 @@ source "$GMASH_SOURCE/parser-extensions.sh"
 gmash_def_parser_dirs(){
   extend_parser
   standard_parser_setup GMASH_DIRS_ARGR gmash_dirs_help \
-    "Usage: gmash [[global-args]...] dirs <sub-command> [[args]...]"
+    "Usage: gmash dirs <sub-command> [[args]...]"
   msg -- "  "
   msg -- "High level path/file manipulation and analysis."
   msg -- "  "

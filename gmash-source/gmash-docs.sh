@@ -107,6 +107,5 @@ generate_doc_page "gmash subtree" "19" "gmash"
 # mono
 generate_doc_page "gmash mono" "22" "gmash"
     generate_doc_page "gmash mono patch" "23" "gmash mono"
-    generate_doc_page "gmash mono new" "24" "gmash mono"
 
 echo "Documentation generation complete."

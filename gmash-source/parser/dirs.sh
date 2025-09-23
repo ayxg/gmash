@@ -82,7 +82,7 @@ gmash_parser_dirs() {
 }
 gmash_dirs_help() {
 cat<<'GETOPTIONSHERE'
-Usage: gmash [[global-args]...] dirs <sub-command> [[args]...]
+Usage: gmash dirs <sub-command> [[args]...]
   
 High level path/file manipulation and analysis.
   

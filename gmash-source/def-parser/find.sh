@@ -16,7 +16,7 @@ source "$GMASH_SOURCE/parser-extensions.sh"
 gmash_def_parser_find(){
   extend_parser
   standard_parser_setup GMASH_FIND_ARGR gmash_find_help \
-    "Usage: gmash [[global-args]...] find <sub-command> [[args]...]"
+    "Usage: gmash find <sub-command> [[args]...]"
   msg -- "  "
   msg -- "High level path/file manipulation and analysis."
   msg -- "  "

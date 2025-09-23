@@ -16,7 +16,7 @@ source "$GMASH_SOURCE/parser-extensions.sh"
 gmash_def_parser_gist(){
     extend_parser
     standard_parser_setup GMASH_GIST_ARGR gmash_gist_help \
-      "Usage: gmash [[global-args]...] gist <sub-command> [[args]...]"
+      "Usage: gmash gist <sub-command> [[args]...]"
   msg -- "  "
   msg -- "Manage GitHub Gists with git-like functionality.
       Use 'upload' to create gists from local files and clone them back as git \
