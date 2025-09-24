@@ -282,9 +282,9 @@ gmash_def_parser_gist_upload(){
   sources."
     msg -- "  "
     msg -- "Display:"
-      standard_parser_help gmash_gist_recover_help
-      disp "GMASH_GIST_RECOVER_VERSION" -v --version \
-        -- "[$GMASH_GIST_RECOVER_VERSION] Display subcommand version."
+      standard_parser_help gmash_gist_upload_help
+      disp "GMASH_GIST_UPLOAD_VERSION" -v --version \
+        -- "[$GMASH_GIST_UPLOAD_VERSION] Display subcommand version."
       msg -- " "
       msg -- "Examples:"
       msg -- "Case 1 : Create a gist from one or more files."
