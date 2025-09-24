@@ -152,7 +152,7 @@ case $_command in
     fi
     _command=$1
     case $_command in
-      duplicate_code)
+      duplicate-code)
         gmash_parser_find_duplicate_code "$@"; gmash_find_duplicate_code; ;;
       gits)
         gmash_parser_find_gits "$@"; gmash_find_gits; ;;

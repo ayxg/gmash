@@ -210,7 +210,6 @@ Parameters:
   Simian Similarity Analyzer 4.0.0 - https://simian.quandarypeak.com
   Copyright (c) 2023 Quandary Peak Research. All rights reserved.
   Subject to the Quandary Peak Academic Software License.
-  Error: Invalid option : '-help'
   Usage: [options] [files]
       -balanceCurlyBraces[+|-]         Accounts for curly braces when breaking lines
       -balanceParentheses[+|-]         Accounts for parentheses when breaking lines

@@ -45,7 +45,7 @@ gmash_def_parser_find_duplicate_code(){
       -- "Duplicate line threshold."
   msg -- "  "
   msg -- "'simian' java lib additional options:"
-  msg -- "$(java -jar /c/lib/simian-4.0.0/simian-4.0.0.jar --help | sed 's/^/  /')"
+  msg -- "$(java -jar /c/lib/simian-4.0.0/simian-4.0.0.jar | sed 's/^/  /')"
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_find_duplicate_code_help
