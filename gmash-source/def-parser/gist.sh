@@ -212,22 +212,22 @@ gmash_def_parser_gist_recover(){
 gmash_def_parser_gist_upload(){
     extend_parser
     standard_parser_setup GMASH_GIST_UPLOAD_ARGR gmash_gist_upload_help \
-      "Usage: gmash gist upload  <<-f <fileOrPath>> [-f <fileOrPath>]...>
-                          [-t <titleFile> | -n <name>]
-                          [-r <readmeFile>]
-                          [-d <description>]
-                          [-p <cloneToPath>]
-                          [-u <githubUser>]
-                          [--no-readme] [--no-title] [-P(--public)]
-                          [-A(--all)] [-a(--asone)][-e(--no-extension)]
-                          [-l <limit>]
-                          "
+      "Usage: gmash gist upload  <<-f <fileOrPath>> [-f <fileOrPath>]...> \
+[-t <titleFile> | -n <name>] \
+[-r <readmeFile>] \
+[-d <description>] \
+[-p <cloneToPath>] \
+[-u <githubUser>] \
+[--no-readme] [--no-title] [-P(--public)] \
+[-A(--all)] [-a(--asone)][-e(--no-extension)] \
+[-l <limit>]
+"
     msg -- "  "
     msg -- "Create gists from given file paths and clone them as a local git
-  repository. If '--all' is passed, push all files inside dir paths as
-  separate gists to GitHub. Use '--no-extension' to combine files with the
-  same base name into one gist. Pass '--as-one' to push each dir's files as
-  a single gist. Adds a 'title.md' and 'readme.md' by default."
+repository. If '--all' is passed, push all files inside dir paths as
+separate gists to GitHub. Use '--no-extension' to combine files with the
+same base name into one gist. Pass '--as-one' to push each dir's files as
+a single gist. Adds a 'title.md' and 'readme.md' by default."
     msg -- "  "
     msg -- "Required:"
       # $1
@@ -273,7 +273,7 @@ gmash_def_parser_gist_upload(){
       gmash_flag GMASH_GIST_UPLOAD_ASONE -a --asone \
         "Push each dir's files as a single gist."
       # $13
-      param GMASH_GIST_UPLOAD_LIMIT -l --limit \
+      param GMASH_GIST_UPLOAD_LIMIT -l --limit var:"<limit>"\
       -- "Maximum number of gists to create. Defaults to 100 (in-case of \
   unintentional overload)."
       # $14
@@ -285,24 +285,31 @@ gmash_def_parser_gist_upload(){
       standard_parser_help gmash_gist_upload_help
       disp "GMASH_GIST_UPLOAD_VERSION" -v --version \
         -- "[$GMASH_GIST_UPLOAD_VERSION] Display subcommand version."
-      msg -- " "
-      msg -- "Examples:"
-      msg -- "Case 1 : Create a gist from one or more files."
-      msg -- "            $ gmash gist upload -f file1 -f file2 -n 'foo-gist' \
-  -d 'description of my gist'"
-      msg -- " "
-      msg -- "Case 2 : Create a separate gist for every file in a path, merge \
-  files with the same base name."
-      msg -- "            $ gmash gist upload -A --no-readme --no-extension"
-      msg -- "    Given 'dir1' and 'dir2' contain files 'foo.cpp', 'bar.cpp', \
-  and 'foo.hpp', 'bar.hpp' respectively,
-      2 gists will be created and cloned to dirs: 'foo' and 'bar' relative to \
-  '--path'."
-      msg -- " "
-      msg -- "Case 3 : Create a separate gist for every directory in a path, \
-  merging all files in each dir."
-      msg -- "            $ gmash gist upload -A -a -f path1 -f path2"
-      msg -- "    Given 'path1' and 'path2' contain dirs 'foo.', 'bar'. 2 \
-  gists will be created and cloned to dirs:
-        'foo' and 'bar' relative to '--path'."
+
+    msg -- " "
+    msg -- "Examples:"
+    msg -- \
+"  Case 1 : Create a gist from one or more files.
+  \`\`\` bash
+  gmash gist upload -f file1 -f file2 -n 'foo-gist' -d 'description of my gist'
+  \`\`\`
+  "
+
+    msg -- \
+"  Case 2 : Create a separate gist for every file in a path, merge files with the same base name.
+  \`\`\` bash
+  gmash gist upload -A --no-readme --no-extension
+  # Given 'dir1' and 'dir2' contain files 'foo.cpp', 'bar.cpp','foo.hpp', 'bar.hpp' respectively,
+  # 2 gists will be created and cloned to dirs: 'foo' and 'bar' relative to '--path'.
+  \`\`\`
+  "
+
+    msg -- \
+"  Case 3 : Create a separate gist for every directory in a path, merging all files in each dir.
+  \`\`\`
+  gmash gist upload -A -a -f path1 -f path2
+  # Given 'path1' and 'path2' contain dirs 'foo.', 'bar'. 2 gists will be
+  # created and cloned to dirs: 'foo' and 'bar' relative to '--path'.
+  \`\`\`
+  "
 }

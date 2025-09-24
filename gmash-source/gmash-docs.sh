@@ -94,7 +94,7 @@ generate_doc_page "gmash gist" "400" "gmash"
     generate_doc_page "gmash gist create" "402" "gmash gist"
     generate_doc_page "gmash gist prepare" "403" "gmash gist"
     generate_doc_page "gmash gist recover" "405" "gmash gist"
-
+    generate_doc_page "gmash gist upload" "406" "gmash gist"
 # lineage
 generate_doc_page "gmash lineage" "500" "gmash"
     generate_doc_page "gmash lineage merge" "501" "gmash lineage"

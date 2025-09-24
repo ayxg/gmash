@@ -10,7 +10,7 @@ parent: "gmash dirs"
 `gmash dirs same -p <srcPath> -P <tgtPath>`
 
 ### Brief
-Get a diff of 2 directories.
+Get a list of equivalent files or folders between two directories.
 
 ### Parameters:
 `-p`  `--path  <srcPath>` \

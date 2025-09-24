@@ -10,7 +10,9 @@ parent: "gmash dirs"
 `gmash dirs prefix --p <prefix> --P [fileOrFolder]`
 
 ### Brief
-Add a prefix to each top-level file in a directory.
+Add a prefix to each top-level file in a directory. If no path is provided, uses current directory.
+If given a file path, only the single file is prefixed.
+Overwrite is denied if the resulting prefixed name already exists in the directory.
 
 ### Parameters:
 `-p`  `--prefix  <prefix>` \

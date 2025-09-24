@@ -10,7 +10,8 @@ parent: "gmash dirs"
 `gmash dirs squash [path]`
 
 ### Brief
-Squash empty directories in the specified path.
+Squash all directories in a given path, and move the contents up to the parent directory.
+Pass a depth greater than 1 to recursivley squash deeper directories up to the parent.
 
 ### Parameters:
 `-p`  `--path  [path]` \

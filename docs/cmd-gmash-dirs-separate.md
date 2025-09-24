@@ -17,7 +17,7 @@ Separate each top-level file into its own folder of the same name.
 &nbsp;&nbsp;&nbsp;&nbsp;Path to separate files from. Defaults to current.
 
 ### Options:
-`-n`  `--no-extension` \
+`-n`  `--noext` \
 &nbsp;&nbsp;&nbsp;&nbsp;Separate files with the same base name, ignoring extensions.
 
 ### Display:

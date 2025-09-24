@@ -10,11 +10,14 @@ parent: "gmash find"
 `gmash find sources -p [path]`
 
 ### Brief
-Find source files in a directory tree.
+Find source files in a directory tree. Optionally merge to target path if provided.
 
 ### Parameters:
 `-p`  `--path  <path>` \
-&nbsp;&nbsp;&nbsp;&nbsp;Target path.
+&nbsp;&nbsp;&nbsp;&nbsp;Path to search for source files.
+
+`-P`  `--tgt-path  <target_path>` \
+&nbsp;&nbsp;&nbsp;&nbsp;Path to merge found source files to.
 
 ### Display:
 `-h`  `--help` \
