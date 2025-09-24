@@ -12,11 +12,19 @@ parent: "gmash"
 ### Brief
 High level path/file manipulation and analysis.
 
-### Sub-commands:
-prefix                                Add a prefix to each top-level file in a directory.
-same                                  Get a diff of 2 directories.
-separate                              Separate a directory into its constituent parts.
-squash                                Squash empty paths in a directory.
+### Commands
+
+`prefix` \
+&nbsp;&nbsp;&nbsp;&nbsp;Add a prefix to each top-level file in a directory.
+
+`same` \
+&nbsp;&nbsp;&nbsp;&nbsp;Get a diff of 2 directories.
+
+`separate` \
+&nbsp;&nbsp;&nbsp;&nbsp;Separate a directory into its constituent parts.
+
+`squash` \
+&nbsp;&nbsp;&nbsp;&nbsp;Squash empty paths in a directory.
 
 ### Display:
 `-h`  `--help` \

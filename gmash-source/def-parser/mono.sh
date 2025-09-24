@@ -19,7 +19,7 @@ gmash_def_parser_mono(){
   msg -- " "
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
   msg -- " "
-  msg -- "Sub-commands:"
+  msg -- "Sub-Commands:"
   cmd patch \
       -- "Patch a git repository with changes from another branch."
   msg -- " "

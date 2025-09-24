@@ -106,7 +106,7 @@ Manage GitHub Gists with git-like functionality.
 Globals:
   -u,     --user <githubUser>           Global gist source(  owner) github user.
   
-Sub-commands:
+Sub-Commands:
   prepare                               Sets up a new gist with a title.md page with the same name as the   target source file(s).
   create                                Push all files in a directory as gists to GitHub. Adds a title.md   and readme.md by default.
   clone                                 Clones a gist to the local filesystem.

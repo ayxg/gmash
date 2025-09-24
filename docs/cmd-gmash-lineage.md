@@ -12,7 +12,7 @@ parent: "gmash"
 ### Brief
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 
-Sub-commands:
+Sub-Commands:
 
 ### Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 merge                                 Merge git commits from multiple git repos in a straight lineage.

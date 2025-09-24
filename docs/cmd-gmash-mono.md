@@ -12,8 +12,10 @@ parent: "gmash"
 ### Brief
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 
-### Sub-commands:
-patch                                 Patch a git repository with changes from another branch.
+### Commands
+
+`patch` \
+&nbsp;&nbsp;&nbsp;&nbsp;Patch a git repository with changes from another branch.
 
 ### Display:
 `-h`  `--help` \

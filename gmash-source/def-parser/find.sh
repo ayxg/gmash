@@ -20,7 +20,7 @@ gmash_def_parser_find(){
   msg -- "  "
   msg -- "High level path/file manipulation and analysis."
   msg -- "  "
-  msg -- "Sub-commands:"
+  msg -- "Sub-Commands:"
     cmd duplicate-code      -- "Find duplicate code across files."
     cmd gits                -- "Find git repositories."
     cmd sources             -- "Find source files."

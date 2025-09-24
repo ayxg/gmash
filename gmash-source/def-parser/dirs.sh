@@ -20,7 +20,7 @@ gmash_def_parser_dirs(){
   msg -- "  "
   msg -- "High level path/file manipulation and analysis."
   msg -- "  "
-  msg -- "Sub-commands:"
+  msg -- "Sub-Commands:"
     cmd prefix -- "Add a prefix to each top-level file in a directory."
     cmd same -- "Get a diff of 2 directories."
     cmd separate -- "Separate a directory into its constituent parts."

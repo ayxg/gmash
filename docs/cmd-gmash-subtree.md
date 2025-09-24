@@ -12,9 +12,13 @@ parent: "gmash"
 ### Brief
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 
-### Sub-commands:
-new                                   Add and merge a new or existing repo as a subtree to a parent monorepo.
-patch                                 Patch subtree changes to monorepo.
+### Commands
+
+`new` \
+&nbsp;&nbsp;&nbsp;&nbsp;Add and merge a new or existing repo as a subtree to a parent monorepo.
+
+`patch` \
+&nbsp;&nbsp;&nbsp;&nbsp;Patch subtree changes to monorepo.
 
 ### Display:
 `-h`  `--help` \

@@ -19,7 +19,7 @@ gmash_def_parser_subtree(){
   msg -- " "
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
   msg -- " "
-  msg -- "Sub-commands:"
+  msg -- "Sub-Commands:"
     cmd new \
       -- "Add and merge a new or existing repo as a subtree to a parent monorepo."
     cmd patch \

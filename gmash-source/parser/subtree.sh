@@ -86,7 +86,7 @@ Usage: gmash subtree <sub-command> [[args]...]
  
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
  
-Sub-commands:
+Sub-Commands:
   new                                   Add and merge a new or existing repo as a subtree to a parent monorepo.
   patch                                 Patch subtree changes to monorepo.
  

@@ -86,7 +86,7 @@ Usage: gmash mono <sub-command> [[args]...]
  
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
  
-Sub-commands:
+Sub-Commands:
   patch                                 Patch a git repository with changes from another branch.
  
 Display:

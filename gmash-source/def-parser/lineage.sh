@@ -19,7 +19,7 @@ gmash_def_parser_lineage(){
   msg -- " "
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
   msg -- " "
-  msg -- "Sub-commands:"
+  msg -- "Sub-Commands:"
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
     cmd merge \
       -- "Merge git commits from multiple git repos in a straight lineage."

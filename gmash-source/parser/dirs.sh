@@ -86,7 +86,7 @@ Usage: gmash dirs <sub-command> [[args]...]
   
 High level path/file manipulation and analysis.
   
-Sub-commands:
+Sub-Commands:
   prefix                                Add a prefix to each top-level file in a directory.
   same                                  Get a diff of 2 directories.
   separate                              Separate a directory into its constituent parts.

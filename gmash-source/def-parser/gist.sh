@@ -31,7 +31,7 @@ gmash_def_parser_gist(){
       param GMASH_GIST_USER -u --user var:"<githubUser>" -- "Global gist source(\
   owner) github user."
     msg -- "  "
-    msg -- "Sub-commands:"
+    msg -- "Sub-Commands:"
       cmd prepare \
           -- "Sets up a new gist with a title.md page with the same name as the \
   target source file(s)."

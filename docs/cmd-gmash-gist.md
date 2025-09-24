@@ -9,6 +9,23 @@ parent: "gmash"
 ### Usage
 `gmash gist <sub-command> [[args]...]`
 
+### Commands
+
+`prepare` \
+&nbsp;&nbsp;&nbsp;&nbsp;Sets up a new gist with a title.md page with the same name as the   target source file(s).
+
+`create` \
+&nbsp;&nbsp;&nbsp;&nbsp;Push all files in a directory as gists to GitHub. Adds a title.md   and readme.md by default.
+
+`clone` \
+&nbsp;&nbsp;&nbsp;&nbsp;Clones a gist to the local filesystem.
+
+`recover` \
+&nbsp;&nbsp;&nbsp;&nbsp;Recover a user's gist(s) from GitHub remotes as git repos.
+
+`upload` \
+&nbsp;&nbsp;&nbsp;&nbsp;Upload files to existing gists.
+
 ### Manage GitHub Gists with git-like functionality.
 Use 'upload' to create gists from local files and clone them back as git   repos.
 Use 'recover' to create mono-subtree repo from a set of selected gists.
@@ -18,13 +35,6 @@ Use 'prepare','create' and 'clone' for lower level control. See sub-command  hel
 ### Globals:
 `-u`  `--user  <githubUser>` \
 &nbsp;&nbsp;&nbsp;&nbsp;Global gist source(  owner) github user.
-
-### Sub-commands:
-prepare                               Sets up a new gist with a title.md page with the same name as the   target source file(s).
-create                                Push all files in a directory as gists to GitHub. Adds a title.md   and readme.md by default.
-clone                                 Clones a gist to the local filesystem.
-recover                               Recover a user's gist(s) from GitHub remotes as git repos.
-upload                                Upload files to existing gists.
 
 ### Display:
 `-h`  `--help` \

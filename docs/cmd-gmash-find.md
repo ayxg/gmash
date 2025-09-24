@@ -12,10 +12,16 @@ parent: "gmash"
 ### Brief
 High level path/file manipulation and analysis.
 
-### Sub-commands:
-duplicate-code                        Find duplicate code across files.
-gits                                  Find git repositories.
-sources                               Find source files.
+### Commands
+
+`duplicate-code` \
+&nbsp;&nbsp;&nbsp;&nbsp;Find duplicate code across files.
+
+`gits` \
+&nbsp;&nbsp;&nbsp;&nbsp;Find git repositories.
+
+`sources` \
+&nbsp;&nbsp;&nbsp;&nbsp;Find source files.
 
 ### Display:
 `-h`  `--help` \

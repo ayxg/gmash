@@ -86,7 +86,7 @@ Usage: gmash find <sub-command> [[args]...]
   
 High level path/file manipulation and analysis.
   
-Sub-commands:
+Sub-Commands:
   duplicate-code                        Find duplicate code across files.
   gits                                  Find git repositories.
   sources                               Find source files.
