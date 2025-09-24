@@ -1,3 +1,9 @@
+---
+title: Getting Started
+nav_order: 11
+parent: Guides
+---
+
 ## Getting Started
 Follow these steps to install gmash, compile its parsers, verify your setup, and run your first command.
 

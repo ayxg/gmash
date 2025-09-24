@@ -1,3 +1,9 @@
+---
+title: "`gmash gist` Use Cases"
+nav_order: 20
+parent: Guides
+---
+
 ## [0] Use `gmash` to manage github gist repos.
 
 ### [0.1] Use Case : Add a gist as a subtree.
