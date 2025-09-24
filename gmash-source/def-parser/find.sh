@@ -58,11 +58,13 @@ gmash_def_parser_find_sources(){
   standard_parser_setup GMASH_FIND_SOURCES_ARGR gmash_find_sources_help \
     "Usage: gmash find sources -p [path]"
   msg -- "  "
-  msg -- "Find source files in a directory tree."
+  msg -- "Find source files in a directory tree. Optionally merge to target path if provided."
   msg -- "  "
   msg -- "Parameters:"
     param GMASH_FIND_SOURCES_PATH -p --path var:"<path>" \
-      -- "Target path."
+      -- "Path to search for source files."
+    param GMASH_FIND_SOURCES_TGTPATH -P --tgt-path var:"<target_path>" \
+      -- "Path to merge found source files to."
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_find_sources_help

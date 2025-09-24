@@ -201,7 +201,9 @@ gmash_dirs_prefix_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]
   
-Add a prefix to each top-level file in a directory.
+Add a prefix to each top-level file in a directory. If no path is provided, uses current directory.
+If given a file path, only the single file is prefixed.
+Overwrite is denied if the resulting prefixed name already exists in the directory.
   
 Parameters:
   -p,     --prefix <prefix>             Prefix to add.
@@ -316,7 +318,7 @@ gmash_dirs_same_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash dirs same -p <srcPath> -P <tgtPath>
   
-Get a diff of 2 directories.
+Get a list of equivalent files or folders between two directories.
   
 Parameters:
   -p,     --path <srcPath>              Source path.
@@ -548,7 +550,8 @@ gmash_dirs_squash_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash dirs squash [path]
   
-Squash empty directories in the specified path.
+Squash all directories in a given path, and move the contents up to the parent directory.
+Pass a depth greater than 1 to recursivley squash deeper directories up to the parent.
   
 Parameters:
   -p,     --path [path]                 Target path. Defaults to current.

@@ -111,10 +111,17 @@ gmash_find_sources(){
     return 0
   fi
 
-  vecho_process "Merging found files to target path."
+  if [ -n "$_tgtpath" ] && [ ! -d "$_tgtpath" ]; then
+    vecho_info "Creating target directory: $_tgtpath"
+    mkdir -p "$_tgtpath" || {
+      echo_error "Failed to create target directory: $_tgtpath"
+      return 1
+    }
+  fi
 
   if [ -n "$_tgtpath" ]; then
-    mkdir -p "$_tgtpath"
+    vecho_process "Merging found files to target path."
+    #mkdir -p "$_tgtpath"
 
     find "$_path" -type f | while read src_; do
       relpath_="${src_#"$_path"/}"
