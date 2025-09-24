@@ -36,6 +36,26 @@ gmash_dirs_prefix(){
     return 1
   fi
 
+  # Assert no such file with prefix already exists
+  if [ -f "$_path" ]; then
+    basename_="$(basename "$_path")"
+    if [ -f "$(dirname "$_path")/$_prefix$basename_" ]; then
+      echo_err "File '$(dirname "$_path")/$_prefix$basename_' already exists."
+      return 1
+    fi
+  else
+    for _fp in "$_path"/*; do
+      if [ -f "$_fp" ]; then
+        basename_="$(basename "$_fp")"
+        if [ -f "$_path/$_prefix$basename_" ]; then
+          echo_err "File '$_path/$_prefix$basename_' already exists."
+          return 1
+        fi
+      fi
+    done
+  fi
+
+
   vecho_info "Input Arguments:"
   vecho "     --prefix: $_prefix"
   vecho "     --path: $_path"
