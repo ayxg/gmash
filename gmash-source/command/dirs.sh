@@ -108,24 +108,41 @@ gmash_dirs_same(){
 gmash_dirs_separate(){
   if [ $# == 0 ]; then
     local _path="${GMASH_DIRS_SEPARATE_PATH:-$(pwd)}"
+    local _noext="${GMASH_DIRS_SEPARATE_NOEXTENSION:-"0"}"
   else
     local _path="${1:-$(pwd)}"
+    local _noext="${2:-"0"}"
   fi
 
   vecho_func "dirs->separate"
   vecho_info "Input Arguments:"
   vecho "     --path: $_path"
+  vecho "     --no-extension: $_noext"
   vecho_process "Separating files..."
 
-  for _fp in "$_path"/*; do
-    if [ -f "$_fp" ]; then
-      _fname="$(basename "$_fp")"
-      _dirname="${_fname%.*}"
-      mkdir -p "$_path/$_dirname"
-      mv "$_fp" "$_path/$_dirname/"
-      vecho_action "'$_fp' -> '$_path/$_dirname'"
-    fi
-  done
+  if [ "$_noext" -eq "1" ]; then
+    vecho_info "--no-extension is set. Using base filenames for directories."
+    for _fp in "$_path"/*; do
+      if [ -f "$_fp" ]; then
+        _fname="$(basename "$_fp")"
+        _dirname="${_fname%.*}"
+        mkdir -p "$_path/$_dirname"
+        mv "$_fp" "$_path/$_dirname/"
+        vecho_action "'$_fp' -> '$_path/$_dirname'"
+      fi
+    done
+  else
+    for _fp in "$_path"/*; do
+      if [ -f "$_fp" ]; then
+        _fname="$(basename "$_fp")"
+        _dirname="$_fname"
+        mkdir -p "$_path/tmp-$_dirname"
+        mv "$_fp" "$_path/tmp-$_dirname/"
+        mv "$_path/tmp-$_dirname" "$_path/$_dirname"
+        vecho_action "'$_fp' -> '$_path/$_dirname'"
+      fi
+    done
+  fi
 
   vecho_done "Success."
   return 0

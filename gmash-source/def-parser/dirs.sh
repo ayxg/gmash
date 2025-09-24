@@ -78,7 +78,7 @@ gmash_def_parser_dirs_separate(){
     param GMASH_DIRS_SEPARATE_PATH -p --path var:"[path]" -- "Path to separate files from. Defaults to current."
   msg -- "  "
   msg -- "Options:"
-    param GMASH_DIRS_SEPARATE_NOEXTENSION -n --no-extension var:""\
+    flag GMASH_DIRS_SEPARATE_NOEXTENSION -n --noext var:""\
       -- "Separate files with the same base name, ignoring extensions."
   msg -- "  "
   msg -- "Display:"

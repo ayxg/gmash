@@ -343,9 +343,9 @@ gmash_parser_dirs_separate() {
 				"$1") OPTARG=; break ;;
 				$1*) OPTARG="$OPTARG --path"
 			esac
-			case '--no-extension' in
+			case '--noext' in
 				"$1") OPTARG=; break ;;
-				$1*) OPTARG="$OPTARG --no-extension"
+				$1*) OPTARG="$OPTARG --noext"
 			esac
 			case '--help' in
 				"$1") OPTARG=; break ;;
@@ -376,10 +376,10 @@ gmash_parser_dirs_separate() {
 				eval 'set -- "${OPTARG%%\=*}" "${OPTARG#*\=}"' ${1+'"$@"'}
 				;;
 			--no-*|--without-*) unset OPTARG ;;
-			-[pn]?*) OPTARG=$1; shift
+			-[p]?*) OPTARG=$1; shift
 				eval 'set -- "${OPTARG%"${OPTARG#??}"}" "${OPTARG#??}"' ${1+'"$@"'}
 				;;
-			-[hv]?*) OPTARG=$1; shift
+			-[nhv]?*) OPTARG=$1; shift
 				eval 'set -- "${OPTARG%"${OPTARG#??}"}" -"${OPTARG#??}"' ${1+'"$@"'}
 				case $2 in --*) set -- "$1" unknown "$2" && GMASH_DIRS_SEPARATE_ARGR=x; esac;OPTARG= ;;
 			+*) unset OPTARG ;;
@@ -390,11 +390,11 @@ gmash_parser_dirs_separate() {
 				OPTARG=$2
 				export GMASH_DIRS_SEPARATE_PATH="$OPTARG"
 				shift ;;
-			'-n'|'--no-extension')
-				[ $# -le 1 ] && set "required" "$1" && break
-				OPTARG=$2
+			'-n'|'--noext')
+				[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break
+				eval '[ ${OPTARG+x} ] &&:' && OPTARG='1' || OPTARG=''
 				export GMASH_DIRS_SEPARATE_NOEXTENSION="$OPTARG"
-				shift ;;
+				;;
 			'-h'|'--help')
 				gmash_dirs_separate_help
 				exit 0 ;;
@@ -437,7 +437,7 @@ Parameters:
   -p,     --path [path]                 Path to separate files from. Defaults to current.
   
 Options:
-  -n,     --no-extension                Separate files with the same base name, ignoring extensions.
+  -n,     --noext                       Separate files with the same base name, ignoring extensions.
   
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
