@@ -125,6 +125,10 @@ case $_command in
   # gmash->dirs
   #############################################################################
   dirs) gmash_parser_dirs "$@"; eval "set -- $GMASH_DIRS_ARGR";
+    if [ $# -lt 1 ]; then
+      gmash_dirs_help
+      exit 0
+    fi
     _command=$1
     case $_command in
       prefix)
@@ -142,6 +146,10 @@ case $_command in
   # gmash->find
   #############################################################################
   find) gmash_parser_find "$@"; eval "set -- $GMASH_FIND_ARGR";
+    if [ $# -lt 1 ]; then
+      gmash_find_help
+      exit 0
+    fi
     _command=$1
     case $_command in
       duplicate_code)
@@ -157,6 +165,10 @@ case $_command in
   # gmash->gist
   #############################################################################
   gist) gmash_parser_gist "$@"; eval "set -- $GMASH_GIST_ARGR";
+    if [ $# -lt 1 ]; then
+      gmash_gist_help
+      exit 0
+    fi
     _command=$1
     case $_command in
       prepare)
@@ -176,6 +188,10 @@ case $_command in
   # gmash->lineage
   #############################################################################
   lineage) gmash_parser_lineage "$@"; eval "set -- $GMASH_LINEAGE_ARGR";
+    if [ $# -lt 1 ]; then
+      gmash_lineage_help
+      exit 0
+    fi
     _command=$1
     case $_command in
       merge)
@@ -187,6 +203,10 @@ case $_command in
   # gmash->mono
   #############################################################################
   mono) gmash_parser_mono "$@"; eval "set -- $GMASH_MONO_ARGR";
+    if [ $# -lt 1 ]; then
+      gmash_mono_help
+      exit 0
+    fi
     _command=$1
     case $_command in
       patch)
@@ -198,6 +218,10 @@ case $_command in
   # gmash->subtree
   #############################################################################
   subtree) gmash_parser_subtree "$@"; eval "set -- $GMASH_SUBTREE_ARGR";
+    if [ $# -lt 1 ]; then
+      gmash_subtree_help
+      exit 0
+    fi
     _command=$1
     case $_command in
       new)
