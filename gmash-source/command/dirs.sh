@@ -55,7 +55,6 @@ gmash_dirs_prefix(){
     done
   fi
 
-
   vecho_info "Input Arguments:"
   vecho "     --prefix: $_prefix"
   vecho "     --path: $_path"
@@ -65,7 +64,6 @@ gmash_dirs_prefix(){
     basename_="$(basename "$_path")"
     mv "$_path" "$(dirname "$_path")/$_prefix$basename_"
     vecho_action "'$_path' -> '$(dirname "$_path")/$_prefix$basename_'"
-    return 0
   else
     for _fp in "$_path"/*; do
       if [ -f "$_fp" ]; then
@@ -99,8 +97,8 @@ gmash_dirs_same(){
     return 1
   fi
 
-  folders1=$(find "$_path1" -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort | uniq)
-  folders2=$(find "$_path2" -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort | uniq)
+  folders1=$(find "$_path1" -mindepth 1 -maxdepth 1 -printf "%f\n" | sort | uniq)
+  folders2=$(find "$_path2" -mindepth 1 -maxdepth 1 -printf "%f\n" | sort | uniq)
 	comm -12 <(echo "$folders1") <(echo "$folders2")
 
   vecho_done "Success."
