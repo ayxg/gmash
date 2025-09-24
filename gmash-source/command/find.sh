@@ -66,16 +66,19 @@ gmash_find_gits(){
   fi
 
   find "$_path" -type d -name ".git" | while read -r gitdir; do
+    vecho_action "Found git repo: $gitdir"
     repo_dir="$(dirname "$gitdir")"
     repo_name="$(basename "$repo_dir")"
     cd "$repo_dir" || return 1
-    last_commit=$(git log -1 --pretty=format:"%h %ad" --date=short 2>/dev/null)
+    last_commit=$(git log -1 --pretty=format:"%h %ad" --date=short 2>/dev/null) || {
+      last_commit="No commits"
+    }
     echo "$repo_dir : $repo_name : [$last_commit]"
     cd - >/dev/null || return 1
   done
 
   if [ -n "$_path" ]; then
-    cd - || return 1
+    cd -  >/dev/null || return 1
   fi
 
   vecho_done "Success."
