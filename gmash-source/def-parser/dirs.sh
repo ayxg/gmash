@@ -37,7 +37,9 @@ gmash_def_parser_dirs_prefix(){
   standard_parser_setup GMASH_DIRS_PREFIX_ARGR gmash_dirs_prefix_help \
     "Usage: gmash dirs prefix --p <prefix> --P [fileOrFolder]"
   msg -- "  "
-  msg -- "Add a prefix to each top-level file in a directory."
+  msg -- "Add a prefix to each top-level file in a directory. If no path is provided, uses current directory."
+  msg -- "If given a file path, only the single file is prefixed."
+  msg -- "Overwrite is denied if the resulting prefixed name already exists in the directory."
   msg -- "  "
   msg -- "Parameters:"
     param GMASH_DIRS_PREFIX_PREFIX -p --prefix var:"<prefix>" -- "Prefix to add."
@@ -55,7 +57,7 @@ gmash_def_parser_dirs_same(){
   standard_parser_setup GMASH_DIRS_SAME_ARGR gmash_dirs_same_help \
     "Usage: gmash dirs same -p <srcPath> -P <tgtPath>"
   msg -- "  "
-  msg -- "Get a diff of 2 directories."
+  msg -- "Get a list of equivalent files or folders between two directories."
   msg -- "  "
   msg -- "Parameters:"
     param GMASH_DIRS_SAME_PATH -p --path var:"<srcPath>" -- "Source path."
@@ -92,7 +94,8 @@ gmash_def_parser_dirs_squash(){
   standard_parser_setup GMASH_DIRS_SQUASH_ARGR gmash_dirs_squash_help \
     "Usage: gmash dirs squash [path]"
   msg -- "  "
-  msg -- "Squash empty directories in the specified path."
+  msg -- "Squash all directories in a given path, and move the contents up to the parent directory."
+  msg -- "Pass a depth greater than 1 to recursivley squash deeper directories up to the parent."
   msg -- "  "
   msg -- "Parameters:"
     param GMASH_DIRS_SQUASH_PATH -p --path var:"[path]" \
