@@ -126,6 +126,11 @@ gmash_dirs_separate(){
       if [ -f "$_fp" ]; then
         _fname="$(basename "$_fp")"
         _dirname="${_fname%.*}"
+        # Make file path doesn't already exist
+        if [ -f "$_path/$_dirname/$_fname" ]; then
+          echo_err "File '$_path/$_dirname/$_fname' already exists. Aborting."
+          return 1
+        fi
         mkdir -p "$_path/$_dirname"
         mv "$_fp" "$_path/$_dirname/"
         vecho_action "'$_fp' -> '$_path/$_dirname'"
