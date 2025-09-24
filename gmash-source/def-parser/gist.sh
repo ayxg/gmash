@@ -37,7 +37,7 @@ gmash_def_parser_gist(){
   target source file(s)."
 
       cmd create \
-        -- "Push all files in a directory as gists to GitHub. Adds a title.md \
+        -- "Push given files as gists to GitHub. Adds a title.md \
   and readme.md by default."
 
       cmd clone \
@@ -47,7 +47,8 @@ gmash_def_parser_gist(){
           -- "Recover a user's gist(s) from GitHub remotes as git repos."
 
       cmd upload \
-        -- "Upload files to existing gists."
+        -- "Create gists from a set of files or folders and clone them back as\
+git repos."
 
     msg -- "  "
     msg -- "Display:"
@@ -97,7 +98,8 @@ gmash_def_parser_gist_create(){
   [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title] \
   [-p(--public)]"
     msg -- "  "
-    msg -- "Sets up an empty gist with a 'title.md' and 'readme.md' file."
+    msg -- "Push given files as gists to GitHub. Adds a title.md \
+  and readme.md by default."
     msg -- "  "
     msg -- "Params:"
       array GMASH_GIST_CREATE_FILE -f --file init:'GMASH_GIST_CREATE_FILE=()'\
@@ -297,19 +299,19 @@ a single gist. Adds a 'title.md' and 'readme.md' by default."
 
     msg -- \
 "  Case 2 : Create a separate gist for every file in a path, merge files with the same base name.
+  Given 'dir1' and 'dir2' contain files 'foo.cpp', 'bar.cpp','foo.hpp', 'bar.hpp' respectively,
+  2 gists will be created and cloned to dirs: 'foo' and 'bar' relative to '--path'.
   \`\`\` bash
   gmash gist upload -A --no-readme --no-extension
-  # Given 'dir1' and 'dir2' contain files 'foo.cpp', 'bar.cpp','foo.hpp', 'bar.hpp' respectively,
-  # 2 gists will be created and cloned to dirs: 'foo' and 'bar' relative to '--path'.
   \`\`\`
   "
 
     msg -- \
 "  Case 3 : Create a separate gist for every directory in a path, merging all files in each dir.
-  \`\`\`
+  Given 'path1' and 'path2' contain dirs 'foo.', 'bar'. 2 gists will be created and cloned to
+  dirs: 'foo' and 'bar' relative to '--path'.
+  \`\`\` bash
   gmash gist upload -A -a -f path1 -f path2
-  # Given 'path1' and 'path2' contain dirs 'foo.', 'bar'. 2 gists will be
-  # created and cloned to dirs: 'foo' and 'bar' relative to '--path'.
   \`\`\`
   "
 }

@@ -10,7 +10,7 @@ parent: "gmash gist"
 `gmash gist create [<-f <file>>...] [-t [titleFile] | -n [name]]   [-r [readmeFile]] [-d [description]] [--no-readme] [--no-title]   [-p(--public)]`
 
 ### Brief
-Sets up an empty gist with a 'title.md' and 'readme.md' file.
+Push given files as gists to GitHub. Adds a title.md   and readme.md by default.
 
 ### Params:
 `-f`  `--file  <filePath>` \

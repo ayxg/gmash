@@ -15,7 +15,7 @@ parent: "gmash"
 &nbsp;&nbsp;&nbsp;&nbsp;Sets up a new gist with a title.md page with the same name as the   target source file(s).
 
 `create` \
-&nbsp;&nbsp;&nbsp;&nbsp;Push all files in a directory as gists to GitHub. Adds a title.md   and readme.md by default.
+&nbsp;&nbsp;&nbsp;&nbsp;Push given files as gists to GitHub. Adds a title.md   and readme.md by default.
 
 `clone` \
 &nbsp;&nbsp;&nbsp;&nbsp;Clones a gist to the local filesystem.
@@ -24,7 +24,7 @@ parent: "gmash"
 &nbsp;&nbsp;&nbsp;&nbsp;Recover a user's gist(s) from GitHub remotes as git repos.
 
 `upload` \
-&nbsp;&nbsp;&nbsp;&nbsp;Upload files to existing gists.
+&nbsp;&nbsp;&nbsp;&nbsp;Create gists from a set of files or folders and clone them back asgit repos.
 
 ### Manage GitHub Gists with git-like functionality.
 Use 'upload' to create gists from local files and clone them back as git   repos.

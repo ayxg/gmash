@@ -76,14 +76,15 @@ gmash gist upload -f file1 -f file2 -n 'foo-gist' -d 'description of my gist'
 ```
 
 Case 2 : Create a separate gist for every file in a path, merge files with the same base name.
+Given 'dir1' and 'dir2' contain files 'foo.cpp', 'bar.cpp','foo.hpp', 'bar.hpp' respectively,
+2 gists will be created and cloned to dirs: 'foo' and 'bar' relative to '--path'.
 ``` bash
 gmash gist upload -A --no-readme --no-extension
-# Given 'dir1' and 'dir2' contain files 'foo.cpp', 'bar.cpp','foo.hpp', 'bar.hpp' respectively,
-# 2 gists will be created and cloned to dirs: 'foo' and 'bar' relative to '--path'.
 ```
+
 Case 3 : Create a separate gist for every directory in a path, merging all files in each dir.
-```
+Given 'path1' and 'path2' contain dirs 'foo.', 'bar'. 2 gists will be created and cloned to
+dirs: 'foo' and 'bar' relative to '--path'.
+``` bash
 gmash gist upload -A -a -f path1 -f path2
-# Given 'path1' and 'path2' contain dirs 'foo.', 'bar'. 2 gists will be
-# created and cloned to dirs: 'foo' and 'bar' relative to '--path'.
 ```
