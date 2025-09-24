@@ -13,7 +13,7 @@
 
 gmash_dirs_prefix(){
   if [ $# == 0 ]; then
-    local _prefix="${GMASH_DIRS_PREFIX_PREFIX:-''}"
+    local _prefix="${GMASH_DIRS_PREFIX_PREFIX:-}"
     local _path="${GMASH_DIRS_PREFIX_PATH:-$(pwd)}"
   else
     local _prefix="${1:-''}"
@@ -31,7 +31,7 @@ gmash_dirs_prefix(){
     _path="$(pwd)"
   fi
 
-  if [ ! -d "$_path" ]; then
+  if [ ! -d "$_path" ] && [ ! -f "$_path" ]; then
     echo_err "Target path '$_path' does not exist."
     return 1
   fi
