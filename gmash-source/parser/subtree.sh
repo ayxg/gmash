@@ -396,12 +396,12 @@ gmash_subtree_patch_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash subtree patch -r [repo] -b [branch]
   
-Patch subtree changes to monorepo.
+Pull subtree changes to monorepo.
   
 Parameters:
-  -R,     --remote [remote = "origin"]  
-  -b,     --branch [branch = "main"]    
-  -p,     --path <subtreePath>          
+  -R,     --remote [remote = "origin"]  Target subtree remote alias. Defaults to 'origin'.
+  -b,     --branch [branch = "main"]    Target subtree branch. Defaults to 'main'.
+  -p,     --path <subtreePath>          Subtree prefix path in the monorepo.
   
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.

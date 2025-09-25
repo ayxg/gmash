@@ -111,23 +111,23 @@
 #       https://opensource.com/article/20/5/git-submodules-subtrees
 #@enddoc#######################################################################
 gmash_mono_patch(){
-  local _br="$GMashParamBr"
-  local _path="$GMashParamPath"
-  local _remote="$GMashParamRemote"
-  local _tgtbr="$GMashParamTgtBr"
-  local _tgtuser="$GMashParamTgtUser"
-  local _tempbr="$GMashFlagTempBr"
-  local _tempdir="$GMashFlagTempDir"
-  local _user="$GMashParamUser"
-  local _url="$GMashParamUrl"
+  local _br="$GMASH_MONO_PATCH_BR"
+  local _path="$GMASH_MONO_PATCH_PATH"
+  local _remote="$GMASH_MONO_PATCH_REMOTE"
+  local _tgtbr="$GMASH_MONO_PATCH_TGTBR"
+  local _tgtuser="$GMASH_MONO_PATCH_TGTUSER"
+  local _tempbr="$GMASH_MONO_PATCH_TEMPBR"
+  local _tempdir="$GMASH_MONO_PATCH_TEMPDIR"
+  local _user="$GMASH_MONO_PATCH_USER"
+  local _url="$GMASH_MONO_PATCH_URL"
 
-  local _all="$GMashFlagAll"
-  local _makepr="$GMashFlagMakePr"
-  local _squash="$GMashFlagSquash"
+  local _all="$GMASH_MONO_PATCH_ALL"
+  local _makepr="$GMASH_MONO_PATCH_MAKEPR"
+  local _squash="$GMASH_MONO_PATCH_SQUASH"
 
   local _curr_repo_name=$(basename $(git rev-parse --show-toplevel))
 
-  gmash_verb "\e[33;1m[$_user/$_curr_repo_name][gmash->mono-patch]\e[0m
+  vecho "\e[33;1m[$_user/$_curr_repo_name][gmash->mono-patch]\e[0m
       \e[34m\tⓘ Input arguments:\e[0m
       \t\t[--br] '$_br',
       \t\t[--path] '$_path',
@@ -143,7 +143,7 @@ gmash_mono_patch(){
       \t\t[--squash] '$_squash'"
 
   # Verify git state & parameters.
-  gmash_verb "\e[35m\t⚙ Verifying parameters.\e[0m"
+  vecho "\e[35m\t⚙ Verifying parameters.\e[0m"
     if [ -z "$_user" ]; then
       echo "[gmash][mono-patch][error]: Must specify a github user/org to own the mono repo with --user or -u."
       return 1
@@ -152,33 +152,33 @@ gmash_mono_patch(){
       echo "[gmash][mono-patch][error]: Must specify a subtree remote alias with --remote or use --all to patch all subtrees."
       return 1
     fi
-    if [ -z "$_name" ]; then
+    if [ -z "${_name:-}" ]; then
       _name="$_remote"
-      gmash_verb "\t\t-> Defaulting subtree name($_name) to remote alias($_remote)."
+      vecho "\t\t-> Defaulting subtree name($_name) to remote alias($_remote)."
     fi
     if [ -z "$_tgtuser" ]; then
       _tgtuser="$_user"
-      gmash_verb "\t\t-> Defaulting target user($_tgtuser) to source user($_user)."
+      vecho "\t\t-> Defaulting target user($_tgtuser) to source user($_user)."
     fi
     if [ -z "$_br" ]; then
       _br="main"
-      gmash_verb "\t\t-> Defaulting mono repo branch($_br) to 'main'."
+      vecho "\t\t-> Defaulting mono repo branch($_br) to 'main'."
     fi
     if [ -z "$_tgtbr" ]; then
       _tgtbr="main"
-      gmash_verb "\t\t-> Defaulting target subtree branch($_tgtbr) to 'main'."
+      vecho "\t\t-> Defaulting target subtree branch($_tgtbr) to 'main'."
     fi
     if [ -z "$_path" ]; then
       _path="projects/$_name"
-      gmash_verb "\t\t-> Defaulting subtree path($_path) to 'projects/$_name'."
+      vecho "\t\t-> Defaulting subtree path($_path) to 'projects/$_name'."
     fi
     if [ -z "$_tempbr" ]; then
       _tempbr="mono-patch-to-$_remote-$_tgtbr"
-      gmash_verb "\t\t-> Defaulting temporary branch($_tempbr) to '$_remote-update-from-mono'."
+      vecho "\t\t-> Defaulting temporary branch($_tempbr) to '$_remote-update-from-mono'."
     fi
     if [ -z "$_tempdir" ]; then
       _tempdir="../mono-patch-sync-temp-$_remote-$_tgtbr"
-      gmash_verb "\t\t-> Defaulting temporary worktree dir to '../mono-patch-sync-temp-$_remote-$_tgtbr'."
+      vecho "\t\t-> Defaulting temporary worktree dir to '../mono-patch-sync-temp-$_remote-$_tgtbr'."
     fi
 
     # Negative tests.
@@ -201,7 +201,7 @@ gmash_mono_patch(){
         echo "[gmash][mono-patch][error]: Could not determine URL of subtree remote '$_remote'. Please specify with --url."
         return 1
       fi
-      gmash_verb "\t\t-> Fetched URL($_url) from existing remote alias($_remote)."
+      vecho "\t\t-> Fetched URL($_url) from existing remote alias($_remote)."
     fi
     if [ ! -d "$_path" ]; then
       echo "[gmash][mono-patch][error]: Subtree path '$_path' does not exist."
@@ -209,9 +209,9 @@ gmash_mono_patch(){
     fi
     # Set url.
     _url=$(git remote get-url "$_remote") # Will overwrite if already correct since remote must match URL.
-  gmash_verb "\e[32m\t  ✓ Params verified, working on mono branch '$_user/$_curr_repo_name:$_br' at '$_url'.\e[0m"
+  vecho "\e[32m\t  ✓ Params verified, working on mono branch '$_user/$_curr_repo_name:$_br' at '$_url'.\e[0m"
 
-  gmash_verb "\e[34m\tⓘ Final input arguments:\e[0m
+  vecho "\e[34m\tⓘ Final input arguments:\e[0m
   \t\t[--br] '$_br',
   \t\t[--path] '$_path',
   \t\t[--remote] '$_remote',
@@ -226,13 +226,13 @@ gmash_mono_patch(){
   \t\t[--squash] '$_squash'"
 
   # Attempt to do a fast forward subtree pull->push.
-  gmash_verb "\e[35m\t⚙ Running fast-forward push to subtree '$_remote:$_tgtbr'.\e[0m"
+  vecho "\e[35m\t⚙ Running fast-forward push to subtree '$_remote:$_tgtbr'.\e[0m"
   if output=$(git subtree pull --prefix="$_path" "$_remote" "$_tgtbr" -m "[gmash][mono-patch] Accepting updates from subtree." 2>&1 | tee /dev/tty); then
     if echo "$output" | grep -q "Already up to date"; then
-      gmash_verb "\t\t-> No new subtree changes detected."
+      vecho "\t\t-> No new subtree changes detected."
 
     else
-      gmash_verb "\t\t-> Accepted new subtree changes, pushing subtree updates to remote mono."
+      vecho "\t\t-> Accepted new subtree changes, pushing subtree updates to remote mono."
       git pull
       git push
     fi
@@ -241,13 +241,13 @@ gmash_mono_patch(){
       exit 1
   fi
 
-  gmash_verb "\e[35m\t⚙ Checking if subtree sync is needed...\e[0m"
+  vecho "\e[35m\t⚙ Checking if subtree sync is needed...\e[0m"
     git fetch "$_remote" "$_tgtbr" 2>/dev/null || true
     if git diff --quiet "HEAD:$_path" "$_remote/$_tgtbr" -- 2>/dev/null; then
       # exit early here.
-      gmash_verb "\t\t-> Subtree content is synced"
-      gmash_verb "\e[32m\t  ✓ Success. Mono is patched.\e[0m"
-      gmash_verb "\e[34m\t[gmash][mono-patch] ⓘ Result metadata:\e[0m
+      vecho "\t\t-> Subtree content is synced"
+      vecho "\e[32m\t  ✓ Success. Mono is patched.\e[0m"
+      vecho "\e[34m\t[gmash][mono-patch] ⓘ Result metadata:\e[0m
       \t\t[--br] '$_br',
       \t\t[--path] '$_path',
       \t\t[--remote] '$_remote',
@@ -261,7 +261,7 @@ gmash_mono_patch(){
       \t\t[--squash] '$_squash'"
       return 0
     else
-      gmash_verb "\t\t-> Subtree content differs, 3 way sync required."
+      vecho "\t\t-> Subtree content differs, 3 way sync required."
     fi
 
   # Prepare parent->subtree merge commit message.
@@ -294,26 +294,26 @@ gmash_mono_patch(){
 
 
   # Begin 3-way sync subtree->parent->subtree.
-  gmash_verb "\e[35m\t⚙ Running 3-way sync subtree->parent->subtree.\e[0m"
+  vecho "\e[35m\t⚙ Running 3-way sync subtree->parent->subtree.\e[0m"
     git worktree remove --force "$_tempdir" 2>/dev/null || rm -rf "$_tempdir"
     git branch -D "$_tempbr" 2>/dev/null || true
-    gmash_verb "\t\t-> Fetching remote state."
-      gmash_verb "\e[33m\t💻 git fetch '$_remote' '$_tgtbr'"
+    vecho "\t\t-> Fetching remote state."
+      vecho "\e[33m\t💻 git fetch '$_remote' '$_tgtbr'"
       git fetch "$_remote" "$_tgtbr"
 
-    gmash_verb "\t\t-> Creating temporary worktree."
-      gmash_verb "\e[33m\t💻 git worktree add --detach '$_tempdir' '$_br'"
+    vecho "\t\t-> Creating temporary worktree."
+      vecho "\e[33m\t💻 git worktree add --detach '$_tempdir' '$_br'"
       if ! git worktree add --detach "$_tempdir" "$_br"; then
         echo "[gmash][mono-patch][error]: Failed to create temporary worktree at '$_tempdir'."
       exit 1
       fi
 
-    gmash_verb "\t\t-> Moving to worktree directory."
+    vecho "\t\t-> Moving to worktree directory."
       _original_dir=$(pwd) # Store current directory to return to later
       cd "$_tempdir" # Move to worktree directory
 
-    gmash_verb "\t\t-> Splitting subtree to temporary branch '$_tempbr'."
-      gmash_verb "\e[33m\t💻 git subtree split --prefix='$_path' --branch='$_tempbr'"
+    vecho "\t\t-> Splitting subtree to temporary branch '$_tempbr'."
+      vecho "\e[33m\t💻 git subtree split --prefix='$_path' --branch='$_tempbr'"
       if ! git subtree split --prefix="$_path" --branch="$_tempbr"; then
         echo "[gmash][mono-patch][error]: Failed to split subtree to temporary branch '$_tempbr'. Reversing changes."
         cd "$_original_dir"
@@ -321,8 +321,8 @@ gmash_mono_patch(){
         return 1
       fi
 
-    gmash_verb "\t\t-> Checking out temporary branch '$_tempbr'."
-      gmash_verb "\e[33m\t💻 git checkout '$_tempbr'"
+    vecho "\t\t-> Checking out temporary branch '$_tempbr'."
+      vecho "\e[33m\t💻 git checkout '$_tempbr'"
       if ! git checkout "$_tempbr"; then
         echo "[gmash][mono-patch][error]: Failed to checkout temporary branch '$_tempbr'. Reversing changes."
         cd "$_original_dir"
@@ -331,8 +331,8 @@ gmash_mono_patch(){
         return 1
       fi
 
-    gmash_verb "\t\t-> Fetching updates from subtree remote '$_remote'."
-      gmash_verb "\e[33m\t💻 git fetch '$_remote' '$_tgtbr'"
+    vecho "\t\t-> Fetching updates from subtree remote '$_remote'."
+      vecho "\e[33m\t💻 git fetch '$_remote' '$_tgtbr'"
       if ! git fetch "$_remote" "$_tgtbr"; then
         echo "[gmash][mono-patch][error]: Failed to fetch from subtree remote '$_remote'. Reversing changes."
         cd "$_original_dir"
@@ -341,8 +341,8 @@ gmash_mono_patch(){
         return 1
       fi
 
-    gmash_verb "\t\t-> Merging changes to remote subtree."
-      gmash_verb "\e[33m\t💻 git merge '$_remote/$_tgtbr' --allow-unrelated-histories -m 'Merge parent changes to remote subtree'"
+    vecho "\t\t-> Merging changes to remote subtree."
+      vecho "\e[33m\t💻 git merge '$_remote/$_tgtbr' --allow-unrelated-histories -m 'Merge parent changes to remote subtree'"
       if ! git merge "$_remote/$_tgtbr" --allow-unrelated-histories -m "$_merge_msg"; then
           echo "[gmash][mono-patch][error]: Merge failed. Resolve conflicts manually or use --make-pr to create a PR instead."
           cd "$_original_dir"
@@ -351,29 +351,29 @@ gmash_mono_patch(){
           exit 1
       fi
 
-    gmash_verb "\t\t-> Pushing to subtree remote."
-      gmash_verb "\e[33m\t💻 git push '$_remote' '$_tempbr:$_tgtbr'"
+    vecho "\t\t-> Pushing to subtree remote."
+      vecho "\e[33m\t💻 git push '$_remote' '$_tempbr:$_tgtbr'"
       if ! git push "$_remote" "$_tempbr:$_tgtbr"; then
           echo "[gmash][mono-patch][error]: Push to subtree remote '$_remote' failed. Resolve conflicts manually or use --make-pr to create a PR instead."
           exit 1
       fi
 
-    gmash_verb "\t\t-> Returning to mono and cleaning up."
+    vecho "\t\t-> Returning to mono and cleaning up."
       cd "$_original_dir"
-      gmash_verb "\e[33m\t💻 git worktree remove --force '$_tempdir'"
+      vecho "\e[33m\t💻 git worktree remove --force '$_tempdir'"
       if [ -d "$_tempdir" ]; then
           git worktree remove --force "$_tempdir" 2>/dev/null || rm -rf "$_tempdir"
       fi
 
-      gmash_verb "\e[33m\t💻 git branch -D '$_tempbr'"
+      vecho "\e[33m\t💻 git branch -D '$_tempbr'"
       if git show-ref --quiet "refs/heads/$_tempbr"; then
         git branch -D "$_tempbr" 2>/dev/null || true
       fi
 
-    gmash_verb "\t\t-> Syncing subtree changes back to parent."
-      gmash_verb "\e[33m\t💻 git fetch '$_remote' '$_tgtbr'"
+    vecho "\t\t-> Syncing subtree changes back to parent."
+      vecho "\e[33m\t💻 git fetch '$_remote' '$_tgtbr'"
       if git fetch "$_remote" "$_tgtbr"; then
-        gmash_verb "\e[33m\t💻 git merge -s subtree FETCH_HEAD -m ..."
+        vecho "\e[33m\t💻 git merge -s subtree FETCH_HEAD -m ..."
         if ! git merge -s subtree FETCH_HEAD -m "$_sync_msg"; then
             echo "[gmash][mono-patch][fatal]: Sync-back merge failed. Subtree possibly changed mid-sync."
             return 1
@@ -383,16 +383,16 @@ gmash_mono_patch(){
         return 1
       fi
 
-    gmash_verb "\t\t -> Validating sync with a mono push."
-      gmash_verb "\e[33m\t💻 git push"
+    vecho "\t\t -> Validating sync with a mono push."
+      vecho "\e[33m\t💻 git push"
       if ! git push; then
           echo "[gmash][mono-patch][error]: Final mono push failed. Unexpected error."
           return 1
       fi
-  gmash_verb "\e[32m\t  ✓ 3 Way sync complete, changes pushed to subtree remote '$_remote' branch '$_tgtbr'.\e[0m"
+  vecho "\e[32m\t  ✓ 3 Way sync complete, changes pushed to subtree remote '$_remote' branch '$_tgtbr'.\e[0m"
 
-  gmash_verb "\e[32m\t  ✓ Success. Mono is patched.\e[0m"
-  gmash_verb "\e[34m\t[gmash][mono-patch] ⓘ Result metadata:\e[0m
+  vecho "\e[32m\t  ✓ Success. Mono is patched.\e[0m"
+  vecho "\e[34m\t[gmash][mono-patch] ⓘ Result metadata:\e[0m
     \t\t[--br] '$_br',
     \t\t[--path] '$_path',
     \t\t[--remote] '$_remote',

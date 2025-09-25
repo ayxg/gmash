@@ -37,10 +37,42 @@ gmash_def_parser_mono_patch(){
   msg -- "Patch a git repository with changes from another branch."
   msg -- "  "
   msg -- "Parameters:"
-    param GMASH_MONO_PATCH_REPO -r --repo var:"<repo>" \
+    param GMASH_MONO_PATCH_BR -b --br var:"<monoBranch>" \
+      -- "Source mono branch to pull changes from."
+
+    param GMASH_MONO_PATCH_PATH -p --path var:"<prefixPath>" \
+      -- "Subtree prefix path in the monorepo."
+
+    param GMASH_MONO_PATCH_REMOTE -r --remote var:"<subtreeRemote>" \
+      -- "Target subtree remote alias."
+
+    param GMASH_MONO_PATCH_TGTBR -B --tgtbr var:"<subtreeBranch>" \
+      -- "Target subtree remote alias."
+
+    param GMASH_MONO_PATCH_TGTUSER -U --tgtuser var:"<subtreeOwner>" \
+      -- "Owner of the target subtree repo."
+
+    param GMASH_MONO_PATCH_TEMPBR -t --tempbr var:"<tempBranch>" \
+      -- "Owner of the target subtree repo."
+
+    param GMASH_MONO_PATCH_TEMPDIR -T --tempdir var:"<tempPath>" \
+      -- "Owner of the target subtree repo."
+
+    param GMASH_MONO_PATCH_USER -u --user var:"<tempPath>" \
+      -- "Owner the mono repo. Defaults to current GitHub user."
+
+    param GMASH_MONO_PATCH_URL -l --url var:"<repo>" \
       -- "Target repository."
-    param GMASH_MONO_PATCH_BRANCH -b --branch var:"<branch>" \
-      -- "Target branch."
+
+    flag GMASH_MONO_PATCH_ALL -a --all var:"" \
+      -- "Patch all known subtrees in the mono repo."
+
+    flag GMASH_MONO_PATCH_MAKEPR -P --make-pr var:"" \
+      -- "Make a pull request on GitHub with the patched changes."
+
+    flag GMASH_MONO_PATCH_SQUASH -s --squash var:"" \
+      -- "Squash strategy when merging subtree changes. Must be consistent with\
+  the previous pul of the subtree."
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_mono_patch_help
