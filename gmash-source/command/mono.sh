@@ -11,6 +11,77 @@
 # @file gmash->mono command group
 #@enddoc#######################################################################
 
+
+gmash_mono_patch_all(){
+  # Read subtree metadata from .gmash/subtree/*.conf and call mono-patch for each.
+  local _subtree_dir=".gmash/subtree"
+  if [ ! -d "$_subtree_dir" ]; then
+    echo "[gmash][mono-patch-all][error]: Subtree metadata directory '$_subtree_dir' not found."
+    return 1
+  fi
+
+  vecho "\e[33;1m[gmash][mono-patch-all]\e[0m
+      \e[34m\tⓘ Scanning subtree metadata directory '$_subtree_dir' for subtrees to patch.\e[0m"
+
+  local _patched_any=0
+  for conf_file in "$_subtree_dir"/*.conf; do
+    if [ "$conf_file" == "$_subtree_dir/*.conf" ]; then
+      # No .conf files found, break the loop.
+      conf_file=""
+      break
+    fi
+
+
+    if [ ! -f "$conf_file" ]; then
+      vecho "\t\t-> No subtree metadata files found in '$_subtree_dir'.
+      \t\t   Skipping mono-patch-all."
+      break
+    fi
+    vecho "\t\t-> Processing subtree metadata file '$conf_file'."
+    # Read config values.
+    local _url
+    local _remote
+    local _branch
+    local _path
+    local _squash
+    local _owned
+    _url=$(confread "$conf_file" "url")
+    _remote=$(confread "$conf_file" "remote")
+    _branch=$(confread "$conf_file" "branch")
+    _path=$(confread "$conf_file" "path")
+    _squash=$(confread "$conf_file" "squash")
+    _owned=$(confread "$conf_file" "owned")
+
+    if [ -z "$_remote" ] || [ -z "$_url" ] || [ -z "$_branch" ] || [ -z "$_path" ]; then
+      echo "[gmash][mono-patch-all][error]: Incomplete metadata in '$conf_file'. Skipping."
+      continue
+    fi
+
+    vecho "\e[34m\tⓘ Patching subtree '$_remote' at '$_path' from '$_url'.\e[0m"
+    GMASH_MONO_PATCH_REMOTE="$_remote"
+    GMASH_MONO_PATCH_URL="$_url"
+    GMASH_MONO_PATCH_BR="$_branch"
+    GMASH_MONO_PATCH_PATH="$_path"
+    GMASH_MONO_PATCH_ALL="0" # Disable all to avoid recursion.
+
+    if gmash_mono_patch; then
+      _patched_any=1
+      vecho "\e[32m\t  ✓ Successfully patched subtree '$_remote'.\e[0m"
+    else
+      echo "[gmash][mono-patch-all][error]: Failed to patch subtree '$_remote'. Continuing to next."
+    fi
+
+  done
+
+  if [ $_patched_any -eq 0 ]; then
+    vecho "\e[33m\t⚠ No subtrees were patched. Either no metadata files found or all patches failed.\e[0m"
+  else
+    vecho "\e[32m\t  ✓ Mono patched with all applicable subtrees.\e[0m"
+  fi
+
+  return 0
+}
+
 #@doc##########################################################################
 # @func gmash_mono_patch
 # @brief Push commits made in a monorepo to an owned subtree repo.
@@ -141,6 +212,12 @@ gmash_mono_patch(){
       \t\t[--all] '$_all',
       \t\t[--make-pr] '$_makepr',
       \t\t[--squash] '$_squash'"
+
+  if [ "$_all" == "1" ]; then
+    vecho "\e[34m\tⓘ --all specified, patching all subtrees from metadata.\e[0m"
+    gmash_mono_patch_all
+    return 0
+  fi
 
   # Verify git state & parameters.
   vecho "\e[35m\t⚙ Verifying parameters.\e[0m"
@@ -404,4 +481,95 @@ gmash_mono_patch(){
     \t\t[--all] '$_all',
     \t\t[--make-pr] '$_makepr',
     \t\t[--squash] '$_squash'"
+}
+
+
+
+
+# Clone monorepo from github. Add all subtrees from metadata.
+gmash_mono_clone(){
+  local _user="$GMASH_MONO_CLONE_USER"
+  local _dir="$GMASH_MONO_CLONE_DIR"
+  local _br="$GMASH_MONO_CLONE_BR"
+
+  if [ -z "$_user" ]; then
+    echo "[gmash][mono-clone][error]: Must specify a github user/org to own the mono repo with --user or -u."
+    return 1
+  fi
+
+  if [ -z "$_dir" ]; then
+    _dir="$_user-mono-repo"
+    vecho "\t\t-> Defaulting mono clone directory($_dir) to '$_user-mono-repo'."
+  fi
+
+  if [ -z "$_br" ]; then
+    _br="main"
+    vecho "\t\t-> Defaulting mono repo branch($_br) to 'main'."
+  fi
+
+  vecho "\e[33;1m[gmash][mono-clone]\e[0m
+      \e[34m\tⓘ Input arguments:\e[0m
+      \t\t[--user] '$_user',
+      \t\t[--dir] '$_dir',
+      \t\t[--br] '$_br'"
+
+  if [ -d "$_dir" ]; then
+    echo "[gmash][mono-clone][error]: Target directory '$_dir' already exists. Please remove or choose another with --dir."
+    return 1
+  fi
+
+  vecho "\e[35m\t⚙ Cloning mono repo from '$_user/$_user-mono-repo' into '$_dir'.\e[0m"
+    if ! git clone "$_user/$_user-mono-repo" "$_dir"; then
+      echo "[gmash][mono-clone][error]: Failed to clone mono repo from '$_user/$_user-mono-repo'. Ensure the repo exists and you have access."
+      return 1
+    fi
+    cd "$_dir" || return 1
+    if ! git checkout "$_br"; then
+      echo "[gmash][mono-clone][error]: Branch '$_br' does not
+  exist in the mono repo."
+      return 1
+    fi
+  vecho "\e[32m\t  ✓ Successfully cloned mono repo.\e[0m"
+
+
+  vecho "\e[35m\t⚙ Adding subtrees from metadata.\e[0m"
+  for conf_file in ../.gmash/subtree/*.conf; do
+    if [ "$conf_file" == "../.gmash/subtree/*.conf" ]; then
+      # No .conf files found, break the loop.
+      conf_file=""
+      break
+    fi
+
+    if [ ! -f "$conf_file" ]; then
+      vecho "\t\t-> No subtree metadata files found in '../.gmash/subtree'.
+      \t\t   Skipping mono-clone subtree addition."
+      break
+    fi
+    vecho "\t\t-> Processing subtree metadata file '$conf_file'."
+    # Read config values.
+    local _url
+    local _remote
+    local _branch
+    local _path
+    local _squash
+    local _owned
+    _url=$(confread "$conf_file" "url")
+    _remote=$(confread "$conf_file" "remote")
+    _branch=$(confread "$conf_file" "branch")
+    _path=$(confread "$conf_file" "path")
+    _squash=$(confread "$conf_file" "squash")
+    _owned=$(confread "$conf_file" "owned")
+
+    if [ -z "$_remote" ] || [ -z "$_url" ] || [ -z "$_branch" ] || [ -z "$_path" ]; then
+      echo "[gmash][mono-clone][error]: Incomplete metadata in '$conf_file'. Skipping."
+      continue
+    fi
+
+    vecho "\e[34m\tⓘ Adding subtree '$_remote' at '$_path' from '$_url'.\e[0m"
+    git remote add "$_remote" "$_url"
+
+  done
+
+  vecho "\e[32m\t  ✓ Successfully added all subtrees from metadata.\e[0m"
+
 }
