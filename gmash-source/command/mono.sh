@@ -33,11 +33,11 @@ gmash_mono_patch_all(){
 
 
     if [ ! -f "$conf_file" ]; then
-      vecho "\t\t-> No subtree metadata files found in '$_subtree_dir'.
+      vecho_action "No subtree metadata files found in '$_subtree_dir'.
       \t\t   Skipping mono-patch-all."
       break
     fi
-    vecho "\t\t-> Processing subtree metadata file '$conf_file'."
+    vecho_action "Processing subtree metadata file '$conf_file'."
     # Read config values.
     local _url
     local _remote
@@ -182,163 +182,176 @@ gmash_mono_patch_all(){
 #       https://opensource.com/article/20/5/git-submodules-subtrees
 #@enddoc#######################################################################
 gmash_mono_patch(){
-  local _br="$GMASH_MONO_PATCH_BR"
-  local _path="$GMASH_MONO_PATCH_PATH"
-  local _remote="$GMASH_MONO_PATCH_REMOTE"
-  local _tgtbr="$GMASH_MONO_PATCH_TGTBR"
-  local _tgtuser="$GMASH_MONO_PATCH_TGTUSER"
-  local _tempbr="$GMASH_MONO_PATCH_TEMPBR"
-  local _tempdir="$GMASH_MONO_PATCH_TEMPDIR"
-  local _user="$GMASH_MONO_PATCH_USER"
-  local _url="$GMASH_MONO_PATCH_URL"
+  local _br=${GMASH_MONO_PATCH_BR:-'main'}
+  local _path=${GMASH_MONO_PATCH_PATH:-'subtreeDirName'}
+  local _remote=${GMASH_MONO_PATCH_REMOTE:-'origin'}
+  local _tgtbr=${GMASH_MONO_PATCH_TGTBR:-'main'}
+  local _user=${GMASH_MONO_PATCH_USER:-{currentGithubUser}}
+  local _tgtuser=${GMASH_MONO_PATCH_TGTUSER:-$_user}
+  local _tempbr=${GMASH_MONO_PATCH_TEMPBR:-""}
+  local _tempdir=${GMASH_MONO_PATCH_TEMPDIR:-""}
+  local _url=${GMASH_MONO_PATCH_URL:-""}
 
-  local _all="$GMASH_MONO_PATCH_ALL"
-  local _makepr="$GMASH_MONO_PATCH_MAKEPR"
-  local _squash="$GMASH_MONO_PATCH_SQUASH"
+  local _all=${GMASH_MONO_PATCH_ALL:-"0"}
+  local _makepr=${GMASH_MONO_PATCH_MAKEPR:-"0"}
+  local _squash=${GMASH_MONO_PATCH_SQUASH-"0"}
 
   local _curr_repo_name=$(basename $(git rev-parse --show-toplevel))
 
-  vecho "\e[33;1m[$_user/$_curr_repo_name][gmash->mono-patch]\e[0m
-      \e[34m\tⓘ Input arguments:\e[0m
-      \t\t[--br] '$_br',
-      \t\t[--path] '$_path',
-      \t\t[--remote] '$_remote',
-      \t\t[--tgtbr] '$_tgtbr',
-      \t\t[--tgtuser] '$_tgtuser',
-      \t\t[--tempbr] '$_tempbr',
-      \t\t[--tempdir] '$_tempdir',
-      \t\t[--user] '$_user',
-      \t\t[--url] '$_url',
-      \t\t[--all] '$_all',
-      \t\t[--make-pr] '$_makepr',
-      \t\t[--squash] '$_squash'"
+  vecho_section_start "gmash mono patch"
+  vecho_info "Input parameters:" 1
+  vecho_info "- br:       $_br" 2
+  vecho_info "- path:     $_path" 2
+  vecho_info "- remote:   $_remote" 2
+  vecho_info "- tgtbr:    $_tgtbr" 2
+  vecho_info "- tgtuser:  $_tgtuser" 2
+  vecho_info "- tempbr    $_tempbr" 2
+  vecho_info "- tempdir   $_tempdir"  2
+  vecho_info "- user      $_user" 2
+  vecho_info "- url       $_url"  2
+  vecho_info "- all       $_all"  2
+  vecho_info "- makepr    $_makepr" 2
+  vecho_info "- squash    $_squash" 2
+  vecho_process "Applying patch from mono : $_user/$_curr_repo_name"
 
   if [ "$_all" == "1" ]; then
-    vecho "\e[34m\tⓘ --all specified, patching all subtrees from metadata.\e[0m"
+    vecho_process "Scanning repo for subtree metadata in '.gmash/subtrees'."
     gmash_mono_patch_all
     return 0
   fi
 
-  # Verify git state & parameters.
-  vecho "\e[35m\t⚙ Verifying parameters.\e[0m"
+  vecho_process "Verifying parameters"
     if [ -z "$_user" ]; then
-      echo "[gmash][mono-patch][error]: Must specify a github user/org to own the mono repo with --user or -u."
+      echo_err "Must specify a github user/org to own the mono repo with --user or -u."
       return 1
     fi
+
     if [ -z "$_remote" ] && [ "$_all" != "1" ]; then
-      echo "[gmash][mono-patch][error]: Must specify a subtree remote alias with --remote or use --all to patch all subtrees."
+      echo_err "Must specify a subtree remote alias with --remote or use --all to patch all subtrees."
       return 1
     fi
+
     if [ -z "${_name:-}" ]; then
       _name="$_remote"
-      vecho "\t\t-> Defaulting subtree name($_name) to remote alias($_remote)."
+      vecho_action "Defaulting subtree name($_name) to remote alias($_remote)." 1
     fi
+
     if [ -z "$_tgtuser" ]; then
       _tgtuser="$_user"
-      vecho "\t\t-> Defaulting target user($_tgtuser) to source user($_user)."
+      vecho_action "Defaulting target user($_tgtuser) to source user($_user)." 1
     fi
+
     if [ -z "$_br" ]; then
       _br="main"
-      vecho "\t\t-> Defaulting mono repo branch($_br) to 'main'."
+      vecho_action "Defaulting mono repo branch($_br) to 'main'." 1
     fi
+
     if [ -z "$_tgtbr" ]; then
       _tgtbr="main"
-      vecho "\t\t-> Defaulting target subtree branch($_tgtbr) to 'main'."
+      vecho_action "Defaulting target subtree branch($_tgtbr) to 'main'." 1
     fi
+
     if [ -z "$_path" ]; then
       _path="projects/$_name"
-      vecho "\t\t-> Defaulting subtree path($_path) to 'projects/$_name'."
+      vecho_action "Defaulting subtree path($_path) to 'projects/$_name'." 1
     fi
+
     if [ -z "$_tempbr" ]; then
       _tempbr="mono-patch-to-$_remote-$_tgtbr"
-      vecho "\t\t-> Defaulting temporary branch($_tempbr) to '$_remote-update-from-mono'."
+      vecho_action "Defaulting temporary branch($_tempbr) to '$_remote-update-from-mono'." 1
     fi
+
     if [ -z "$_tempdir" ]; then
       _tempdir="../mono-patch-sync-temp-$_remote-$_tgtbr"
-      vecho "\t\t-> Defaulting temporary worktree dir to '../mono-patch-sync-temp-$_remote-$_tgtbr'."
+      vecho_action "Defaulting temporary worktree dir to '../mono-patch-sync-temp-$_remote-$_tgtbr'."  1
     fi
 
     # Negative tests.
     local _correct_branch=$(git rev-parse --abbrev-ref HEAD)
     if [ "$_correct_branch" != "$_br" ]; then
-      echo "[gmash][new-subtree][error]: Must be on $_br branch (currently on $_correct_branch)."
+      echo_err "Must be on $_br branch (currently on $_correct_branch)."
       return 1
     fi
+
     if [ -z "$_remote" ] && [ "$_all" != "1" ]; then
-      echo "[gmash][mono-patch][error]: Must specify a subtree remote alias with --remote or use --all to patch all subtrees."
+      echo_err "Must specify a subtree remote alias with --remote or use --all to patch all subtrees."
       return 1
     fi
+
     if ! git remote get-url "$_remote" >/dev/null 2>&1; then
-      echo "[gmash][mono-patch][error]: Subtree remote '$_remote' not found."
+      echo_err "Subtree remote '$_remote' not found."
       return 1
     fi
+
     if [ -z "$_url" ]; then
       _url=$(git remote get-url "$_remote" 2>/dev/null)
       if [ $? -ne 0 ]; then
-        echo "[gmash][mono-patch][error]: Could not determine URL of subtree remote '$_remote'. Please specify with --url."
+        echo_err "Could not determine URL of subtree remote '$_remote'. Please specify with --url."
         return 1
       fi
-      vecho "\t\t-> Fetched URL($_url) from existing remote alias($_remote)."
+      vecho_action "Fetched URL($_url) from existing remote alias($_remote)." 1
     fi
+
     if [ ! -d "$_path" ]; then
-      echo "[gmash][mono-patch][error]: Subtree path '$_path' does not exist."
+      echo_err "Subtree path '$_path' does not exist."
       return 1
     fi
     # Set url.
     _url=$(git remote get-url "$_remote") # Will overwrite if already correct since remote must match URL.
-  vecho "\e[32m\t  ✓ Params verified, working on mono branch '$_user/$_curr_repo_name:$_br' at '$_url'.\e[0m"
+  vecho_done "Params verified, working on mono branch '$_user/$_curr_repo_name:$_br' at '$_url'."
 
-  vecho "\e[34m\tⓘ Final input arguments:\e[0m
-  \t\t[--br] '$_br',
-  \t\t[--path] '$_path',
-  \t\t[--remote] '$_remote',
-  \t\t[--tgtbr] '$_tgtbr',
-  \t\t[--tgtuser] '$_tgtuser',
-  \t\t[--tempbr] '$_tempbr',
-  \t\t[--tempdir] '$_tempdir',
-  \t\t[--url] '$_url',
-  \t\t[--user] '$_user',
-  \t\t[--all] '$_all',
-  \t\t[--make-pr] '$_makepr',
-  \t\t[--squash] '$_squash'"
+  vecho_info "Final input parameters:" 1
+  vecho_info "- br:       $_br" 2
+  vecho_info "- path:     $_path" 2
+  vecho_info "- remote:   $_remote" 2
+  vecho_info "- tgtbr:    $_tgtbr" 2
+  vecho_info "- tgtuser:  $_tgtuser"  2
+  vecho_info "- tempbr:   $_tempbr" 2
+  vecho_info "- tempdir:  $_tempdir" 2
+  vecho_info "- url:      $_url" 2
+  vecho_info "- user:     $_user" 2
+  vecho_info "- all:      $_all" 2
+  vecho_info "- makepr:   $_makepr" 2
+  vechp_info "- squash:   $_squash" 2 
 
   # Attempt to do a fast forward subtree pull->push.
-  vecho "\e[35m\t⚙ Running fast-forward push to subtree '$_remote:$_tgtbr'.\e[0m"
-  if output=$(git subtree pull --prefix="$_path" "$_remote" "$_tgtbr" -m "[gmash][mono-patch] Accepting updates from subtree." 2>&1 | tee /dev/tty); then
+  vecho_process "Running fast-forward push to subtree '$_remote:$_tgtbr'."
+  if output=$(git subtree pull --prefix="$_path" "$_remote" "$_tgtbr" -m "[gmash mono patch] Accepting updates from subtree." 2>&1 | tee /dev/tty); then
     if echo "$output" | grep -q "Already up to date"; then
-      vecho "\t\t-> No new subtree changes detected."
+      vecho_action "No new subtree changes detected."
 
     else
-      vecho "\t\t-> Accepted new subtree changes, pushing subtree updates to remote mono."
+      vecho_action "Accepted new subtree changes, pushing subtree updates to remote mono."
       git pull
       git push
     fi
   else
-      echo "[gmash][mono-patch][fatal]: Failed to pull subtree remote. Remote possibly corrupted."
+      echo_err "Failed to pull subtree remote. Remote possibly corrupted."
       exit 1
   fi
 
-  vecho "\e[35m\t⚙ Checking if subtree sync is needed...\e[0m"
+  vecho_process "Checking if subtree sync is needed..."
     git fetch "$_remote" "$_tgtbr" 2>/dev/null || true
     if git diff --quiet "HEAD:$_path" "$_remote/$_tgtbr" -- 2>/dev/null; then
       # exit early here.
-      vecho "\t\t-> Subtree content is synced"
-      vecho "\e[32m\t  ✓ Success. Mono is patched.\e[0m"
-      vecho "\e[34m\t[gmash][mono-patch] ⓘ Result metadata:\e[0m
-      \t\t[--br] '$_br',
-      \t\t[--path] '$_path',
-      \t\t[--remote] '$_remote',
-      \t\t[--tgtbr] '$_tgtbr',
-      \t\t[--tgtuser] '$_tgtuser',
-      \t\t[--tempbr] '$_tempbr',
-      \t\t[--tempdir] '$_tempdir',
-      \t\t[--url] '$_url',
-      \t\t[--all] '$_all',
-      \t\t[--make-pr] '$_makepr',
-      \t\t[--squash] '$_squash'"
+      vecho_action "Subtree content is synced"
+      vecho_done "Mono patched applied."
+      vecho_info "Result metadata:" 1
+      vecho_info "- br:       $_br" 2
+      vecho_info "- path:     $_path" 2
+      vecho_info "- remote:   $_remote" 2
+      vecho_info "- tgtbr:    $_tgtbr" 2
+      vecho_info "- tgtuser:  $_tgtuser"  2
+      vecho_info "- tempbr:   $_tempbr" 2
+      vecho_info "- tempdir:  $_tempdir" 2
+      vecho_info "- url:      $_url" 2
+      vecho_info "- user:     $_user" 2
+      vecho_info "- all:      $_all" 2
+      vecho_info "- makepr:   $_makepr" 2
+      vechp_info "- squash:   $_squash" 2
       return 0
     else
-      vecho "\t\t-> Subtree content differs, 3 way sync required."
+      vecho_warn "Subtree content differs, 3 way sync required."
     fi
 
   # Prepare parent->subtree merge commit message.
@@ -371,116 +384,118 @@ gmash_mono_patch(){
 
 
   # Begin 3-way sync subtree->parent->subtree.
-  vecho "\e[35m\t⚙ Running 3-way sync subtree->parent->subtree.\e[0m"
+  vecho_process "Running 3-way sync subtree->parent->subtree."
     git worktree remove --force "$_tempdir" 2>/dev/null || rm -rf "$_tempdir"
     git branch -D "$_tempbr" 2>/dev/null || true
-    vecho "\t\t-> Fetching remote state."
-      vecho "\e[33m\t💻 git fetch '$_remote' '$_tgtbr'"
+    vecho_action "Fetching remote state."
+      vecho_func "git fetch '$_remote' '$_tgtbr'"
       git fetch "$_remote" "$_tgtbr"
 
-    vecho "\t\t-> Creating temporary worktree."
-      vecho "\e[33m\t💻 git worktree add --detach '$_tempdir' '$_br'"
+    vecho_action "Creating temporary worktree."
+      vecho_func "git worktree add --detach '$_tempdir' '$_br'"
       if ! git worktree add --detach "$_tempdir" "$_br"; then
-        echo "[gmash][mono-patch][error]: Failed to create temporary worktree at '$_tempdir'."
+        echo_err "Failed to create temporary worktree at '$_tempdir'."
       exit 1
       fi
 
-    vecho "\t\t-> Moving to worktree directory."
+    vecho_action "Moving to worktree directory."
       _original_dir=$(pwd) # Store current directory to return to later
       cd "$_tempdir" # Move to worktree directory
 
-    vecho "\t\t-> Splitting subtree to temporary branch '$_tempbr'."
-      vecho "\e[33m\t💻 git subtree split --prefix='$_path' --branch='$_tempbr'"
+    vecho_action "Splitting subtree to temporary branch '$_tempbr'."
+      vecho_func "git subtree split --prefix='$_path' --branch='$_tempbr'"
       if ! git subtree split --prefix="$_path" --branch="$_tempbr"; then
-        echo "[gmash][mono-patch][error]: Failed to split subtree to temporary branch '$_tempbr'. Reversing changes."
+        echo_err "Failed to split subtree to temporary branch '$_tempbr'. Reversing changes."
         cd "$_original_dir"
         git worktree remove --force "$_tempdir" 2>/dev/null || rm -rf "$_tempdir"
         return 1
       fi
 
-    vecho "\t\t-> Checking out temporary branch '$_tempbr'."
-      vecho "\e[33m\t💻 git checkout '$_tempbr'"
+    vecho_action "Checking out temporary branch '$_tempbr'."
+      vecho_func "git checkout '$_tempbr'"
       if ! git checkout "$_tempbr"; then
-        echo "[gmash][mono-patch][error]: Failed to checkout temporary branch '$_tempbr'. Reversing changes."
+        echo_err "Failed to checkout temporary branch '$_tempbr'. Reversing changes."
         cd "$_original_dir"
         git worktree remove --force "$_tempdir" 2>/dev/null || rm -rf "$_tempdir"
         git branch -D "$_tempbr" 2>/dev/null || true
         return 1
       fi
 
-    vecho "\t\t-> Fetching updates from subtree remote '$_remote'."
-      vecho "\e[33m\t💻 git fetch '$_remote' '$_tgtbr'"
+    vecho_action "Fetching updates from subtree remote '$_remote'."
+      vecho_func "git fetch '$_remote' '$_tgtbr'"
       if ! git fetch "$_remote" "$_tgtbr"; then
-        echo "[gmash][mono-patch][error]: Failed to fetch from subtree remote '$_remote'. Reversing changes."
+        echo_err "Failed to fetch from subtree remote '$_remote'. Reversing changes."
         cd "$_original_dir"
         git worktree remove --force "$_tempdir" 2>/dev/null || rm -rf "$_tempdir"
         git branch -D "$_tempbr" 2>/dev/null || true
         return 1
       fi
 
-    vecho "\t\t-> Merging changes to remote subtree."
-      vecho "\e[33m\t💻 git merge '$_remote/$_tgtbr' --allow-unrelated-histories -m 'Merge parent changes to remote subtree'"
+    vecho_action "Merging changes to remote subtree."
+      vecho_func "git merge '$_remote/$_tgtbr' --allow-unrelated-histories -m 'Merge parent changes to remote subtree'"
       if ! git merge "$_remote/$_tgtbr" --allow-unrelated-histories -m "$_merge_msg"; then
-          echo "[gmash][mono-patch][error]: Merge failed. Resolve conflicts manually or use --make-pr to create a PR instead."
+          echo_err "Merge failed. Resolve conflicts manually or use --make-pr to create a PR instead."
           cd "$_original_dir"
           git worktree remove --force "$_tempdir" 2>/dev/null || rm -rf "$_tempdir"
           git branch -D "$_tempbr" 2>/dev/null || true
           exit 1
       fi
 
-    vecho "\t\t-> Pushing to subtree remote."
-      vecho "\e[33m\t💻 git push '$_remote' '$_tempbr:$_tgtbr'"
+    vecho_action "Pushing to subtree remote."
+      vecho_func "git push '$_remote' '$_tempbr:$_tgtbr'"
       if ! git push "$_remote" "$_tempbr:$_tgtbr"; then
-          echo "[gmash][mono-patch][error]: Push to subtree remote '$_remote' failed. Resolve conflicts manually or use --make-pr to create a PR instead."
+          echo_err "Push to subtree remote '$_remote' failed. Resolve conflicts manually or use --make-pr to create a PR instead."
           exit 1
       fi
 
-    vecho "\t\t-> Returning to mono and cleaning up."
+    vecho_action "Returning to mono and cleaning up."
       cd "$_original_dir"
-      vecho "\e[33m\t💻 git worktree remove --force '$_tempdir'"
+      vecho_func "git worktree remove --force '$_tempdir'"
       if [ -d "$_tempdir" ]; then
           git worktree remove --force "$_tempdir" 2>/dev/null || rm -rf "$_tempdir"
       fi
 
-      vecho "\e[33m\t💻 git branch -D '$_tempbr'"
+      vecho_func "git branch -D '$_tempbr'"
       if git show-ref --quiet "refs/heads/$_tempbr"; then
         git branch -D "$_tempbr" 2>/dev/null || true
       fi
 
-    vecho "\t\t-> Syncing subtree changes back to parent."
-      vecho "\e[33m\t💻 git fetch '$_remote' '$_tgtbr'"
+    vecho_action "Syncing subtree changes back to parent."
+      vecho_func "git fetch '$_remote' '$_tgtbr'"
       if git fetch "$_remote" "$_tgtbr"; then
-        vecho "\e[33m\t💻 git merge -s subtree FETCH_HEAD -m ..."
+        vecho_func "git merge -s subtree FETCH_HEAD -m ..."
         if ! git merge -s subtree FETCH_HEAD -m "$_sync_msg"; then
-            echo "[gmash][mono-patch][fatal]: Sync-back merge failed. Subtree possibly changed mid-sync."
+            vecho_warn "Sync-back merge failed. Subtree possibly changed mid-sync."
             return 1
         fi
       else
-        echo "[gmash][mono-patch][fatal]: Failed to fetch from remote for sync-back. Unexpected error."
+        vecho_warn "Failed to fetch from remote for sync-back. Unexpected error."
         return 1
       fi
 
-    vecho "\t\t -> Validating sync with a mono push."
-      vecho "\e[33m\t💻 git push"
+    vecho_action "Validating sync with a mono push."
+      vecho_func "git push"
       if ! git push; then
-          echo "[gmash][mono-patch][error]: Final mono push failed. Unexpected error."
+          echo_err "Final mono push failed. Unexpected error."
           return 1
       fi
-  vecho "\e[32m\t  ✓ 3 Way sync complete, changes pushed to subtree remote '$_remote' branch '$_tgtbr'.\e[0m"
+  vecho_done "3 Way sync complete, changes pushed to subtree remote '$_remote' branch '$_tgtbr'."
+  vecho_done "Mono patched applied."
+  vecho_info "Result metadata:" 1
+  vecho_info "- br:       $_br" 2
+  vecho_info "- path:     $_path" 2
+  vecho_info "- remote:   $_remote" 2
+  vecho_info "- tgtbr:    $_tgtbr" 2
+  vecho_info "- tgtuser:  $_tgtuser"  2
+  vecho_info "- tempbr:   $_tempbr" 2
+  vecho_info "- tempdir:  $_tempdir" 2
+  vecho_info "- url:      $_url" 2
+  vecho_info "- user:     $_user" 2
+  vecho_info "- all:      $_all" 2
+  vecho_info "- makepr:   $_makepr" 2
+  vechp_info "- squash:   $_squash" 2
 
-  vecho "\e[32m\t  ✓ Success. Mono is patched.\e[0m"
-  vecho "\e[34m\t[gmash][mono-patch] ⓘ Result metadata:\e[0m
-    \t\t[--br] '$_br',
-    \t\t[--path] '$_path',
-    \t\t[--remote] '$_remote',
-    \t\t[--tgtbr] '$_tgtbr',
-    \t\t[--tgtuser] '$_tgtuser',
-    \t\t[--tempbr] '$_tempbr',
-    \t\t[--tempdir] '$_tempdir',
-    \t\t[--url] '$_url',
-    \t\t[--all] '$_all',
-    \t\t[--make-pr] '$_makepr',
-    \t\t[--squash] '$_squash'"
+  return 0
 }
 
 
@@ -499,12 +514,12 @@ gmash_mono_clone(){
 
   if [ -z "$_dir" ]; then
     _dir="$_user-mono-repo"
-    vecho "\t\t-> Defaulting mono clone directory($_dir) to '$_user-mono-repo'."
+    vecho_action "Defaulting mono clone directory($_dir) to '$_user-mono-repo'."
   fi
 
   if [ -z "$_br" ]; then
     _br="main"
-    vecho "\t\t-> Defaulting mono repo branch($_br) to 'main'."
+    vecho_action "Defaulting mono repo branch($_br) to 'main'."
   fi
 
   vecho "\e[33;1m[gmash][mono-clone]\e[0m
@@ -541,11 +556,11 @@ gmash_mono_clone(){
     fi
 
     if [ ! -f "$conf_file" ]; then
-      vecho "\t\t-> No subtree metadata files found in '../.gmash/subtree'.
+      vecho_action "No subtree metadata files found in '../.gmash/subtree'.
       \t\t   Skipping mono-clone subtree addition."
       break
     fi
-    vecho "\t\t-> Processing subtree metadata file '$conf_file'."
+    vecho_action "Processing subtree metadata file '$conf_file'."
     # Read config values.
     local _url
     local _remote
