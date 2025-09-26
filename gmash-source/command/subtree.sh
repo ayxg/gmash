@@ -217,14 +217,27 @@ gmash_subtree_new(){
     vecho_func "git push"
     git push
 
-    vecho_done "Subtree '$_remote' added to '$_path' and pushed to remote.\e[0m"
-    vecho_info "Result metadata:\
-      [Remote URL]: '$_url'
-      [Target Remote Alias]: '$_remote'
-      [Target Subtree Branch]: '$_tgtbr'
-      [Mono Repo]: '$_user/$_curr_repo_name'
-      [Subtree Repo]: '$_tgtuser/$_name'
-      [Mono->Subtree Link Path]: '$_path'.\e[0m"
+
+  # Add subtree metadata to `.gmash/subtree/$alias.conf`
+    vecho_process "Writing subtree metadata to '.gmash/subtree/$_remote.conf'."
+    local _conf=".gmash/subtree/$_remote.conf"
+    confwrite "$_conf" created "$(date)"
+    confwrite "$_conf" url "$_url"
+    confwrite "$_conf" remote  "$_remote"
+    confwrite "$_conf" branch "$_tgtbr"
+    confwrite "$_conf" path "$_path"
+    confwrite "$_conf" squash false
+    confwrite "$_conf" owned  true
+
+
+  vecho_done "Subtree '$_remote' added to '$_path' and pushed to remote.\e[0m"
+  vecho_info "Result metadata:\
+    [Remote URL]: '$_url'
+    [Target Remote Alias]: '$_remote'
+    [Target Subtree Branch]: '$_tgtbr'
+    [Mono Repo]: '$_user/$_curr_repo_name'
+    [Subtree Repo]: '$_tgtuser/$_name'
+    [Mono->Subtree Link Path]: '$_path'.\e[0m"
 
   return 0
 }

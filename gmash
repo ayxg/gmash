@@ -62,6 +62,8 @@ fi
 # Main script sources
   # Main script common utils.
   source "$GMASH_SOURCE/common.sh"
+  # Basic key-value configuration file handler.
+  source "$GMASH_SOURCE/confile.sh"
   # 'getoptions' parser extensions. (also sourced in parser-def)
   source "$GMASH_SOURCE/parser-extensions.sh"
   # Compiled cli parsers.
