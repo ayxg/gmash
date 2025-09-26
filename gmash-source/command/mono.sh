@@ -16,25 +16,21 @@ gmash_mono_patch_all(){
   # Read subtree metadata from .gmash/subtree/*.conf and call mono-patch for each.
   local _subtree_dir=".gmash/subtree"
   if [ ! -d "$_subtree_dir" ]; then
-    echo "[gmash][mono-patch-all][error]: Subtree metadata directory '$_subtree_dir' not found."
+    echo_err "Subtree metadata directory '$_subtree_dir' not found."
     return 1
   fi
 
-  vecho "\e[33;1m[gmash][mono-patch-all]\e[0m
-      \e[34m\tⓘ Scanning subtree metadata directory '$_subtree_dir' for subtrees to patch.\e[0m"
-
+  vecho_process "Scanning subtree metadata directory '$_subtree_dir' for subtrees to patch."
   local _patched_any=0
   for conf_file in "$_subtree_dir"/*.conf; do
     if [ "$conf_file" == "$_subtree_dir/*.conf" ]; then
-      # No .conf files found, break the loop.
       conf_file=""
       break
     fi
 
-
     if [ ! -f "$conf_file" ]; then
-      vecho_action "No subtree metadata files found in '$_subtree_dir'.
-      \t\t   Skipping mono-patch-all."
+      vecho_action "No subtree metadata files found in '$_subtree_dir'."
+      vecho_action "Skipping mono-patch-all."
       break
     fi
     vecho_action "Processing subtree metadata file '$conf_file'."
@@ -53,11 +49,11 @@ gmash_mono_patch_all(){
     _owned=$(confread "$conf_file" "owned")
 
     if [ -z "$_remote" ] || [ -z "$_url" ] || [ -z "$_branch" ] || [ -z "$_path" ]; then
-      echo "[gmash][mono-patch-all][error]: Incomplete metadata in '$conf_file'. Skipping."
+      vecho_warn "Incomplete metadata in '$conf_file'. Skipping."
       continue
     fi
 
-    vecho "\e[34m\tⓘ Patching subtree '$_remote' at '$_path' from '$_url'.\e[0m"
+    vecho_process "Patching subtree '$_remote' at '$_path' from '$_url'."
     GMASH_MONO_PATCH_REMOTE="$_remote"
     GMASH_MONO_PATCH_URL="$_url"
     GMASH_MONO_PATCH_BR="$_branch"
@@ -66,17 +62,17 @@ gmash_mono_patch_all(){
 
     if gmash_mono_patch; then
       _patched_any=1
-      vecho "\e[32m\t  ✓ Successfully patched subtree '$_remote'.\e[0m"
+      vecho_done "Successfully patched subtree '$_remote'."
     else
-      echo "[gmash][mono-patch-all][error]: Failed to patch subtree '$_remote'. Continuing to next."
+      vecho_warn "Failed to patch subtree '$_remote'. Continuing to next."
     fi
 
   done
 
   if [ $_patched_any -eq 0 ]; then
-    vecho "\e[33m\t⚠ No subtrees were patched. Either no metadata files found or all patches failed.\e[0m"
+    vecho_warn "No subtrees were patched. Either no metadata files found or all patches failed."
   else
-    vecho "\e[32m\t  ✓ Mono patched with all applicable subtrees.\e[0m"
+    vecho_done "Mono patched with all applicable subtrees."
   fi
 
   return 0
@@ -499,8 +495,6 @@ gmash_mono_patch(){
 }
 
 
-
-
 # Clone monorepo from github. Add all subtrees from metadata.
 gmash_mono_clone(){
   local _user="$GMASH_MONO_CLONE_USER"
@@ -508,7 +502,7 @@ gmash_mono_clone(){
   local _br="$GMASH_MONO_CLONE_BR"
 
   if [ -z "$_user" ]; then
-    echo "[gmash][mono-clone][error]: Must specify a github user/org to own the mono repo with --user or -u."
+    echo_err "Must specify a github user/org to own the mono repo with --user or -u."
     return 1
   fi
 
@@ -522,32 +516,30 @@ gmash_mono_clone(){
     vecho_action "Defaulting mono repo branch($_br) to 'main'."
   fi
 
-  vecho "\e[33;1m[gmash][mono-clone]\e[0m
-      \e[34m\tⓘ Input arguments:\e[0m
-      \t\t[--user] '$_user',
-      \t\t[--dir] '$_dir',
-      \t\t[--br] '$_br'"
+  vecho_info "Input parameters:"
+  vecho_info "- user:   $_user"
+  vecho_info "- dir:    $_dir"
+  vecho_info "- br:     $br"
 
   if [ -d "$_dir" ]; then
-    echo "[gmash][mono-clone][error]: Target directory '$_dir' already exists. Please remove or choose another with --dir."
+    echo_err "Target directory '$_dir' already exists. Please remove or choose another with --dir."
     return 1
   fi
 
-  vecho "\e[35m\t⚙ Cloning mono repo from '$_user/$_user-mono-repo' into '$_dir'.\e[0m"
+  vecho_process "Cloning mono repo from '$_user/$_user-mono-repo' into '$_dir'."
     if ! git clone "$_user/$_user-mono-repo" "$_dir"; then
-      echo "[gmash][mono-clone][error]: Failed to clone mono repo from '$_user/$_user-mono-repo'. Ensure the repo exists and you have access."
+      echo_err "Failed to clone mono repo from '$_user/$_user-mono-repo'. Ensure the repo exists and you have access."
       return 1
     fi
     cd "$_dir" || return 1
     if ! git checkout "$_br"; then
-      echo "[gmash][mono-clone][error]: Branch '$_br' does not
-  exist in the mono repo."
+      echo_err "Branch '$_br' does not exist in the mono repo."
       return 1
     fi
-  vecho "\e[32m\t  ✓ Successfully cloned mono repo.\e[0m"
+  vecho_done "Successfully cloned mono repo."
 
 
-  vecho "\e[35m\t⚙ Adding subtrees from metadata.\e[0m"
+  vecho_process "Adding subtrees from metadata."
   for conf_file in ../.gmash/subtree/*.conf; do
     if [ "$conf_file" == "../.gmash/subtree/*.conf" ]; then
       # No .conf files found, break the loop.
@@ -556,8 +548,7 @@ gmash_mono_clone(){
     fi
 
     if [ ! -f "$conf_file" ]; then
-      vecho_action "No subtree metadata files found in '../.gmash/subtree'.
-      \t\t   Skipping mono-clone subtree addition."
+      vecho_action "No subtree metadata files found in '../.gmash/subtree'. Skipping mono-clone subtree addition."
       break
     fi
     vecho_action "Processing subtree metadata file '$conf_file'."
@@ -576,15 +567,14 @@ gmash_mono_clone(){
     _owned=$(confread "$conf_file" "owned")
 
     if [ -z "$_remote" ] || [ -z "$_url" ] || [ -z "$_branch" ] || [ -z "$_path" ]; then
-      echo "[gmash][mono-clone][error]: Incomplete metadata in '$conf_file'. Skipping."
+      echo_err "Incomplete metadata in '$conf_file'. Skipping."
       continue
     fi
 
-    vecho "\e[34m\tⓘ Adding subtree '$_remote' at '$_path' from '$_url'.\e[0m"
+    vecho_action "Adding subtree '$_remote' at '$_path' from '$_url'."
     git remote add "$_remote" "$_url"
 
   done
 
-  vecho "\e[32m\t  ✓ Successfully added all subtrees from metadata.\e[0m"
-
+  vecho_done "Successfully added all subtrees from metadata."
 }
