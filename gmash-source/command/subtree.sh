@@ -78,13 +78,27 @@ gmash_subtree_patch(){
   #       git push
 #@enddoc#######################################################################
 gmash_subtree_new(){
+  vecho_section_start "gmash subtree new"
+  local api_user_
+  api_user_="$(gh_api_user)"
+  if [ -z "$api_user_" ]; then
+    vecho_err "Failed determine GitHub API user. Are you logged in?"
+  fi
+
+  local curr_repo_name_
+  curr_repo_name_="$(git_curr_repo)"
+  if [ -z "$curr_repo_name_" ]; then
+    vecho_err "Failed to detect active git repo. You must be inside a git repo."
+  fi
+  vecho_info "Creating subtree for $_user in $curr_repo_name_"
+
   if [ $# == 0 ]; then
+    _user=${GMASH_SUBTREE_NEW_USER:-api_user_}
+    _tgtuser=${GMASH_SUBTREE_NEW_TGTUSER:-$_user}
     _path=${GMASH_SUBTREE_NEW_PATH:-""}
     _remote=${GMASH_SUBTREE_NEW_REMOTE:-"origin"}
     _name=${GMASH_SUBTREE_NEW_NAME:-'subtreeDirName'}
-    _url=${GMASH_SUBTREE_NEW_URL:-"$_remote/$_name.git"}
-    _user=${GMASH_SUBTREE_NEW_USER:-{currentGithubUser}}
-    _tgtuser=${GMASH_SUBTREE_NEW_TGTUSER:-$_user}
+    _url=${GMASH_SUBTREE_NEW_URL:-"$_tgtuser/$_name.git"}
     _br=${GMASH_SUBTREE_NEW_BR:-'main'}
     _tgtbr=${GMASH_SUBTREE_NEW_TGTBR:-'main'}
   else
@@ -96,10 +110,10 @@ gmash_subtree_new(){
     _tgtbr=${6:-'main'}
     _name=${7:-'subtreeDirName'}
   fi
-  local _curr_repo_name
-  _curr_repo_name=$(basename "$(git rev-parse --show-toplevel)")
+  local curr_repo_name_
+  curr_repo_name_=$(basename "$(git rev-parse --show-toplevel)")
 
-  vecho_section_start "gmash subtree new"
+
   vecho_process "Verifying parameters."
     # If _name is empty, name is the same as remote alias.
     if [ -z "$_name" ]; then
@@ -129,7 +143,7 @@ gmash_subtree_new(){
       echo_err "Must be on $_br branch (currently on $_correct_branch)."
       return 1
     fi
-  vecho_done "Params verified, working on mono branch '$_curr_repo_name/$_tgtbr'." 1
+  vecho_done "Params verified, working on mono branch '$curr_repo_name_/$_tgtbr'." 1
 
   vecho_info "Final input parameters:" 1
   vecho_info  "- remote:    '$_remote'" 2
@@ -142,7 +156,8 @@ gmash_subtree_new(){
   vecho_info  "- name:      '$_name'." 2
 
   vecho_process "Getting or creating target subtree repo."
-    if [ -z "$_url" ]; then # No url, get an existing remote's url or create a new repo at the given remote.
+    if [ ! -z "$_url" ]; then # No url, get an existing remote's url or create a new repo at the given remote.
+      echo "DEBUG!!!"
       # github repo $_tgtuser/$_name.git exists & accessible? Use it as the url.
       if git ls-remote "https://github.com/$_tgtuser/$_name.git" &> /dev/null; then
           _url="https://github.com/$_tgtuser/$_name.git"
@@ -163,7 +178,7 @@ gmash_subtree_new(){
             vecho_action "Creating new GitHub repo '$_tgtuser/$_name' for subtree..."
             vecho_func "gh repo create '$_tgtuser/$_name' --private --add-readme --description ..."
             if gh repo create "$_tgtuser/$_name" --private --add-readme --description \
-              "[gmash][new-subtree] Generated subtree repository '$_tgtuser/$_name' for '$_user/$_curr_repo_name:$_path'"; then
+              "[gmash][new-subtree] Generated subtree repository '$_tgtuser/$_name' for '$_user/$curr_repo_name_:$_path'"; then
               _url="https://github.com/$_tgtuser/$_name.git"
             else # Unexpected error ?
               echo_err "Failed to create GitHub repository."
@@ -242,7 +257,7 @@ gmash_subtree_new(){
   vecho_info "[Remote URL]: '$_url'" 2
   vecho_info "[Target Remote Alias]: '$_remote'" 2
   vecho_info "[Target Subtree Branch]: '$_tgtbr'" 2
-  vecho_info "[Mono Repo]: '$_user/$_curr_repo_name'" 2
+  vecho_info "[Mono Repo]: '$_user/$curr_repo_name_'" 2
   vecho_info "[Subtree Repo]: '$_tgtuser/$_name'" 2
   vecho_info "[Mono->Subtree Link Path]: '$_path'." 2
 

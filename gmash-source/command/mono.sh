@@ -308,7 +308,7 @@ gmash_mono_patch(){
   vecho_info "- user:     $_user" 2
   vecho_info "- all:      $_all" 2
   vecho_info "- makepr:   $_makepr" 2
-  vechp_info "- squash:   $_squash" 2 
+  vechp_info "- squash:   $_squash" 2
 
   # Attempt to do a fast forward subtree pull->push.
   vecho_process "Running fast-forward push to subtree '$_remote:$_tgtbr'."
