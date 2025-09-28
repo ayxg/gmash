@@ -76,12 +76,14 @@ gmash_def_parser_subtree_patch(){
   msg -- "Pull subtree changes to monorepo."
   msg -- "  "
   msg -- "Parameters:"
-    param GMASH_SUBTREE_PATCH_REMOTE -R --remote var:"[remote = \"origin\"]" \
-      -- "Target subtree remote alias. Defaults to 'origin'."
-    param GMASH_SUBTREE_PATCH_BRANCH -b --branch var:"[branch = \"main\"]" \
-      -- "Target subtree branch. Defaults to 'main'."
-    param GMASH_SUBTREE_PATCH_PATH -p --path var:"<subtreePath>"\
+    param GMASH_SUBTREE_PATCH_REMOTE -r --remote var:"<subtreeRemote>" \
+      -- "Target subtree remote alias."
+    param GMASH_SUBTREE_PATCH_BRANCH -b --branch var:"<subtreeBranch>" \
+      -- "Target subtree branch."
+    param GMASH_SUBTREE_PATCH_PREFIX -p --prefix var:"<subtreePrefixPath>"\
       -- "Subtree prefix path in the monorepo."
+    flag GMASH_SUBTREE_PATCH_ALL -a --all var:""\
+      -- "Patch all subtrees based on gmash metadata."
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_subtree_patch_help

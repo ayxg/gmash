@@ -261,7 +261,8 @@ GETOPTIONSHERE
 # URL: https://github.com/ko1nksm/getoptions (v3.3.2)
 export GMASH_SUBTREE_PATCH_REMOTE=''
 export GMASH_SUBTREE_PATCH_BRANCH=''
-export GMASH_SUBTREE_PATCH_PATH=''
+export GMASH_SUBTREE_PATCH_PREFIX=''
+export GMASH_SUBTREE_PATCH_ALL=''
 GMASH_SUBTREE_PATCH_ARGR=''
 gmash_parser_subtree_patch() {
 	OPTIND=$(($#+1))
@@ -277,9 +278,13 @@ gmash_parser_subtree_patch() {
 				"$1") OPTARG=; break ;;
 				$1*) OPTARG="$OPTARG --branch"
 			esac
-			case '--path' in
+			case '--prefix' in
 				"$1") OPTARG=; break ;;
-				$1*) OPTARG="$OPTARG --path"
+				$1*) OPTARG="$OPTARG --prefix"
+			esac
+			case '--all' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --all"
 			esac
 			case '--help' in
 				"$1") OPTARG=; break ;;
@@ -310,16 +315,16 @@ gmash_parser_subtree_patch() {
 				eval 'set -- "${OPTARG%%\=*}" "${OPTARG#*\=}"' ${1+'"$@"'}
 				;;
 			--no-*|--without-*) unset OPTARG ;;
-			-[Rbp]?*) OPTARG=$1; shift
+			-[rbp]?*) OPTARG=$1; shift
 				eval 'set -- "${OPTARG%"${OPTARG#??}"}" "${OPTARG#??}"' ${1+'"$@"'}
 				;;
-			-[hv]?*) OPTARG=$1; shift
+			-[ahv]?*) OPTARG=$1; shift
 				eval 'set -- "${OPTARG%"${OPTARG#??}"}" -"${OPTARG#??}"' ${1+'"$@"'}
 				case $2 in --*) set -- "$1" unknown "$2" && GMASH_SUBTREE_PATCH_ARGR=x; esac;OPTARG= ;;
 			+*) unset OPTARG ;;
 		esac
 		case $1 in
-			'-R'|'--remote')
+			'-r'|'--remote')
 				[ $# -le 1 ] && set "required" "$1" && break
 				OPTARG=$2
 				export GMASH_SUBTREE_PATCH_REMOTE="$OPTARG"
@@ -329,11 +334,16 @@ gmash_parser_subtree_patch() {
 				OPTARG=$2
 				export GMASH_SUBTREE_PATCH_BRANCH="$OPTARG"
 				shift ;;
-			'-p'|'--path')
+			'-p'|'--prefix')
 				[ $# -le 1 ] && set "required" "$1" && break
 				OPTARG=$2
-				export GMASH_SUBTREE_PATCH_PATH="$OPTARG"
+				export GMASH_SUBTREE_PATCH_PREFIX="$OPTARG"
 				shift ;;
+			'-a'|'--all')
+				[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break
+				eval '[ ${OPTARG+x} ] &&:' && OPTARG='1' || OPTARG=''
+				export GMASH_SUBTREE_PATCH_ALL="$OPTARG"
+				;;
 			'-h'|'--help')
 				gmash_subtree_patch_help
 				exit 0 ;;
@@ -373,9 +383,10 @@ Usage: gmash subtree patch -r [repo] -b [branch]
 Pull subtree changes to monorepo.
   
 Parameters:
-  -R,     --remote [remote = "origin"]  Target subtree remote alias. Defaults to 'origin'.
-  -b,     --branch [branch = "main"]    Target subtree branch. Defaults to 'main'.
-  -p,     --path <subtreePath>          Subtree prefix path in the monorepo.
+  -r,     --remote <subtreeRemote>      Target subtree remote alias.
+  -b,     --branch <subtreeBranch>      Target subtree branch.
+  -p,     --prefix <subtreePrefixPath>  Subtree prefix path in the monorepo.
+  -a,     --all                         Patch all subtrees based on gmash metadata.
   
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.

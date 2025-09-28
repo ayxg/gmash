@@ -9,45 +9,8 @@
   #############################################################################
   # @file gmash->subtree command group
   # @created: 2025/08/31
-#@enddoc#######################################################################
-
-# @brief Patch subtree from its remote repo.
-gmash_subtree_patch(){
-  if [ $# == 0 ]; then
-    _remote=${GMASH_SUBTREE_PATCH_REMOTE:-""}
-    _branch=${GMASH_SUBTREE_PATCH_BRANCH:-"main"}
-    _path=${GMASH_SUBTREE_PATCH_PATH:-""}
-  else
-    _remote=${1:-""}
-    _branch=${2:-""}
-    _path=${3:-""}
-  fi
-
-  if [ -z "$_prefix" ]; then
-    echo_err "Missing required '--prefix' parameter"
-    return 1
-  fi
-
-  if [ -z "$_remote" ]; then
-    echo_err "Missing required '--remote' parameter"
-    return 1
-  fi
-
-  if [ -z "$_url" ]; then
-    _url="https://github.com/$api_user_/$_remote.git"
-    vecho_info "URL not provided, targeting subtree remote '$_url'"
-  fi
-
-  git subtree pull --prefix="$_path" "$_remote" "$_branch"
-  git pull
-  git push
-}
-
-#@doc##########################################################################
-  # @func gmash_subtree_new
-  # @brief Add subtree to this repo from an existing external git repo.
   #
-  # Detailed overview of the git process for example subtree 'foo-box'.
+  # Detailed overview of the git process for creating an example subtree 'foo-box'.
   # For each submodule:
   # 1. Create github repo with only a single commit (eg. .gitignore or README.md).
   #
@@ -89,6 +52,88 @@ gmash_subtree_patch(){
   #   6. Push the monorepo's submodule tree changes to the remote GitHub monorepo
   #      from the git-bash.
   #       git push
+#@enddoc#######################################################################
+
+# @brief Patch subtree from its remote repo.
+# $1 = remote
+# $2 = branch
+# $3 = prefix
+gmash_subtree_patch(){
+  if [ $# == 0 ]; then
+    _remote=${GMASH_SUBTREE_PATCH_REMOTE:-""}
+    _branch=${GMASH_SUBTREE_PATCH_BRANCH:-"main"}
+    _prefix=${GMASH_SUBTREE_PATCH_PREFIX:-""}
+    _all=${GMASH_SUBTREE_PATCH_ALL:-"0"}
+  else
+    _remote=${1:-""}
+    _branch=${2:-"main"}
+    _prefix=${3:-""}
+    _all=${4:-"0"}
+  fi
+
+  if [ "$_all" -eq 1 ]; then
+    gmash_subtree_pull_all
+  else
+    if [ -z "$_prefix" ]; then
+      echo_err "Missing required '--prefix' parameter"
+      return 1
+    fi
+
+    if [ -z "$_remote" ]; then
+      echo_err "Missing required '--remote' parameter"
+      return 1
+    fi
+
+    git subtree pull --prefix="$_prefix" "$_remote" "$_branch"
+    git pull
+    git push
+  fi
+}
+
+gmash_subtree_pull_all(){
+  local gmash_meta_=".gmash/subtree"
+  if [ ! -d "$gmash_meta_" ]; then
+    echo_err "Subtree metadata directory '$gmash_meta_' not found."
+    return 1
+  fi
+
+  for conf_file in "$gmash_meta_"/*.conf; do
+    # Glob did not detect any files.
+    if [ "$conf_file" == "$gmash_meta_/*.conf" ]; then
+      conf_file=""
+      echo "No subtree metadata found."
+      break
+    fi
+
+    # Read config values.
+    local remote_
+    local branch_
+    local prefix_
+    remote_=$(confread "$conf_file" "remote")
+    branch_=$(confread "$conf_file" "branch")
+    prefix_=$(confread "$conf_file" "prefix")
+
+    if [ -z "$remote_" ] || [ -z "$branch_" ] || [ -z "$_path" ]; then
+      vecho_warn "Incomplete metadata in '$conf_file'. Skipping."
+      continue
+    fi
+
+    echo "Pulling subtree '$remote_' at '$_path' from '$_url'."
+    if ! gmash_subtree_patch \
+        "${remote_:-}" \
+        "${branch_:-}" \
+        "${prefix_:-}"
+    then
+      echo_err "Failed to pull subtree '$remote_' at '$_path' from '$_url'."
+      continue
+    fi
+  done
+  return 0
+}
+
+#@doc##########################################################################
+  # @func gmash_subtree_new
+  # @brief Add subtree to this repo from an existing external git repo.
 #@enddoc#######################################################################
 gmash_subtree_new(){
   # Get current working repo data
@@ -211,17 +256,17 @@ gmash_subtree_new(){
   confwrite "$_conf" url "$_url"
   confwrite "$_conf" remote  "$_remote"
   confwrite "$_conf" branch "$_branch"
-  confwrite "$_conf" path "$_prefix"
+  confwrite "$_conf" prefix "$_prefix"
   confwrite "$_conf" squash "$_squash"
-  confwrite "$_conf" owned  true
+  confwrite "$_conf" owned  1
 
   # Commit & push the changes
   git add "$_conf"
   git commit -m "[[gmash][subtree][add]]
- - url: \`$_url\`
- - remote: \`$_remote\`
- - prefix: \`$_prefix\`
- - metadata: \`$_conf\`"
+ - url: $_url
+ - remote: $_remote
+ - prefix: $_prefix
+ - metadata: $_conf"
   git push
 
   return 0
