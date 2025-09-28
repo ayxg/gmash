@@ -117,3 +117,7 @@ gh_api_user(){
 git_curr_repo(){
   basename "$(git rev-parse --show-toplevel)" 2>/dev/null
 }
+
+git_curr_branch(){
+  git rev-parse --abbrev-ref HEAD  2>/dev/null
+}
