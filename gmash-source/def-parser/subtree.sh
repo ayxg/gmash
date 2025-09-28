@@ -20,10 +20,10 @@ gmash_def_parser_subtree(){
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
   msg -- " "
   msg -- "Sub-Commands:"
-    cmd new \
+    cmd add \
       -- "Add and merge a new or existing repo as a subtree to a parent monorepo."
-    cmd patch \
-      -- "Patch subtree changes to monorepo."
+    cmd pull \
+      -- "Pull subtree changes to monorepo."
   msg -- " "
   msg -- "Display:"
     standard_parser_help gmash_subtree_help
@@ -34,7 +34,7 @@ gmash_def_parser_subtree(){
 gmash_def_parser_subtree_new(){
   extend_parser
   standard_parser_setup GMASH_SUBTREE_NEW_ARGR gmash_subtree_new_help \
-    "Usage: gmash subtree new <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> [-b <subtreeBranch>]"
+    "Usage: gmash subtree add <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> [-b <subtreeBranch>]"
   msg -- " "
   msg -- "Properly add and merge a new or existing repo as a subtree to a parent monorepo."
   msg -- " "
@@ -51,14 +51,14 @@ gmash_def_parser_subtree_new(){
  attempt to find an existing GitHub repo at 'api-user/remote.git'. If no such\
  repo exists and '--new' is passed: a new empty repo will be created at\
  'api-user/remote.git'."
-    param GMASH_SUBTREE_NEW_BR -b --branch var:"[monoBranch = \"main\"]" \
+    param GMASH_SUBTREE_NEW_BR -b --branch var:"[monoBranch = \"main\"]"\
       -- "Target branch of the subtree remote to pull in. Defaults to 'main'."
     flag GMASH_SUBTREE_NEW_SQUASH -s --squash var:"" \
       -- "Instead of merging the entire history from the subtree project, produce only\
  a single commit that contains all the differences to merge. Then, merge that new\
  commit into the parent repo. Note, if you add a subtree with --squash, future
  pulls and pushes to that subtree should also be squashed."
-    flag GMASH_SUBTREE_ADD_NEW -n --new var:"" \
+    flag GMASH_SUBTREE_NEW_NEW -n --new var:"" \
       -- "Create a new github repo for the added subtree, if the target subtree remote\
  does not exist."
   msg -- "  "
@@ -71,7 +71,7 @@ gmash_def_parser_subtree_new(){
 gmash_def_parser_subtree_patch(){
   extend_parser
   standard_parser_setup GMASH_SUBTREE_PATCH_ARGR gmash_subtree_patch_help \
-    "Usage: gmash subtree patch -r [repo] -b [branch]"
+    "Usage: gmash subtree pull -r [repo] -b [branch]"
   msg -- "  "
   msg -- "Pull subtree changes to monorepo."
   msg -- "  "

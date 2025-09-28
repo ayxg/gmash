@@ -56,7 +56,7 @@ gmash_parser_subtree() {
 				break ;;
 			[-+]?*) set "unknown" "$1"; break ;;
 			*)
-				case $1 in 'new'|'patch') ;;
+				case $1 in 'add'|'pull') ;;
 					*) set "notcmd" "$1"; break
 				esac
 				while [ $# -gt 0 ]; do
@@ -87,8 +87,8 @@ Usage: gmash subtree <sub-command> [[args]...]
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
  
 Sub-Commands:
-  new                                   Add and merge a new or existing repo as a subtree to a parent monorepo.
-  patch                                 Patch subtree changes to monorepo.
+  add                                   Add and merge a new or existing repo as a subtree to a parent monorepo.
+  pull                                  Pull subtree changes to monorepo.
  
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
@@ -103,7 +103,7 @@ export GMASH_SUBTREE_NEW_REMOTE=''
 export GMASH_SUBTREE_NEW_URL=''
 export GMASH_SUBTREE_NEW_BR=''
 export GMASH_SUBTREE_NEW_SQUASH=''
-export GMASH_SUBTREE_ADD_NEW=''
+export GMASH_SUBTREE_NEW_NEW=''
 GMASH_SUBTREE_NEW_ARGR=''
 gmash_parser_subtree_new() {
 	OPTIND=$(($#+1))
@@ -201,7 +201,7 @@ gmash_parser_subtree_new() {
 			'-n'|'--new')
 				[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break
 				eval '[ ${OPTARG+x} ] &&:' && OPTARG='1' || OPTARG=''
-				export GMASH_SUBTREE_ADD_NEW="$OPTARG"
+				export GMASH_SUBTREE_NEW_NEW="$OPTARG"
 				;;
 			'-h'|'--help')
 				gmash_subtree_new_help
@@ -237,7 +237,7 @@ gmash_parser_subtree_new() {
 }
 gmash_subtree_new_help() {
 cat<<'GETOPTIONSHERE'
-Usage: gmash subtree new <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> [-b <subtreeBranch>]
+Usage: gmash subtree add <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> [-b <subtreeBranch>]
  
 Properly add and merge a new or existing repo as a subtree to a parent monorepo.
  
@@ -378,7 +378,7 @@ gmash_parser_subtree_patch() {
 }
 gmash_subtree_patch_help() {
 cat<<'GETOPTIONSHERE'
-Usage: gmash subtree patch -r [repo] -b [branch]
+Usage: gmash subtree pull -r [repo] -b [branch]
   
 Pull subtree changes to monorepo.
   

@@ -113,18 +113,18 @@ gmash_subtree_pull_all(){
     branch_=$(confread "$conf_file" "branch")
     prefix_=$(confread "$conf_file" "prefix")
 
-    if [ -z "$remote_" ] || [ -z "$branch_" ] || [ -z "$_path" ]; then
+    if [ -z "$remote_" ] || [ -z "$branch_" ] || [ -z "$prefix_" ]; then
       vecho_warn "Incomplete metadata in '$conf_file'. Skipping."
       continue
     fi
 
-    echo "Pulling subtree '$remote_' at '$_path' from '$_url'."
+    echo "Pulling subtree '$remote_' at '$prefix_'."
     if ! gmash_subtree_patch \
         "${remote_:-}" \
         "${branch_:-}" \
         "${prefix_:-}"
     then
-      echo_err "Failed to pull subtree '$remote_' at '$_path' from '$_url'."
+      echo_err "Failed to pull subtree '$remote_' at '$prefix_'."
       continue
     fi
   done
@@ -142,6 +142,9 @@ gmash_subtree_new(){
   if [ -z "$api_user_" ]; then
     echo_err "Failed determine GitHub API user. Are you logged in?"
   fi
+
+  local repo_owner_
+  repo_owner_="$(gh_repo_owner)"
 
   local curr_repo_name_
   curr_repo_name_="$(git_curr_repo)"
@@ -180,33 +183,33 @@ gmash_subtree_new(){
   fi
 
   if [ -z "$_url" ]; then
-    _url="https://github.com/$api_user_/$_remote.git"
-    vecho_info "URL not provided, targeting subtree remote '$_url'"
+    _url="https://github.com/$repo_owner_/$_remote.git"
+    vecho_process "URL not provided, targeting subtree remote '$_url'"
   fi
 
   # Determine the target remote
   #
   # github repo $api_user_/$_remote.git exists & accessible? Use it as the url.
   if git ls-remote "$_url" &> /dev/null; then
-      vecho_action "Found existing GitHub repo '$_url'." 1
+      vecho_process "Found existing GitHub repo '$_url'." 1
   else
     # Does the subtree target remote already point to an existing repo ?
     if git remote get-url "$_remote" >/dev/null 2>&1; then
       _url=$(git remote get-url "$_remote" 2>&1)
-      vecho_action "Found existing remote '$_remote' with URL '$_url'." 1
+      vecho_process "Found existing remote '$_remote' with URL '$_url'."
       if ! git ls-remote "$_url" &> /dev/null; then
         echo_err "Existing remote '$_remote' URL is not accessible. URL: $_url"
         return 1
       fi
     else
-      if [ "$_new" -eq 1 ]; then
+      if [ "$_new" -eq "1" ]; then
         # Create a new GitHub repo with the same name as the remote alias on the api user's
         # GitHub account. Commit of a README.md file(required to be non-empty to add as subtree).
         if command -v gh >/dev/null 2>&1; then
-          vecho_action "Creating new GitHub repo '$api_user_/$_remote' for subtree..."
-          if gh repo create "$api_user_/$_remote" --private --add-readme --description \
-            "[gmash subtree add] Created subtree repository '$api_user_/$_remote' for '$api_user_/$curr_repo_name_:$curr_branch_'"; then
-            vecho_action "Created subtree repository '$api_user_/$_remote'."
+          vecho_process "Creating new GitHub repo '$repo_owner_/$_remote' for subtree..."
+          if gh repo create "$repo_owner_/$_remote" --private --add-readme --description \
+            "[gmash subtree add] Created subtree repository '$repo_owner_/$_remote' for '$repo_owner_/$curr_repo_name_:$curr_branch_'"; then
+            vecho_process "Created subtree repository '$repo_owner_/$_remote'."
           else # Unexpected error ?
             echo_err "Failed to create GitHub repository."
             return 1
@@ -244,30 +247,31 @@ gmash_subtree_new(){
   fi
 
   # Perfom the subtree operation
-  vecho_process "Adding subtree '$_remote' from '$_url' into '$_prefix'." 1
+  vecho_process "Adding subtree '$_remote' from '$_url' into '$_prefix'."
   git remote add -f "$_remote" "$_url"
   git subtree add --prefix="$_prefix" "$_url" "$_branch"
   git subtree pull --prefix="$_prefix" "$_remote" "$_branch"
 
   # Add subtree metadata to `.gmash/subtree/$alias.conf`
-  vecho_process "Writing subtree metadata to '.gmash/subtree/$_remote.conf'." 1
-  local _conf=".gmash/subtree/$_remote.conf"
-  confwrite "$_conf" created "$(date)"
-  confwrite "$_conf" url "$_url"
-  confwrite "$_conf" remote  "$_remote"
-  confwrite "$_conf" branch "$_branch"
-  confwrite "$_conf" prefix "$_prefix"
-  confwrite "$_conf" squash "$_squash"
-  confwrite "$_conf" owned  1
+  vecho_process "Writing subtree metadata to '.gmash/subtree/$_remote.conf'."
+  local conf_=".gmash/subtree/$_remote.conf"
+  confwrite "$conf_" created "$(date)"
+  confwrite "$conf_" url "$_url"
+  confwrite "$conf_" remote  "$_remote"
+  confwrite "$conf_" branch "$_branch"
+  confwrite "$conf_" prefix "$_prefix"
+  confwrite "$conf_" squash "$_squash"
+  owned_=$(check_repo_access "$_url")
+  confwrite "$conf_" owned "$owned_"
 
   # Commit & push the changes
-  git add "$_conf"
+  git add "$conf_"
   git commit -m "[[gmash][subtree][add]]
  - url: $_url
  - remote: $_remote
  - prefix: $_prefix
- - metadata: $_conf"
-  git push
+ - metadata: $conf_"
 
+  vecho_done "Subtree added. Call 'git push' to complete operation."
   return 0
 }

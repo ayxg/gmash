@@ -114,10 +114,55 @@ gh_api_user(){
   printf "%s" "$GH_API_USER"
 }
 
+GH_REPO_OWNER=""
+gh_repo_owner() {
+  if [ -z "$GH_REPO_OWNER" ]; then
+    GH_REPO_OWNER=$(gh repo view --json owner --jq '.owner.login' 2>/dev/null)
+  fi
+  printf "%s" "$GH_REPO_OWNER"
+}
+
 git_curr_repo(){
   basename "$(git rev-parse --show-toplevel)" 2>/dev/null
 }
 
 git_curr_branch(){
   git rev-parse --abbrev-ref HEAD  2>/dev/null
+}
+
+check_repo_access() {
+  local _url="$1"
+
+  local owner_repo
+  owner_repo=$(echo "$_url" | sed -E '
+    s|^https://github.com/||
+    s|^git@github.com:||
+    s|\.git$||
+  ')
+
+  local owner
+  owner=$(echo "$owner_repo" | cut -d/ -f1)
+  local repo
+  repo=$(echo "$owner_repo" | cut -d/ -f2)
+  local my_user
+  my_user=$(gh_api_user)
+
+  if [ -z "$owner" ] || [ -z "$repo" ]; then
+    echo "0"
+    return 1
+  fi
+
+  if [ "$owner" = "$my_user" ]; then
+    echo "1"
+    return 0
+  fi
+
+  local can_push
+  can_push=$(gh api "repos/$owner/$repo" --jq '.permissions.push' 2>/dev/null)
+
+  if [ "$can_push" = "true" ]; then
+    echo "1"
+  else
+    echo "0"
+  fi
 }

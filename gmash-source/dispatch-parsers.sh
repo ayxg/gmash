@@ -17,7 +17,7 @@
 #readonly GMASH_DISPATCH_PARSERS_INVALID_SUBCMD="[gmash][error]: Invalid sub-command specified. Use --help to see commands list."
 
 gmash_dispatch_parsers(){
-  gmash_dev_debug_echo "[gmash_dispatch_parsers: input args]: $*"
+  echo "[gmash_dispatch_parsers: input args]: $*"
 
   local _argc=$#
   local _cmd=""
@@ -73,8 +73,8 @@ gmash_dispatch_parsers(){
         *) echo "$GMASH_DISPATCH_PARSERS_INVALID_SUBCMD"; return 1 ;;
       esac ;;
       subtree) parse_cmd_subtree "$@"; _cmd=$1; shift; case $_cmd in
-        new) parse_cmd_subtree_new "$@"; cmd_subtree_new; ;;
-        patch) parse_cmd_subtree_patch "$@"; cmd_subtree_patch; ;;
+        add) parse_cmd_subtree_new "$@"; cmd_subtree_new; ;;
+        pull) parse_cmd_subtree_patch "$@"; cmd_subtree_patch; ;;
         *) echo "$GMASH_DISPATCH_PARSERS_INVALID_SUBCMD"; return 1 ;;
       esac ;;
       *) echo "$GMASH_DISPATCH_PARSERS_INVALID_CMD"; return 1 ;;

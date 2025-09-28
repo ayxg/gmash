@@ -226,9 +226,9 @@ case $_command in
     fi
     _command=$1
     case $_command in
-      new)
+      add)
         gmash_parser_subtree_new "$@"; gmash_subtree_new; ;;
-      patch)
+      pull)
         gmash_parser_subtree_patch "$@"; gmash_subtree_patch; ;;
       *)
         echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
