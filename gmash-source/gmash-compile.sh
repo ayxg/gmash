@@ -75,7 +75,7 @@ compile_parser
   compile_parser lineage
     compile_parser lineage merge
   compile_parser mono
-    compile_parser mono patch
-  compile_parser subtree
-    compile_parser subtree new
-    compile_parser subtree patch
+    compile_parser mono sub
+    compile_parser mono pull
+    compile_parser mono push
+    compile_parser mono config

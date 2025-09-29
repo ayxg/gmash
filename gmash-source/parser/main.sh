@@ -96,7 +96,7 @@ gmash_parser_main() {
 				break ;;
 			[-+]?*) set "unknown" "$1"; break ;;
 			*)
-				case $1 in 'dirs'|'find'|'gist'|'lineage'|'mono'|'subtree') ;;
+				case $1 in 'dirs'|'find'|'gist'|'lineage'|'mono') ;;
 					*) set "notcmd" "$1"; break
 				esac
 				while [ $# -gt 0 ]; do
@@ -156,8 +156,12 @@ Commands:
     upload          Upload files to existing gists.
   
   lineage                               Amalgamate git commits from archived git repos to a more recent version.
-  mono                                  Manage Monorepo->Subtree github git remotes and locals.
-  subtree                               Manage Subtree->Monorepo github git remotes and locals.
+  mono                                  Git+GitHub monorepo workflow strategy.
+    sub           Add or re-configure a sub project to the mono repo as a subtree.
+    pull          Pull changes from a sub project's remote into the mono repo.
+    push          Push changes in the mono repo to a sub project's remote.
+    config        Configure a mono repo's remotes based on stored subproject metadata.
+  
   
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
