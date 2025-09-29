@@ -22,6 +22,9 @@ gmash_mono_patch_all(){
 
   vecho_process "Scanning subtree metadata directory '$_subtree_dir' for subtrees to patch."
   local _patched_any=0
+  local _merge_commits=()
+  local _starting_commit=$(git rev-parse HEAD)
+
   for conf_file in "$_subtree_dir"/*.conf; do
     if [ "$conf_file" == "$_subtree_dir/*.conf" ]; then
       conf_file=""
@@ -38,35 +41,44 @@ gmash_mono_patch_all(){
     local _url
     local _remote
     local _branch
-    local _path
+    local prefix_
     local _squash
     local _owned
     _url=$(confread "$conf_file" "url")
     _remote=$(confread "$conf_file" "remote")
     _branch=$(confread "$conf_file" "branch")
-    _path=$(confread "$conf_file" "path")
+    prefix_=$(confread "$conf_file" "prefix")
     _squash=$(confread "$conf_file" "squash")
     _owned=$(confread "$conf_file" "owned")
 
-    if [ -z "$_remote" ] || [ -z "$_url" ] || [ -z "$_branch" ] || [ -z "$_path" ]; then
+    if [ -z "$_remote" ] || [ -z "$_url" ] || [ -z "$_branch" ] || [ -z "$prefix_" ]; then
       vecho_warn "Incomplete metadata in '$conf_file'. Skipping."
       continue
     fi
 
-    vecho_process "Patching subtree '$_remote' at '$_path' from '$_url'."
+    vecho_process "Patching subtree '$_remote' at '$prefix_' from '$_url'."
     GMASH_MONO_PATCH_REMOTE="$_remote"
     GMASH_MONO_PATCH_URL="$_url"
     GMASH_MONO_PATCH_BR="$_branch"
-    GMASH_MONO_PATCH_PATH="$_path"
+    GMASH_MONO_PATCH_PATH="$prefix_"
     GMASH_MONO_PATCH_ALL="0" # Disable all to avoid recursion.
 
+    # Store current commit before merge
+    local _pre_merge_commit=$(git rev-parse HEAD)
+
     if gmash_mono_patch; then
+      # Capture the merge commit hash if a new commit was created
+      local _post_merge_commit=$(git rev-parse HEAD)
+      if [ "$_pre_merge_commit" != "$_post_merge_commit" ]; then
+        _merge_commits+=("$_post_merge_commit")
+        vecho_done "Successfully patched subtree '$_remote'. Merge commit: ${_post_merge_commit:0:8}"
+      else
+        vecho_done "No changes for subtree '$_remote' (already up to date)."
+      fi
       _patched_any=1
-      vecho_done "Successfully patched subtree '$_remote'."
     else
       vecho_warn "Failed to patch subtree '$_remote'. Continuing to next."
     fi
-
   done
 
   if [ $_patched_any -eq 0 ]; then
@@ -193,21 +205,6 @@ gmash_mono_patch(){
   local _squash=${GMASH_MONO_PATCH_SQUASH-"0"}
 
   local _curr_repo_name=$(basename $(git rev-parse --show-toplevel))
-
-  vecho_section_start "gmash mono patch"
-  vecho_info "Input parameters:" 1
-  vecho_info "- br:       $_br" 2
-  vecho_info "- path:     $_path" 2
-  vecho_info "- remote:   $_remote" 2
-  vecho_info "- tgtbr:    $_tgtbr" 2
-  vecho_info "- tgtuser:  $_tgtuser" 2
-  vecho_info "- tempbr    $_tempbr" 2
-  vecho_info "- tempdir   $_tempdir"  2
-  vecho_info "- user      $_user" 2
-  vecho_info "- url       $_url"  2
-  vecho_info "- all       $_all"  2
-  vecho_info "- makepr    $_makepr" 2
-  vecho_info "- squash    $_squash" 2
   vecho_process "Applying patch from mono : $_user/$_curr_repo_name"
 
   if [ "$_all" == "1" ]; then
@@ -296,20 +293,6 @@ gmash_mono_patch(){
     _url=$(git remote get-url "$_remote") # Will overwrite if already correct since remote must match URL.
   vecho_done "Params verified, working on mono branch '$_user/$_curr_repo_name:$_br' at '$_url'."
 
-  vecho_info "Final input parameters:" 1
-  vecho_info "- br:       $_br" 2
-  vecho_info "- path:     $_path" 2
-  vecho_info "- remote:   $_remote" 2
-  vecho_info "- tgtbr:    $_tgtbr" 2
-  vecho_info "- tgtuser:  $_tgtuser"  2
-  vecho_info "- tempbr:   $_tempbr" 2
-  vecho_info "- tempdir:  $_tempdir" 2
-  vecho_info "- url:      $_url" 2
-  vecho_info "- user:     $_user" 2
-  vecho_info "- all:      $_all" 2
-  vecho_info "- makepr:   $_makepr" 2
-  vechp_info "- squash:   $_squash" 2
-
   # Attempt to do a fast forward subtree pull->push.
   vecho_process "Running fast-forward push to subtree '$_remote:$_tgtbr'."
   if output=$(git subtree pull --prefix="$_path" "$_remote" "$_tgtbr" -m "[gmash mono patch] Accepting updates from subtree." 2>&1 | tee /dev/tty); then
@@ -330,21 +313,6 @@ gmash_mono_patch(){
     git fetch "$_remote" "$_tgtbr" 2>/dev/null || true
     if git diff --quiet "HEAD:$_path" "$_remote/$_tgtbr" -- 2>/dev/null; then
       # exit early here.
-      vecho_action "Subtree content is synced"
-      vecho_done "Mono patched applied."
-      vecho_info "Result metadata:" 1
-      vecho_info "- br:       $_br" 2
-      vecho_info "- path:     $_path" 2
-      vecho_info "- remote:   $_remote" 2
-      vecho_info "- tgtbr:    $_tgtbr" 2
-      vecho_info "- tgtuser:  $_tgtuser"  2
-      vecho_info "- tempbr:   $_tempbr" 2
-      vecho_info "- tempdir:  $_tempdir" 2
-      vecho_info "- url:      $_url" 2
-      vecho_info "- user:     $_user" 2
-      vecho_info "- all:      $_all" 2
-      vecho_info "- makepr:   $_makepr" 2
-      vechp_info "- squash:   $_squash" 2
       return 0
     else
       vecho_warn "Subtree content differs, 3 way sync required."
@@ -477,19 +445,6 @@ gmash_mono_patch(){
       fi
   vecho_done "3 Way sync complete, changes pushed to subtree remote '$_remote' branch '$_tgtbr'."
   vecho_done "Mono patched applied."
-  vecho_info "Result metadata:" 1
-  vecho_info "- br:       $_br" 2
-  vecho_info "- path:     $_path" 2
-  vecho_info "- remote:   $_remote" 2
-  vecho_info "- tgtbr:    $_tgtbr" 2
-  vecho_info "- tgtuser:  $_tgtuser"  2
-  vecho_info "- tempbr:   $_tempbr" 2
-  vecho_info "- tempdir:  $_tempdir" 2
-  vecho_info "- url:      $_url" 2
-  vecho_info "- user:     $_user" 2
-  vecho_info "- all:      $_all" 2
-  vecho_info "- makepr:   $_makepr" 2
-  vechp_info "- squash:   $_squash" 2
 
   return 0
 }

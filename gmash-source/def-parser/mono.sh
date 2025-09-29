@@ -20,8 +20,14 @@ gmash_def_parser_mono(){
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
   msg -- " "
   msg -- "Sub-Commands:"
-  cmd patch \
-      -- "Patch a git repository with changes from another branch."
+  cmd project \
+    -- "Add or re-configure a sub project to the mono repo as a subtree."
+  cmd pull \
+    -- "Pull changes from a sub project's remote into the mono repo."
+  cmd push \
+    -- "Push changes in the mono repo to a sub project's remote."
+  cmd config \
+    -- "Configure a mono repo's remotes based on stored subproject metadata."
   msg -- " "
   msg -- "Display:"
     standard_parser_help gmash_mono_help
