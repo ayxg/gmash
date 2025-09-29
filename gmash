@@ -73,15 +73,12 @@ fi
     source "$GMASH_SOURCE/parser/gist.sh"
     source "$GMASH_SOURCE/parser/lineage.sh"
     source "$GMASH_SOURCE/parser/mono.sh"
-    source "$GMASH_SOURCE/parser/subtree.sh"
   # gmash commands impl.
     source "$GMASH_SOURCE/command/dirs.sh"
     source "$GMASH_SOURCE/command/find.sh"
     source "$GMASH_SOURCE/command/gist.sh"
     source "$GMASH_SOURCE/command/lineage.sh"
     source "$GMASH_SOURCE/command/mono.sh"
-    source "$GMASH_SOURCE/command/subtree.sh"
-
 
 # Command usage from inside bash:
 #
