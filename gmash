@@ -64,7 +64,7 @@ fi
   source "$GMASH_SOURCE/common.sh"
   # Basic key-value configuration file handler.
   source "$GMASH_SOURCE/confile.sh"
-  # 'getoptions' parser extensions. (also sourced in parser-def)
+  # 'getoptions' parser extensions. (also sourced in /parser-def/)
   source "$GMASH_SOURCE/parser-extensions.sh"
   # Compiled cli parsers.
     source "$GMASH_SOURCE/parser/main.sh"
@@ -211,8 +211,14 @@ case $_command in
     fi
     _command=$1
     case $_command in
-      patch)
-        gmash_parser_mono_patch "$@"; gmash_mono_patch; ;;
+      sub)
+        gmash_def_parser_mono_sub "$@"; gmash_mono_sub; ;;
+      pull)
+        gmash_def_parser_mono_pull "$@"; gmash_mono_pull; ;;
+      push)
+        gmash_def_parser_mono_push "$@"; gmash_mono_push; ;;
+      config)
+        gmash_def_parser_mono_config "$@"; gmash_mono_config; ;;
       *)
         echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
     esac ;;
