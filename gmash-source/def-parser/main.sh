@@ -59,9 +59,12 @@ gmash_def_parser_main() {
     cmd lineage \
       -- "Amalgamate git commits from archived git repos to a more recent version."
     cmd mono \
-      -- "Manage Monorepo->Subtree github git remotes and locals."
-    cmd subtree \
-      -- "Manage Subtree->Monorepo github git remotes and locals."
+      -- "Git+GitHub monorepo workflow strategy."
+        msg -- "    sub           Add or re-configure a sub project to the mono repo as a subtree."
+        msg -- "    pull          Pull changes from a sub project's remote into the mono repo."
+        msg -- "    push          Push changes in the mono repo to a sub project's remote."
+        msg -- "    config        Configure a mono repo's remotes based on stored subproject metadata."
+        msg -- "  "
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_main_help
