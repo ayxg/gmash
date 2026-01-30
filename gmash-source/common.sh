@@ -149,7 +149,7 @@ check_repo_access() {
 
   if [ -z "$owner" ] || [ -z "$repo" ]; then
     echo "0"
-    return 1
+    return 0
   fi
 
   if [ "$owner" = "$my_user" ]; then
