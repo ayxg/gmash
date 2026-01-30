@@ -83,16 +83,16 @@ gmash_parser_mono() {
 gmash_mono_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash mono <sub-command> [[args]...]
- 
+
 Git+GitHub monorepo workflow strategy.
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
- 
+
 Sub-Commands:
   sub                                   Add or re-configure a sub project to the mono repo as a subtree.
   pull                                  Pull changes from a sub project's remote into the mono repo.
   push                                  Push changes in the mono repo to a sub project's remote.
   config                                Configure a mono repo's remotes based on stored subproject metadata.
- 
+
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
   -v,     --version                     [v0-0-0] Display command group version.
@@ -241,19 +241,19 @@ gmash_parser_mono_sub() {
 gmash_subtree_new_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash mono sub <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> [-b <subtreeBranch>]
- 
+
 Add or re-configure a sub project to the mono repo as a subtree.
- 
+
 Parameters:
   -p,     --prefix <subtreePrefixPath>  Relative path inside the parent repo where the subtree will be added. Cannot be the root path. The path must be empty or non-existent in the parent repo. gmash will deny adding a subtree to a path which already contains any files.
   -r,     --remote <remoteAlias>        Remote alias to add to the parent repo, which will be refered to when pulling and pushing changes to the added subtree.
   -l,     --url <remoteURL>             Remote repository URL of the subtree to add. If not provided, gmash will attempt to find an existing GitHub repo at 'api-user/remote.git'. If no such repo exists and '--new' is passed: a new empty repo will be created at 'api-user/remote.git'.
-  -b,     --branch [monoBranch = "main"] 
+  -b,     --branch [monoBranch = "main"]
                                         Target branch of the subtree remote to pull in. Defaults to 'main'.
   -s,     --squash                      Instead of merging the entire history from the subtree project, produce only a single commit that contains all the differences to merge. Then, merge that new commit into the parent repo. Note, if you add a subtree with --squash, future
  pulls and pushes to that subtree should also be squashed.
   -n,     --new                         Create a new github repo for the added subtree, if the target subtree remote does not exist.
-  
+
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
   -v,     --version                     [v0-0-0] Display command group version.
@@ -382,15 +382,15 @@ gmash_parser_mono_pull() {
 gmash_subtree_patch_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash subtree pull -r [repo] -b [branch]
-  
+
 Pull subtree changes to monorepo.
-  
+
 Parameters:
   -r,     --remote <subtreeRemote>      Target subtree remote alias.
   -b,     --branch <subtreeBranch>      Target subtree branch.
   -p,     --prefix <subtreePrefixPath>  Subtree prefix path in the monorepo.
   -a,     --all                         Patch all subtrees based on gmash metadata.
-  
+
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
   -v,     --version                     [v0-0-0] Display command group version.
@@ -599,9 +599,9 @@ gmash_parser_mono_push() {
 gmash_mono_patch_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash mono push -r [repo] -b [branch]
-  
+
 Push changes in the mono repo to a sub project's remote.
-  
+
 Parameters:
   -b,     --br <monoBranch>             Source mono branch to pull changes from.
   -p,     --path <prefixPath>           Subtree prefix path in the monorepo.
@@ -615,7 +615,7 @@ Parameters:
   -a,     --all                         Patch all known subtrees in the mono repo.
   -P,     --make-pr                     Make a pull request on GitHub with the patched changes.
   -s,     --squash                      Squash strategy when merging subtree changes. Must be consistent with  the previous pul of the subtree.
-  
+
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
   -v,     --version                     [v0-0-0] Display command group version.
@@ -744,15 +744,15 @@ gmash_parser_mono_config() {
 gmash_subtree_patch_help() {
 cat<<'GETOPTIONSHERE'
 Usage: gmash subtree config -r [repo] -b [branch]
-  
+
 Configure a mono repo's remotes based on stored subproject metadata.
-  
+
 Parameters:
   -r,     --remote <subtreeRemote>      Target subtree remote alias.
   -b,     --branch <subtreeBranch>      Target subtree branch.
   -p,     --prefix <subtreePrefixPath>  Subtree prefix path in the monorepo.
   -a,     --all                         Patch all subtrees based on gmash metadata.
-  
+
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
   -v,     --version                     [v0-0-0] Display command group version.
