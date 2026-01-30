@@ -18,7 +18,7 @@
 #@enddoc------------------------------------------------------------------------------------------#
 
 # Source path (used for relative sources)
-export GMASH_SOURCE="$(dirname "$(readlink -f "$0")")/gmash-source"
+export GMASH_SOURCE="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Program Metadata
 export GMASH_PROGRAM="${0##*/}"
@@ -58,11 +58,10 @@ export GMASH_CONFIG=""    # Config file path.
       export GMASH_LINEAGE_MERGE_VERSION="v0-0-0"
 
     export GMASH_MONO_VERSION="v0-0-0"
+      export GMASH_MONO_SUB_VERSION="v0-0-0"
+      export GMASH_MONO_PULL_VERSION="v0-0-0"
+      export GMASH_MONO_CONFIG_VERSION="v0-0-0"
       export GMASH_MONO_PATCH_VERSION="v0-0-0"
-
-    export GMASH_SUBTREE_VERSION="v0-0-0"
-      export GMASH_SUBTREE_NEW_VERSION="v0-0-0"
-      export GMASH_SUBTREE_PATCH_VERSION="v0-0-0"
 
 gmash_versions_index(){
   echo "gmash $GMASH_VERSION"

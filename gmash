@@ -33,7 +33,7 @@ gmash_dev_debug_echo(){
 }
 
 # Global vars shared across parser-def && main script.
-source "$(dirname "$(readlink -f "$0")")/gmash-source/global.sh"
+source "$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/gmash-source/global.sh"
 
 # !!! Early exit.
 # Special case for --compile-parser developer arg.
