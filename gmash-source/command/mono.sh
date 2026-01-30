@@ -65,14 +65,14 @@ gmash_mono_sub(){
     echo_err "Failed determine GitHub API user. Are you logged in?"
   fi
 
-  local repo_owner_
-  repo_owner_="$(gh_repo_owner)"
-
   local curr_repo_name_
   curr_repo_name_="$(git_curr_repo)"
   if [ -z "$curr_repo_name_" ]; then
     echo_err "Failed to detect active git repo. You must be inside a git repo."
   fi
+
+  local repo_owner_
+  repo_owner_="$(gh_repo_owner)"
 
   local curr_branch_
   curr_branch_="$(git_curr_branch)"
@@ -187,6 +187,7 @@ gmash_mono_sub(){
   confwrite "$conf_" owned "$owned_"
 
   # Commit & push the changes
+  vecho_process "Committing changes."
   git add "$conf_"
   git commit -m "[[gmash][subtree][add]]
  - url: $_url
@@ -204,10 +205,10 @@ gmash_mono_sub(){
 # $3 = prefix
 gmash_mono_pull(){
   if [ $# == 0 ]; then
-    _remote=${GMASH_SUBTREE_PATCH_REMOTE:-""}
-    _branch=${GMASH_SUBTREE_PATCH_BRANCH:-"main"}
-    _prefix=${GMASH_SUBTREE_PATCH_PREFIX:-""}
-    _all=${GMASH_SUBTREE_PATCH_ALL:-"0"}
+    _remote=${GMASH_MONO_PULL_REMOTE:-""}
+    _branch=${GMASH_MONO_PULL_BRANCH:-"main"}
+    _prefix=${GMASH_MONO_PULL_PREFIX:-""}
+    _all=${GMASH_MONO_PULL_ALL:-"0"}
   else
     _remote=${1:-""}
     _branch=${2:-"main"}

@@ -77,8 +77,8 @@ gmash_def_parser_mono_sub(){
 
 gmash_def_parser_mono_pull(){
   extend_parser
-  standard_parser_setup GMASH_MONO_PULL_ARGR gmash_subtree_patch_help \
-    "Usage: gmash subtree pull -r [repo] -b [branch]"
+  standard_parser_setup GMASH_MONO_PULL_ARGR gmash_mono_pull_help \
+    "Usage: gmash mono pull -r [repo] -b [branch]"
   msg -- "  "
   msg -- "Pull subtree changes to monorepo."
   msg -- "  "
@@ -93,7 +93,7 @@ gmash_def_parser_mono_pull(){
       -- "Patch all subtrees based on gmash metadata."
   msg -- "  "
   msg -- "Display:"
-    standard_parser_help gmash_subtree_patch_help
+    standard_parser_help gmash_mono_pull_help
     disp "GMASH_MONO_PULL_VERSION" -v --version \
       -- "[$GMASH_MONO_PULL_VERSION] Display command group version."
 }
@@ -151,23 +151,23 @@ gmash_def_parser_mono_push(){
 
 gmash_def_parser_mono_config(){
   extend_parser
-  standard_parser_setup GMASH_MONO_PULL_ARGR gmash_subtree_patch_help \
-    "Usage: gmash subtree config -r [repo] -b [branch]"
+  standard_parser_setup GMASH_MONO_CONFIG_ARGR gmash_mono_config_help \
+    "Usage: gmash mono config -r [repo] -b [branch]"
   msg -- "  "
   msg -- "Configure a mono repo's remotes based on stored subproject metadata."
   msg -- "  "
   msg -- "Parameters:"
-    param GMASH_MONO_PULL_REMOTE -r --remote var:"<subtreeRemote>" \
+    param GMASH_MONO_CONFIG_REMOTE -r --remote var:"<subtreeRemote>" \
       -- "Target subtree remote alias."
-    param GMASH_MONO_PULL_BRANCH -b --branch var:"<subtreeBranch>" \
+    param GMASH_MONO_CONFIG_BRANCH -b --branch var:"<subtreeBranch>" \
       -- "Target subtree branch."
-    param GMASH_MONO_PULL_PREFIX -p --prefix var:"<subtreePrefixPath>"\
+    param GMASH_MONO_CONFIG_PREFIX -p --prefix var:"<subtreePrefixPath>"\
       -- "Subtree prefix path in the monorepo."
-    flag GMASH_MONO_PULL_ALL -a --all var:""\
-      -- "Patch all subtrees based on gmash metadata."
+    flag GMASH_MONO_CONFIG_ALL -a --all var:""\
+      -- "Configure all subtrees based on gmash metadata."
   msg -- "  "
   msg -- "Display:"
-    standard_parser_help gmash_subtree_patch_help
-    disp "GMASH_MONO_PULL_VERSION" -v --version \
-      -- "[$GMASH_MONO_PULL_VERSION] Display command group version."
+    standard_parser_help gmash_mono_config_help
+    disp "GMASH_MONO_CONFIG_VERSION" -v --version \
+      -- "[$GMASH_MONO_CONFIG_VERSION] Display command group version."
 }
