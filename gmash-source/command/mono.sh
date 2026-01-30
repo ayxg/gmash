@@ -12,7 +12,7 @@
 #@enddoc#######################################################################
 
 #@doc##########################################################################
-  # @func gmash_subtree_new
+  # @func gmash_mono_sub
   # @brief Add subtree to this repo from an existing external git repo.
   # Detailed overview of the git process for creating an example subtree 'foo-box'.
   # For each submodule:
@@ -57,7 +57,7 @@
   #      from the git-bash.
   #       git push
 #@enddoc#######################################################################
-gmash_subtree_new(){
+gmash_mono_sub(){
   # Get current working repo data
   local api_user_
   api_user_="$(gh_api_user)"
@@ -79,12 +79,12 @@ gmash_subtree_new(){
 
   # Handle input args
   if [ $# == 0 ]; then
-    local _prefix=${GMASH_SUBTREE_NEW_PREFIX:-""}
-    local _remote=${GMASH_SUBTREE_NEW_REMOTE:-""}
-    local _url=${GMASH_SUBTREE_NEW_URL:-""}
-    local _branch=${GMASH_SUBTREE_NEW_BR:-"main"}
-    local _squash=${GMASH_SUBTREE_NEW_SQUASH:-"0"}
-    local _new=${GMASH_SUBTREE_NEW_NEW:-"0"}
+    local _prefix=${GMASH_MONO_SUB_PREFIX:-""}
+    local _remote=${GMASH_MONO_SUB_REMOTE:-""}
+    local _url=${GMASH_MONO_SUB_URL:-""}
+    local _branch=${GMASH_MONO_SUB_BR:-"main"}
+    local _squash=${GMASH_MONO_SUB_SQUASH:-"0"}
+    local _new=${GMASH_MONO_SUB_NEW:-"0"}
   else
     local _prefix=${1:-""}
     local _remote=${2:-""}

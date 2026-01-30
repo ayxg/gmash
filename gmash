@@ -209,13 +209,13 @@ case $_command in
     _command=$1
     case $_command in
       sub)
-        gmash_def_parser_mono_sub "$@"; gmash_mono_sub; ;;
+        gmash_parser_mono_sub "$@"; gmash_mono_sub; ;;
       pull)
-        gmash_def_parser_mono_pull "$@"; gmash_mono_pull; ;;
+        gmash_parser_mono_pull "$@"; gmash_mono_pull; ;;
       push)
-        gmash_def_parser_mono_push "$@"; gmash_mono_push; ;;
+        gmash_parser_mono_push "$@"; gmash_mono_push; ;;
       config)
-        gmash_def_parser_mono_config "$@"; gmash_mono_config; ;;
+        gmash_parser_mono_config "$@"; gmash_mono_config; ;;
       *)
         echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
     esac ;;
