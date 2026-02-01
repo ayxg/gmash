@@ -210,6 +210,8 @@ case $_command in
     case $_command in
       sub)
         gmash_parser_mono_sub "$@"; gmash_mono_sub; ;;
+      remove)
+        gmash_parser_mono_remove "$@"; gmash_mono_remove; ;;
       pull)
         gmash_parser_mono_pull "$@"; gmash_mono_pull; ;;
       push)

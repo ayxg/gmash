@@ -199,6 +199,40 @@ gmash_mono_sub(){
   return 0
 }
 
+gmash_mono_remove(){
+  local _remote="${1:-${GMASH_MONO_REMOVE_REMOTE:-}}"
+  local _prefix="${2:-${GMASH_MONO_REMOVE_PREFIX:-}}"
+  local _keep_remote="${3:-${GMASH_MONO_REMOVE_KEEP_REMOTE:-0}}"
+
+  [[ -n "$_remote" ]] || echo_err "Missing --remote"
+
+  local conf=".gmash/subtree/$_remote.conf"
+  [[ -f "$conf" ]] || echo_err "No subtree metadata found for '$_remote'"
+
+  local meta_prefix
+  meta_prefix="$(confread "$conf" prefix)"
+
+  [[ -n "$_prefix" ]] || _prefix="$meta_prefix"
+  [[ "$_prefix" == "$meta_prefix" ]] || echo_err "Prefix mismatch"
+
+  git diff --quiet || echo_err "Working tree is dirty"
+
+  [[ -d "$_prefix" ]] || echo_err "Subtree path '$_prefix' not found"
+
+  vecho_process "Removing subtree '$_remote' at '$_prefix'"
+  git rm -r "$_prefix"
+  git rm "$conf"
+
+  git commit -m "gmash(subtree): remove $_remote" \
+             -m "prefix=$_prefix"
+
+  if [[ "$_keep_remote" -eq 0 ]] && git remote get-url "$_remote" &>/dev/null; then
+    git remote remove "$_remote"
+  fi
+
+  vecho_done "Subtree removed. Run 'git push' to apply."
+}
+
 # @brief Patch subtree from its remote repo.
 # $1 = remote
 # $2 = branch

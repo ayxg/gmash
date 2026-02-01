@@ -23,6 +23,8 @@ gmash_def_parser_mono(){
   msg -- "Sub-Commands:"
   cmd sub \
     -- "Add or re-configure a sub project to the mono repo as a subtree."
+  cmd remove \
+    -- "Remove a subtree from the monorepo."
   cmd pull \
     -- "Pull changes from a sub project's remote into the mono repo."
   cmd push \
@@ -72,6 +74,27 @@ gmash_def_parser_mono_sub(){
   msg -- "Display:"
     standard_parser_help gmash_mono_sub_help
     disp "GMASH_MONO_SUB_VERSION" -v --version \
+      -- "[$GMASH_MONO_SUB_VERSION] Display command group version."
+}
+
+gmash_def_parser_mono_remove(){
+  extend_parser
+  standard_parser_setup GMASH_MONO_REMOVE_ARGR gmash_mono_remove_help \
+    "Usage: gmash mono remove -r [remote] -p [prefix] [-k]"
+  msg -- "  "
+  msg -- "Remove a subtree from the monorepo."
+  msg -- "  "
+  msg -- "Parameters:"
+    param GMASH_MONO_REMOVE_REMOTE -r --remote var:"<subtreeRemote>" \
+      -- "Target subtree remote alias."
+    param GMASH_MONO_REMOVE_PREFIX -p --prefix var:"<subtreePrefixPath>"\
+      -- "Subtree prefix path in the monorepo."
+    flag GMASH_MONO_REMOVE_KEEP_REMOTE -k --keep-remote var:"" \
+      -- "Keep the remote alias in the parent repo even if it is no longer used."
+  msg -- "  "
+  msg -- "Display:"
+    standard_parser_help gmash_mono_remove_help
+    disp "GMASH_MONO_REMOVE_VERSION" -v --version \
       -- "[$GMASH_MONO_SUB_VERSION] Display command group version."
 }
 
