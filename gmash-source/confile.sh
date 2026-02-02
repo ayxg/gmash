@@ -14,6 +14,7 @@
 #   Read: confread <file> <key>
 #@enddoc------------------------------------------------------------------------------------------#
 
+readonly CONFILE_VERSION=1
 
 # Read a key value from a config file.
 # $1 = config file path
