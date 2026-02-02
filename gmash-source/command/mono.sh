@@ -78,21 +78,12 @@ gmash_mono_sub(){
   curr_branch_="$(git_curr_branch)"
 
   # Handle input args
-  if [ $# == 0 ]; then
-    local _prefix=${GMASH_MONO_SUB_PREFIX:-""}
-    local _remote=${GMASH_MONO_SUB_REMOTE:-""}
-    local _url=${GMASH_MONO_SUB_URL:-""}
-    local _branch=${GMASH_MONO_SUB_BR:-"main"}
-    local _squash=${GMASH_MONO_SUB_SQUASH:-"0"}
-    local _new=${GMASH_MONO_SUB_NEW:-"0"}
-  else
-    local _prefix=${1:-""}
-    local _remote=${2:-""}
-    local _url=${3:-""}
-    local _branch=${4:-"main"}
-    local _squash=${5:-"0"}
-    local _new=${6:-"0"}
-  fi
+  local _prefix="${1:-${GMASH_MONO_SUB_PREFIX:""}}"
+  local _remote="${2:-${GMASH_MONO_SUB_REMOTE:""}}"
+  local _url="${3:-${GMASH_MONO_SUB_URL:""}}"
+  local _branch="${4:-${GMASH_MONO_SUB_BR:-main}}"
+  local _squash="${5:-${GMASH_MONO_SUB_SQUASH:-0}}"
+  local _new="${6:-${GMASH_MONO_SUB_NEW:-0}}"
 
   if [ -z "$_prefix" ]; then
     echo_err "Missing required '--prefix' parameter"
