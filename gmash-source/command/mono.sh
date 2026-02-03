@@ -11,111 +11,116 @@
 # @file gmash->mono command group
 #@enddoc#######################################################################
 
+readonly GMASH_MONO_DEFAULT_BRANCH="main"
+
 #@doc##########################################################################
   # @func gmash_mono_sub
-  # @brief Add subtree to this repo from an existing external git repo.
-  # Detailed overview of the git process for creating an example subtree 'foo-box'.
-  # For each submodule:
-  # 1. Create github repo with only a single commit (eg. .gitignore or README.md).
-  #
-  # 2. Create a folder for the submodule inside the monorepo submodules directory.
-  #
-  # 3. Set up the monorepo for a subtree merge.
-  #   1. Open "git-bash" console in the local monorepo folder.
-  #
-  #   2. Add a new remote URL pointing to the separate submodule repo that was
-  #      created on step 1.
-  #     git remote add -f foo-box https://github.com/SophiaSGS/foo-box.git
-  #     Updating foo-box
-  #     remote: Enumerating objects: 3, done.
-  #     remote: Counting objects: 100% (3/3), done.
-  #     remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
-  #     Unpacking objects: 100% (3/3), 869 bytes | 8.00 KiB/s, done.
-  #     From https://github.com/SophiaSGS/foo-box
-  #     * [new branch]      main       -> foo-box/main
-  #
-  #   3. Merge the submodule repo into the monorepo. This doesn't change any of
-  #      your files locally, but it does prepare Git for the next step.
-  #      You must also indicate which specific branch you wish to merge. In this
-  #      case 'main'.
-  #         git merge -s ours --no-commit --allow-unrelated-histories foo-box/main
-  #      Automatic merge went well; stopped before committing as requested
-  #
-  #   4. Create a folder for the submodule inside the monorepo submodules directory.
-  #      Then, copy the Git history of the submodule project into it using
-  #      'read-tree'. '--prefix' is the path inside the monorepo where the module
-  #      will be stored. You must also specify the branch argument '-u'.
-  #           "Not a fatal error? false positive."
-  #         git read-tree --prefix=boxes/foo_box/ -u foo-box/main
-  #         fatal: refusing to merge unrelated histories
-  #
-  #   5. Commit the submodule subtree changes locally.
-  #     git commit -m "Merged submodule subtree 'foo-box' into monorepo 'boxes/foo_box'."
-  #     [main fe0ca25] Merged submodule subtree 'foo-box' into monorepo 'boxes/foo_box'.
-  #
-  #   6. Push the monorepo's submodule tree changes to the remote GitHub monorepo
-  #      from the git-bash.
-  #       git push
+  # @brief Add subtree to this repo from an existing external git repo,
+  #     or create a new remote repo if '--new' is passed.
 #@enddoc#######################################################################
 gmash_mono_sub(){
-  # Get current working repo data
-  local api_user_
-  api_user_="$(gh_api_user)"
-  if [ -z "$api_user_" ]; then
-    echo_err "Failed determine GitHub API user. Are you logged in?"
-  fi
-
-  local curr_repo_name_
-  curr_repo_name_="$(git_curr_repo)"
-  if [ -z "$curr_repo_name_" ]; then
-    echo_err "Failed to detect active git repo. You must be inside a git repo."
-  fi
-
-  local repo_owner_
-  repo_owner_="$(gh_repo_owner)"
-
-  local curr_branch_
-  curr_branch_="$(git_curr_branch)"
-
-  # Handle input args
+  #############################################################################
+  # Receive input args.
+  #############################################################################
   local _prefix="${1:-${GMASH_MONO_SUB_PREFIX:""}}"
   local _remote="${2:-${GMASH_MONO_SUB_REMOTE:""}}"
   local _url="${3:-${GMASH_MONO_SUB_URL:""}}"
-  local _branch="${4:-${GMASH_MONO_SUB_BR:-main}}"
+  local _branch="${4:-${GMASH_MONO_SUB_BR:-""}}"
   local _squash="${5:-${GMASH_MONO_SUB_SQUASH:-0}}"
   local _new="${6:-${GMASH_MONO_SUB_NEW:-0}}"
 
+  #############################################################################
+  # Validate input and set defaults
+  #############################################################################
+
+  # Precondition: must be inside a git repo.
+  local curr_repo_name_
+  curr_repo_name_="$(git_curr_repo)"
+  if [ -z "$curr_repo_name_" ]; then
+    echo_die "Failed to detect active git repo. You must be inside a git repo."
+  fi
+
+  # Required: prefix arg.
   if [ -z "$_prefix" ]; then
-    echo_err "Missing required '--prefix' parameter"
-    return 1
+    echo_die "Missing required '--prefix' parameter"
   fi
 
+  # Required: remote arg.
   if [ -z "$_remote" ]; then
-    echo_err "Missing required '--remote' parameter"
-    return 1
+    echo_die "Missing required '--remote' parameter"
   fi
 
-  if [ -z "$_url" ]; then
-    _url="https://github.com/$repo_owner_/$_remote.git"
-    vecho_process "URL not provided, targeting subtree remote '$_url'"
+  # Required: branch arg. Default to main if not provided.
+  if [ -z "$_branch" ]; then
+    _branch="$GMASH_MONO_DEFAULT_BRANCH"
+    vecho_process "Defaulting subtree branch to '$_branch'."
   fi
 
-  # Determine the target remote
-  #
-  # github repo $api_user_/$_remote.git exists & accessible? Use it as the url.
-  if git ls-remote "$_url" &> /dev/null; then
-      vecho_process "Found existing GitHub repo '$_url'." 1
-  else
-    # Does the subtree target remote already point to an existing repo ?
+  # Guard: current remotes.
+  if git config "remote.$_remote.url" > /dev/null; then
+    echo_die "Remote '$_remote' already exists."
+  fi
+
+  # Guard: url not already used by another remote.
+  if git remote -v | awk '{print $2}' | grep -q "^$_url$"; then
+    echo_die "URL '$_url' is already used by another remote."
+  fi
+
+  # Guard: prefix path must not exist or be non-empty.
+  if [ -e "$_prefix" ] && [ -n "$(find "$_prefix" -maxdepth 1 -mindepth 1 -print -quit 2>/dev/null)" ]; then
+    echo_die "Target path '$_prefix' exists and contains files."
+  fi
+
+  # Guard: prefix path must not match gitignore patterns.
+  if git check-ignore -q "$_prefix"; then
+    echo_die "Target path '$_prefix' matches gitignore patterns"
+  fi
+
+  # Guard : working tree must be clean.
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo_die "Working tree is dirty. Please commit or stash changes before adding subtree."
+  fi
+
+  # Guard: gmash metadata file must not already exist.
+  if [ -f ".gmash/subtree/$_remote.conf" ]; then
+    echo_die "Subtree metadata for remote '$_remote' already exists. Try removing first."
+  fi
+
+  # If url is provided, verify access.
+  if [ -n "$_url" ]; then
+    vecho_process "Verifying access to provided subtree URL '$_url'."
+    if ! git ls-remote "$_url" &> /dev/null; then
+      echo_die "Provided subtree URL '$_url' is not accessible."
+    fi
+  else  # No url provided, attempt to get from existing remote.
+    vecho_process "No subtree URL provided, checking url from remote '$_remote'."
     if git remote get-url "$_remote" >/dev/null 2>&1; then
       _url=$(git remote get-url "$_remote" 2>&1)
       vecho_process "Found existing remote '$_remote' with URL '$_url'."
       if ! git ls-remote "$_url" &> /dev/null; then
-        echo_err "Existing remote '$_remote' URL is not accessible. URL: $_url"
-        return 1
+        echo_die "Existing remote '$_remote' URL is not accessible. URL: $_url"
       fi
-    else
+    else # No existing remote, attempt to construct url to create new repo if --new is passed.
       if [ "$_new" -eq "1" ]; then
+        vecho_process "URL not provided, attempting to construct from github user and remote names."
+
+        # Check GitHub API user.
+        local api_user_
+        api_user_="$(gh_api_user)"
+        if [ -z "$api_user_" ]; then
+          echo_die "Unable to determine GitHub API user. Can't infer new remote URL."
+        fi
+
+        # Get the repo owner.
+        local repo_owner_
+        repo_owner_="$(gh_repo_owner)"
+
+        _url="https://github.com/$repo_owner_/$_remote.git"
+        vecho_process "Targeting subtree remote '$_url'"
+
+        local curr_branch_
+        curr_branch_="$(git_curr_branch)"
+
         # Create a new GitHub repo with the same name as the remote alias on the api user's
         # GitHub account. Commit of a README.md file(required to be non-empty to add as subtree).
         if command -v gh >/dev/null 2>&1; then
@@ -124,51 +129,31 @@ gmash_mono_sub(){
             "[gmash subtree add] Created subtree repository '$repo_owner_/$_remote' for '$repo_owner_/$curr_repo_name_:$curr_branch_'"; then
             vecho_process "Created subtree repository '$repo_owner_/$_remote'."
           else # Unexpected error ?
-            echo_err "Failed to create GitHub repository."
-            return 1
+            echo_die "Failed to create GitHub repository."
           fi
         else # gh not installed...
-            echo_err "GitHub CLI (gh) not found."
-            return 1
+            echo_die "GitHub CLI (gh) not found."
         fi
-      else
-        echo_err "Could not locate subtree remote. Use '--new' to create a repo at '$_url'."
-        return 1
+      else # No --new flag, error out.
+        echo_die "Could not locate subtree remote. Use '--new' to create a repo at '$_url'."
       fi
     fi
   fi
 
-  # Guard current remotes, subtrees and parent paths. Overwrite disabled.
-  if git config "remote.$_remote.url" > /dev/null; then
-    echo_err "Remote '$_remote' already exists."
-    return 1
-  fi
-
-  if git remote -v | awk '{print $2}' | grep -q "^$_url$"; then
-    echo_err "URL '$_url' is already used by another remote."
-    return 1
-  fi
-
-  if [ -e "$_prefix" ] && [ -n "$(find "$_prefix" -maxdepth 1 -mindepth 1 -print -quit 2>/dev/null)" ]; then
-    echo_err "Target path '$_prefix' exists and contains files."
-    return 1
-  fi
-
-  if git check-ignore -q "$_prefix"; then
-    echo_err "Target path '$_prefix' matches gitignore patterns"
-    return 1
-  fi
-
+  #############################################################################
   # Perfom the subtree operation
+  #############################################################################
   vecho_process "Adding subtree '$_remote' from '$_url' into '$_prefix'."
   git remote add -f "$_remote" "$_url"
   git subtree add --prefix="$_prefix" "$_url" "$_branch"
-  git subtree pull --prefix="$_prefix" "$_remote" "$_branch"
 
-  # Add subtree metadata to `.gmash/subtree/$alias.conf`
+  #############################################################################
+  # Add subtree metadata to `.gmash/subtree/$_remote.conf`
+  #############################################################################
   vecho_process "Writing subtree metadata to '.gmash/subtree/$_remote.conf'."
   local conf_=".gmash/subtree/$_remote.conf"
-  confwrite "$conf_" created "$(date)"
+  confwrite "$conf_" version "${CONFILE_VERSION}"
+  confwrite "$conf_" created "$(date -Iseconds)"
   confwrite "$conf_" url "$_url"
   confwrite "$conf_" remote  "$_remote"
   confwrite "$conf_" branch "$_branch"
@@ -177,51 +162,85 @@ gmash_mono_sub(){
   owned_=$(check_repo_access "$_url")
   confwrite "$conf_" owned "$owned_"
 
-  # Commit & push the changes
+  #############################################################################
+  # Commit changes.
+  #############################################################################
   vecho_process "Committing changes."
   git add "$conf_"
-  git commit -m "[[gmash][subtree][add]]
+  git commit -m "[gmash mono] Add subtree '$_remote' at '$_prefix'" \
+  -m "Subtree details :
  - url: $_url
  - remote: $_remote
  - prefix: $_prefix
  - metadata: $conf_"
 
-  vecho_done "Subtree added. Call 'git push' to complete operation."
+  vecho_done "Success. Subtree '$_remote' added at '$_prefix'."
   return 0
 }
 
+#@doc##########################################################################
+  # @func gmash_mono_remove
+  # @brief Remove subtree remote, prefix and metadata file.
+#@enddoc#######################################################################
 gmash_mono_remove(){
-  local _remote="${1:-${GMASH_MONO_REMOVE_REMOTE:-}}"
-  local _prefix="${2:-${GMASH_MONO_REMOVE_PREFIX:-}}"
+  #############################################################################
+  # Receive input args.
+  #############################################################################
+  local _remote="${1:-${GMASH_MONO_REMOVE_REMOTE:""}}"
+  local _prefix="${2:-${GMASH_MONO_REMOVE_PREFIX:""}}"
   local _keep_remote="${3:-${GMASH_MONO_REMOVE_KEEP_REMOTE:-0}}"
 
-  [[ -n "$_remote" ]] || echo_err "Missing --remote"
+  #############################################################################
+  # Validate input and set defaults
+  #############################################################################
 
+  # Required: remote arg.
+  if [ -z "$_remote" ]; then
+    echo_die "Missing required '--remote' parameter"
+  fi
+
+  # Precondition: metadata file must exist.
   local conf=".gmash/subtree/$_remote.conf"
-  [[ -f "$conf" ]] || echo_err "No subtree metadata found for '$_remote'"
+  if [ ! -f "$conf" ]; then
+    echo_die "No subtree metadata found for '$_remote'"
+  fi
 
+  # Guard: working tree must be clean.
+  git diff --quiet || echo_die "Working tree is dirty"
+
+  # Guard: prefix arg must exist and match metadata.
   local meta_prefix
   meta_prefix="$(confread "$conf" prefix)"
+  if [ -z "$_prefix" ]; then # default to metadata
+    _prefix="$meta_prefix"
+    vecho_process "Defaulting prefix to metadata value '$_prefix'."
+  else # provided prefix must match metadata
+    if [ "$_prefix" != "$meta_prefix" ]; then
+      echo_die "Provided prefix '$_prefix' does not match metadata value '$meta_prefix'."
+    fi
+    vecho_process "Provided prefix matches metadata value '$_prefix'."
+  fi
 
-  [[ -n "$_prefix" ]] || _prefix="$meta_prefix"
-  [[ "$_prefix" == "$meta_prefix" ]] || echo_err "Prefix mismatch"
+  # Subtree path must exist.
+  if [ ! -d "$_prefix" ]; then
+    echo_die "Subtree path '$_prefix' does not exist."
+  fi
 
-  git diff --quiet || echo_err "Working tree is dirty"
-
-  [[ -d "$_prefix" ]] || echo_err "Subtree path '$_prefix' not found"
-
+  #############################################################################
+  # Apply removal.
+  #############################################################################
   vecho_process "Removing subtree '$_remote' at '$_prefix'"
   git rm -r "$_prefix"
   git rm "$conf"
-
-  git commit -m "gmash(subtree): remove $_remote" \
-             -m "prefix=$_prefix"
 
   if [[ "$_keep_remote" -eq 0 ]] && git remote get-url "$_remote" &>/dev/null; then
     git remote remove "$_remote"
   fi
 
-  vecho_done "Subtree removed. Run 'git push' to apply."
+  git commit -m "[gmash mono] Removed subtree '$_remote'" \
+             -m "prefix=$_prefix"
+
+  vecho_done "Subtree removed successfully."
 }
 
 # @brief Patch subtree from its remote repo.
