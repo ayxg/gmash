@@ -50,6 +50,11 @@ echo_err(){
   echo -e "\e[31;1mError:\e[0m $*" >&2;
 }
 
+echo_die(){
+  echo_err "$@"
+  exit 1
+}
+
 vecho_err(){
   if [ "$GMASH_VERBOSE" = 1 ]; then
     vecho "\e[31;1m$1\e[0m" "${2:-0}"
