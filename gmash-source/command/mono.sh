@@ -16,7 +16,8 @@ readonly GMASH_MONO_DEFAULT_BRANCH="main"
 #@doc##########################################################################
   # @func gmash_mono_sub
   # @brief Add subtree to this repo from an existing external git repo,
-  #     or create a new remote repo if '--new' is passed.
+  #     or create a new remote repo if '--new' is passed. Generates metadata
+  #     file at `.gmash/subtree/<remote>.conf` to track the subtree.
 #@enddoc#######################################################################
 gmash_mono_sub(){
   #############################################################################
@@ -243,10 +244,10 @@ gmash_mono_remove(){
   vecho_done "Subtree removed successfully."
 }
 
-# @brief Patch subtree from its remote repo.
-# $1 = remote
-# $2 = branch
-# $3 = prefix
+#@doc##########################################################################
+  # @func gmash_mono_pull
+  # @brief Pull subtree changes into the monorepo from the subtree remote.
+#@enddoc#######################################################################
 gmash_mono_pull(){
   if [ $# == 0 ]; then
     _remote=${GMASH_MONO_PULL_REMOTE:-""}
@@ -273,25 +274,22 @@ gmash_mono_pull(){
       return 1
     fi
 
-    git subtree pull --prefix="$_prefix" "$_remote" "$_branch"
-    git pull
-    git push
+    git subtree pull --prefix="$_prefix" "$_remote" "$_branch" \
+      -m "[gmash mono pull] Pulling updates from '$_remote:$_branch' into '$_prefix'."
   fi
 }
 
 _gmash_mono_pull_all(){
   local gmash_meta_=".gmash/subtree"
   if [ ! -d "$gmash_meta_" ]; then
-    echo_err "Subtree metadata directory '$gmash_meta_' not found."
-    return 1
+    echo_die "Subtree metadata directory '$gmash_meta_' not found."
   fi
 
   for conf_file in "$gmash_meta_"/*.conf; do
     # Glob did not detect any files.
     if [ "$conf_file" == "$gmash_meta_/*.conf" ]; then
       conf_file=""
-      echo "No subtree metadata found."
-      break
+      echo_die "No subtree metadata found."
     fi
 
     # Read config values.
@@ -307,7 +305,7 @@ _gmash_mono_pull_all(){
       continue
     fi
 
-    echo "Pulling subtree '$remote_' at '$prefix_'."
+    vecho_process "Pulling subtree '$remote_' at '$prefix_'."
     if ! gmash_mono_pull \
         "${remote_:-}" \
         "${branch_:-}" \
