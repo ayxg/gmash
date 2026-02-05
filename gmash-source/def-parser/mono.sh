@@ -43,7 +43,7 @@ gmash_def_parser_mono(){
 gmash_def_parser_mono_subtree(){
   extend_parser
   standard_parser_setup GMASH_MONO_SUBTREE_ARGR gmash_mono_subtree_help \
-    "Usage: gmash mono subtree <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> [-b <subtreeBranch>]"
+    "Usage: gmash mono subtree <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> <-b <subtreeBranch>> [-n] [-N <subtreeRepoName>] [-O <subtreeRepoOwner>] [-s]"
   msg -- " "
   msg -- "Add or re-configure a sub project to the mono repo as a subtree."
   msg -- " "
@@ -83,7 +83,7 @@ gmash_def_parser_mono_subtree(){
 gmash_def_parser_mono_remove(){
   extend_parser
   standard_parser_setup GMASH_MONO_REMOVE_ARGR gmash_mono_remove_help \
-    "Usage: gmash mono remove -r [remote] -p [prefix] [-k]"
+    "Usage: gmash mono remove <-r <subtreeRemote>> [-p <subtreePrefixPath>] [-k]"
   msg -- "  "
   msg -- "Remove a subtree from the monorepo."
   msg -- "  "
@@ -104,17 +104,17 @@ gmash_def_parser_mono_remove(){
 gmash_def_parser_mono_pull(){
   extend_parser
   standard_parser_setup GMASH_MONO_PULL_ARGR gmash_mono_pull_help \
-    "Usage: gmash mono pull -r [repo] -b [branch]"
+    "Usage: gmash mono pull <-r <subtreeRemote>> [-b <subtreeBranch>] [-p <subtreePrefixPath>] [-a]"
   msg -- "  "
   msg -- "Pull subtree changes to monorepo."
   msg -- "  "
   msg -- "Parameters:"
     param GMASH_MONO_PULL_REMOTE -r --remote var:"<subtreeRemote>" \
       -- "Target subtree remote alias."
-    param GMASH_MONO_PULL_BRANCH -b --branch var:"<subtreeBranch>" \
-      -- "Target subtree branch."
-    param GMASH_MONO_PULL_PREFIX -p --prefix var:"<subtreePrefixPath>"\
-      -- "Subtree prefix path in the monorepo."
+    param GMASH_MONO_PULL_BRANCH -b --branch var:"[subtreeBranch]" \
+      -- "Target subtree branch. Prefer not to specify this and let gmash look it up from metadata."
+    param GMASH_MONO_PULL_PREFIX -p --prefix var:"[subtreePrefixPath]"\
+      -- "Subtree prefix path in the monorepo. Prefer not to specify this and let gmash look it up from metadata."
     flag GMASH_MONO_PULL_ALL -a --all var:""\
       -- "Patch all subtrees based on gmash metadata."
   msg -- "  "
