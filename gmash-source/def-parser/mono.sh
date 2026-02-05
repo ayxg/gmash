@@ -21,7 +21,7 @@ gmash_def_parser_mono(){
   msg -- "Call [main-cmd] [sub-cmd] --help for details of each sub-command."
   msg -- " "
   msg -- "Sub-Commands:"
-  cmd sub \
+  cmd subtree \
     -- "Add or re-configure a sub project to the mono repo as a subtree."
   cmd remove \
     -- "Remove a subtree from the monorepo."
@@ -40,41 +40,44 @@ gmash_def_parser_mono(){
       -- "[$GMASH_MONO_VERSION] Display command group version."
 }
 
-gmash_def_parser_mono_sub(){
+gmash_def_parser_mono_subtree(){
   extend_parser
-  standard_parser_setup GMASH_MONO_SUB_ARGR gmash_mono_sub_help \
-    "Usage: gmash mono sub <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> [-b <subtreeBranch>]"
+  standard_parser_setup GMASH_MONO_SUBTREE_ARGR gmash_mono_subtree_help \
+    "Usage: gmash mono subtree <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> [-b <subtreeBranch>]"
   msg -- " "
   msg -- "Add or re-configure a sub project to the mono repo as a subtree."
   msg -- " "
   msg -- "Parameters:"
-    param GMASH_MONO_SUB_PREFIX -p --prefix var:'<subtreePrefixPath>'\
+    param GMASH_MONO_SUBTREE_PREFIX -p --prefix var:'<subtreePrefixPath>'\
       -- "Relative path inside the parent repo where the subtree will be added. Cannot be\
  the root path. The path must be empty or non-existent in the parent repo. gmash will deny\
  adding a subtree to a path which already contains any files."
-     param GMASH_MONO_SUB_REMOTE -r --remote var:"<remoteAlias>" \
+    param GMASH_MONO_SUBTREE_REMOTE -r --remote var:"<remoteAlias>" \
       -- "Remote alias to add to the parent repo, which will be refered to when pulling\
  and pushing changes to the added subtree."
-     param GMASH_MONO_SUB_URL -l --url var:"<remoteURL>" \
-      -- "Remote repository URL of the subtree to add. If not provided, gmash will\
- attempt to find an existing GitHub repo at 'api-user/remote.git'. If no such\
- repo exists and '--new' is passed: a new empty repo will be created at\
- 'api-user/remote.git'."
-    param GMASH_MONO_SUB_BR -b --branch var:"[monoBranch = \"main\"]"\
-      -- "Target branch of the subtree remote to pull in. Defaults to 'main'."
-    flag GMASH_MONO_SUB_SQUASH -s --squash var:"" \
+    param GMASH_MONO_SUBTREE_URL -l --url var:"<remoteURL>" \
+      -- "Remote repository URL of the subtree to add. Ignored if '--new' is passed."
+    param GMASH_MONO_SUBTREE_BR -b --branch var:"<subtreeBranch>"\
+      -- "Target branch of the subtree remote to pull in."
+    flag GMASH_MONO_SUBTREE_SQUASH -s --squash var:"" \
       -- "Instead of merging the entire history from the subtree project, produce only\
  a single commit that contains all the differences to merge. Then, merge that new\
  commit into the parent repo. Note, if you add a subtree with --squash, future
  pulls and pushes to that subtree should also be squashed."
-    flag GMASH_MONO_SUB_NEW -n --new var:"" \
-      -- "Create a new github repo for the added subtree, if the target subtree remote\
- does not exist."
+    flag GMASH_MONO_SUBTREE_NEW -n --new var:"" \
+      -- "Create a new github repo for the added subtree. Requires '--name' and '--owner'\
+ to be specified."
+    param GMASH_MONO_SUBTREE_NAME -N --name var:"<subtreeRepoName>" \
+      -- "Name of the new remote repo to create for the subtree. Required if '--new' is\
+ passed."
+    param GMASH_MONO_SUBTREE_OWNER -O --owner var:"<subtreeRepoOwner>" \
+      -- "Owner (user or org) of the new remote repo to create for the subtree. Required if\
+ '--new' is passed."
   msg -- "  "
   msg -- "Display:"
-    standard_parser_help gmash_mono_sub_help
-    disp "GMASH_MONO_SUB_VERSION" -v --version \
-      -- "[$GMASH_MONO_SUB_VERSION] Display command group version."
+    standard_parser_help gmash_mono_subtree_help
+    disp "GMASH_MONO_SUBTREE_VERSION" -v --version \
+      -- "[$GMASH_MONO_SUBTREE_VERSION] Display command group version."
 }
 
 gmash_def_parser_mono_remove(){
@@ -95,7 +98,7 @@ gmash_def_parser_mono_remove(){
   msg -- "Display:"
     standard_parser_help gmash_mono_remove_help
     disp "GMASH_MONO_REMOVE_VERSION" -v --version \
-      -- "[$GMASH_MONO_SUB_VERSION] Display command group version."
+      -- "[$GMASH_MONO_SUBTREE_VERSION] Display command group version."
 }
 
 gmash_def_parser_mono_pull(){

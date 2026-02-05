@@ -70,18 +70,18 @@ gmash_mono_subtree_new(){
   #     or create a new remote repo if '--new' is passed. Generates metadata
   #     file at `.gmash/subtree/<remote>.conf` to track the subtree.
 #@enddoc#######################################################################
-gmash_mono_sub(){
+gmash_mono_subtree(){
   #############################################################################
   # Receive input args.
   #############################################################################
-  local _prefix="${1:-${GMASH_MONO_SUB_PREFIX:""}}"
-  local _remote="${2:-${GMASH_MONO_SUB_REMOTE:""}}"
-  local _url="${3:-${GMASH_MONO_SUB_URL:""}}"
-  local _branch="${4:-${GMASH_MONO_SUB_BR:-""}}"
-  local _squash="${5:-${GMASH_MONO_SUB_SQUASH:-0}}"
-  local _new="${6:-${GMASH_MONO_SUB_NEW:-0}}"
-  local _name="${7:-${GMASH_MONO_SUB_NAME:-""}}"
-  local _owner="${8:-${GMASH_MONO_SUB_OWNER:-""}}"
+  local _prefix="${1:-${GMASH_MONO_SUBTREE_PREFIX:""}}"
+  local _remote="${2:-${GMASH_MONO_SUBTREE_REMOTE:""}}"
+  local _url="${3:-${GMASH_MONO_SUBTREE_URL:""}}"
+  local _branch="${4:-${GMASH_MONO_SUBTREE_BR:-""}}"
+  local _squash="${5:-${GMASH_MONO_SUBTREE_SQUASH:-0}}"
+  local _new="${6:-${GMASH_MONO_SUBTREE_NEW:-0}}"
+  local _name="${7:-${GMASH_MONO_SUBTREE_NAME:-""}}"
+  local _owner="${8:-${GMASH_MONO_SUBTREE_OWNER:-""}}"
 
   #############################################################################
   # Validate input and set defaults
