@@ -49,6 +49,13 @@ if [ "$#" -ge 1 ] && [ "$1" == "--compile-docs" ]; then
   exit 0
 fi
 
+# !!! Early exit.
+# Special case for --unit-test developer arg.
+if [ "$#" -ge 1 ] && [ "$1" == "--unit-test" ]; then
+  eval "$GMASH_SOURCE/../gmash-test/ut-gmash-mono.sh"
+  exit 0
+fi
+
 # Source implementation files.
 #
 # The script is sparated into two parts: the parser definitions(parser-def)
@@ -208,8 +215,8 @@ case $_command in
     fi
     _command=$1
     case $_command in
-      sub)
-        gmash_parser_mono_sub "$@"; gmash_mono_sub; ;;
+      subtree)
+        gmash_parser_mono_subtree "$@"; gmash_mono_subtree; ;;
       remove)
         gmash_parser_mono_remove "$@"; gmash_mono_remove; ;;
       pull)
