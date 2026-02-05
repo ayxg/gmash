@@ -1,6 +1,15 @@
-# Git Smash
-## Git Monorepo Management Toolbox
-Bash command line for monorepo git & github repo management.
+# Git Smash - Git Monorepo Management Toolbox
+Bash command line toolbox for monorepo git & github repo management. 
+
+The core command of `gmash` is `gmash mono` which makes managing repos using subtrees more straightforward. 
+
+A brief overview of the advantages compared to raw `git subtree`:
+- `gmash mono subtree`: Will add an existing or create a new repo as a subtree while also recording the subtree's metadata in a `.gmash` folder.
+- `gmash mono remove` : Removes a subtree, it's metadata and related remotes from the parent repo.
+- `gmash mono pull|push` : Pulling and pushing from a created subtree only requires the remote name to be specified. 
+- You are also able to pull or push from **all** recorded subtrees automatically by passing an `--all` argument to `mono pull|push`.
+- `gmash mono push` : Uses a diffrent merge strategy and avoids annoying edge cases compared to `git subtree push`.
+- `gmash mono clone` : Clones a monorepo and automatically sets up the subtree remotes based on metadata. This has to be done manually upon a regular clone otherwise.
 
 ## Documentation
 https://ayxg.github.io/gmash/
