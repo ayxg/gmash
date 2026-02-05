@@ -111,12 +111,303 @@ export GMASH_MONO_SUBTREE_SQUASH=''
 export GMASH_MONO_SUBTREE_NEW=''
 export GMASH_MONO_SUBTREE_NAME=''
 export GMASH_MONO_SUBTREE_OWNER=''
+GMASH_MONO_SUBTREE_ARGR=''
+gmash_parser_mono_subtree() {
+	OPTIND=$(($#+1))
+	while OPTARG= && [ "${GMASH_MONO_SUBTREE_ARGR}" != x ] && [ $# -gt 0 ]; do
+		set -- "${1%%\=*}" "${1#*\=}" "$@"
+		while [ ${#1} -gt 2 ]; do
+			case $1 in (*[!a-zA-Z0-9_-]*) break; esac
+			case '--prefix' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --prefix"
+			esac
+			case '--remote' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --remote"
+			esac
+			case '--url' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --url"
+			esac
+			case '--branch' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --branch"
+			esac
+			case '--squash' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --squash"
+			esac
+			case '--new' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --new"
+			esac
+			case '--name' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --name"
+			esac
+			case '--owner' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --owner"
+			esac
+			case '--help' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --help"
+			esac
+			case '--version' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --version"
+			esac
+			break
+		done
+		case ${OPTARG# } in
+			*\ *)
+				eval "set -- $OPTARG $1 $OPTARG"
+				OPTIND=$((($#+1)/2)) OPTARG=$1; shift
+				while [ $# -gt "$OPTIND" ]; do OPTARG="$OPTARG, $1"; shift; done
+				set "Ambiguous option: $1 (could be $OPTARG)" ambiguous "$@"
+				parser_error "$@" >&2 || exit $?
+				echo "$1" >&2
+				exit 1 ;;
+			?*)
+				[ "$2" = "$3" ] || OPTARG="$OPTARG=$2"
+				shift 3; eval 'set -- "${OPTARG# }"' ${1+'"$@"'}; OPTARG= ;;
+			*) shift 2
+		esac
+		case $1 in
+			--?*=*) OPTARG=$1; shift
+				eval 'set -- "${OPTARG%%\=*}" "${OPTARG#*\=}"' ${1+'"$@"'}
+				;;
+			--no-*|--without-*) unset OPTARG ;;
+			-[prlbNO]?*) OPTARG=$1; shift
+				eval 'set -- "${OPTARG%"${OPTARG#??}"}" "${OPTARG#??}"' ${1+'"$@"'}
+				;;
+			-[snhv]?*) OPTARG=$1; shift
+				eval 'set -- "${OPTARG%"${OPTARG#??}"}" -"${OPTARG#??}"' ${1+'"$@"'}
+				case $2 in --*) set -- "$1" unknown "$2" && GMASH_MONO_SUBTREE_ARGR=x; esac;OPTARG= ;;
+			+*) unset OPTARG ;;
+		esac
+		case $1 in
+			'-p'|'--prefix')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_MONO_SUBTREE_PREFIX="$OPTARG"
+				shift ;;
+			'-r'|'--remote')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_MONO_SUBTREE_REMOTE="$OPTARG"
+				shift ;;
+			'-l'|'--url')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_MONO_SUBTREE_URL="$OPTARG"
+				shift ;;
+			'-b'|'--branch')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_MONO_SUBTREE_BR="$OPTARG"
+				shift ;;
+			'-s'|'--squash')
+				[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break
+				eval '[ ${OPTARG+x} ] &&:' && OPTARG='1' || OPTARG=''
+				export GMASH_MONO_SUBTREE_SQUASH="$OPTARG"
+				;;
+			'-n'|'--new')
+				[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break
+				eval '[ ${OPTARG+x} ] &&:' && OPTARG='1' || OPTARG=''
+				export GMASH_MONO_SUBTREE_NEW="$OPTARG"
+				;;
+			'-N'|'--name')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_MONO_SUBTREE_NAME="$OPTARG"
+				shift ;;
+			'-O'|'--owner')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_MONO_SUBTREE_OWNER="$OPTARG"
+				shift ;;
+			'-h'|'--help')
+				gmash_mono_subtree_help
+				exit 0 ;;
+			'-v'|'--version')
+				echo "${GMASH_MONO_SUBTREE_VERSION}"
+				exit 0 ;;
+			--)
+				shift
+				while [ $# -gt 0 ]; do
+					GMASH_MONO_SUBTREE_ARGR="${GMASH_MONO_SUBTREE_ARGR} \"\${$(($OPTIND-$#))}\""
+					shift
+				done
+				break ;;
+			[-+]?*) set "unknown" "$1"; break ;;
+			*)
+				GMASH_MONO_SUBTREE_ARGR="${GMASH_MONO_SUBTREE_ARGR} \"\${$(($OPTIND-$#))}\""
+		esac
+		shift
+	done
+	[ $# -eq 0 ] && { OPTIND=1; unset OPTARG; return 0; }
+	case $1 in
+		unknown) set "Unrecognized option: $2" "$@" ;;
+		noarg) set "Does not allow an argument: $2" "$@" ;;
+		required) set "Requires an argument: $2" "$@" ;;
+		pattern:*) set "Does not match the pattern (${1#*:}): $2" "$@" ;;
+		notcmd) set "Not a command: $2" "$@" ;;
+		*) set "Validation error ($1): $2" "$@"
+	esac
+	parser_error "$@" >&2 || exit $?
+	echo "$1" >&2
+	exit 1
+}
+gmash_mono_subtree_help() {
+cat<<'GETOPTIONSHERE'
+Usage: gmash mono subtree <-p <subtreePrefixPath>> <-r <remoteAlias>> <-l <remoteUrl>> [-b <subtreeBranch>]
+ 
+Add or re-configure a sub project to the mono repo as a subtree.
+ 
+Parameters:
+  -p,     --prefix <subtreePrefixPath>  Relative path inside the parent repo where the subtree will be added. Cannot be the root path. The path must be empty or non-existent in the parent repo. gmash will deny adding a subtree to a path which already contains any files.
+  -r,     --remote <remoteAlias>        Remote alias to add to the parent repo, which will be refered to when pulling and pushing changes to the added subtree.
+  -l,     --url <remoteURL>             Remote repository URL of the subtree to add. Ignored if '--new' is passed.
+  -b,     --branch <subtreeBranch>      Target branch of the subtree remote to pull in.
+  -s,     --squash                      Instead of merging the entire history from the subtree project, produce only a single commit that contains all the differences to merge. Then, merge that new commit into the parent repo. Note, if you add a subtree with --squash, future
+ pulls and pushes to that subtree should also be squashed.
+  -n,     --new                         Create a new github repo for the added subtree. Requires '--name' and '--owner' to be specified.
+  -N,     --name <subtreeRepoName>      Name of the new remote repo to create for the subtree. Required if '--new' is passed.
+  -O,     --owner <subtreeRepoOwner>    Owner (user or org) of the new remote repo to create for the subtree. Required if '--new' is passed.
+  
+Display:
+  -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
+  -v,     --version                     [v0-0-0] Display command group version.
+GETOPTIONSHERE
+}
 # Generated by getoptions (END)
 # Generated by getoptions (BEGIN)
 # URL: https://github.com/ko1nksm/getoptions (v3.3.2)
 export GMASH_MONO_REMOVE_REMOTE=''
 export GMASH_MONO_REMOVE_PREFIX=''
 export GMASH_MONO_REMOVE_KEEP_REMOTE=''
+GMASH_MONO_REMOVE_ARGR=''
+gmash_parser_mono_remove() {
+	OPTIND=$(($#+1))
+	while OPTARG= && [ "${GMASH_MONO_REMOVE_ARGR}" != x ] && [ $# -gt 0 ]; do
+		set -- "${1%%\=*}" "${1#*\=}" "$@"
+		while [ ${#1} -gt 2 ]; do
+			case $1 in (*[!a-zA-Z0-9_-]*) break; esac
+			case '--remote' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --remote"
+			esac
+			case '--prefix' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --prefix"
+			esac
+			case '--keep-remote' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --keep-remote"
+			esac
+			case '--help' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --help"
+			esac
+			case '--version' in
+				"$1") OPTARG=; break ;;
+				$1*) OPTARG="$OPTARG --version"
+			esac
+			break
+		done
+		case ${OPTARG# } in
+			*\ *)
+				eval "set -- $OPTARG $1 $OPTARG"
+				OPTIND=$((($#+1)/2)) OPTARG=$1; shift
+				while [ $# -gt "$OPTIND" ]; do OPTARG="$OPTARG, $1"; shift; done
+				set "Ambiguous option: $1 (could be $OPTARG)" ambiguous "$@"
+				parser_error "$@" >&2 || exit $?
+				echo "$1" >&2
+				exit 1 ;;
+			?*)
+				[ "$2" = "$3" ] || OPTARG="$OPTARG=$2"
+				shift 3; eval 'set -- "${OPTARG# }"' ${1+'"$@"'}; OPTARG= ;;
+			*) shift 2
+		esac
+		case $1 in
+			--?*=*) OPTARG=$1; shift
+				eval 'set -- "${OPTARG%%\=*}" "${OPTARG#*\=}"' ${1+'"$@"'}
+				;;
+			--no-*|--without-*) unset OPTARG ;;
+			-[rp]?*) OPTARG=$1; shift
+				eval 'set -- "${OPTARG%"${OPTARG#??}"}" "${OPTARG#??}"' ${1+'"$@"'}
+				;;
+			-[khv]?*) OPTARG=$1; shift
+				eval 'set -- "${OPTARG%"${OPTARG#??}"}" -"${OPTARG#??}"' ${1+'"$@"'}
+				case $2 in --*) set -- "$1" unknown "$2" && GMASH_MONO_REMOVE_ARGR=x; esac;OPTARG= ;;
+			+*) unset OPTARG ;;
+		esac
+		case $1 in
+			'-r'|'--remote')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_MONO_REMOVE_REMOTE="$OPTARG"
+				shift ;;
+			'-p'|'--prefix')
+				[ $# -le 1 ] && set "required" "$1" && break
+				OPTARG=$2
+				export GMASH_MONO_REMOVE_PREFIX="$OPTARG"
+				shift ;;
+			'-k'|'--keep-remote')
+				[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break
+				eval '[ ${OPTARG+x} ] &&:' && OPTARG='1' || OPTARG=''
+				export GMASH_MONO_REMOVE_KEEP_REMOTE="$OPTARG"
+				;;
+			'-h'|'--help')
+				gmash_mono_remove_help
+				exit 0 ;;
+			'-v'|'--version')
+				echo "${GMASH_MONO_REMOVE_VERSION}"
+				exit 0 ;;
+			--)
+				shift
+				while [ $# -gt 0 ]; do
+					GMASH_MONO_REMOVE_ARGR="${GMASH_MONO_REMOVE_ARGR} \"\${$(($OPTIND-$#))}\""
+					shift
+				done
+				break ;;
+			[-+]?*) set "unknown" "$1"; break ;;
+			*)
+				GMASH_MONO_REMOVE_ARGR="${GMASH_MONO_REMOVE_ARGR} \"\${$(($OPTIND-$#))}\""
+		esac
+		shift
+	done
+	[ $# -eq 0 ] && { OPTIND=1; unset OPTARG; return 0; }
+	case $1 in
+		unknown) set "Unrecognized option: $2" "$@" ;;
+		noarg) set "Does not allow an argument: $2" "$@" ;;
+		required) set "Requires an argument: $2" "$@" ;;
+		pattern:*) set "Does not match the pattern (${1#*:}): $2" "$@" ;;
+		notcmd) set "Not a command: $2" "$@" ;;
+		*) set "Validation error ($1): $2" "$@"
+	esac
+	parser_error "$@" >&2 || exit $?
+	echo "$1" >&2
+	exit 1
+}
+gmash_mono_remove_help() {
+cat<<'GETOPTIONSHERE'
+Usage: gmash mono remove -r [remote] -p [prefix] [-k]
+  
+Remove a subtree from the monorepo.
+  
+Parameters:
+  -r,     --remote <subtreeRemote>      Target subtree remote alias.
+  -p,     --prefix <subtreePrefixPath>  Subtree prefix path in the monorepo.
+  -k,     --keep-remote                 Keep the remote alias in the parent repo even if it is no longer used.
+  
+Display:
+  -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.
+  -v,     --version                     [v0-0-0] Display command group version.
+GETOPTIONSHERE
+}
 # Generated by getoptions (END)
 # Generated by getoptions (BEGIN)
 # URL: https://github.com/ko1nksm/getoptions (v3.3.2)
