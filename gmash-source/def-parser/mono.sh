@@ -91,14 +91,14 @@ gmash_def_parser_mono_remove(){
     param GMASH_MONO_REMOVE_REMOTE -r --remote var:"<subtreeRemote>" \
       -- "Target subtree remote alias."
     param GMASH_MONO_REMOVE_PREFIX -p --prefix var:"<subtreePrefixPath>"\
-      -- "Subtree prefix path in the monorepo."
+      -- "Subtree prefix path in the monorepo. Prefer not to specify this and let gmash look it up from metadata."
     flag GMASH_MONO_REMOVE_KEEP_REMOTE -k --keep-remote var:"" \
       -- "Keep the remote alias in the parent repo even if it is no longer used."
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_mono_remove_help
     disp "GMASH_MONO_REMOVE_VERSION" -v --version \
-      -- "[$GMASH_MONO_SUBTREE_VERSION] Display command group version."
+      -- "[$GMASH_MONO_REMOVE_VERSION] Display command group version."
 }
 
 gmash_def_parser_mono_pull(){
