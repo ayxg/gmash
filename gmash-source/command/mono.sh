@@ -46,6 +46,22 @@ assert_github_api_user(){
   echo "$api_user_"
 }
 
+assert_metadata_exists(){
+  local _remote="${1:-""}"
+  local conf=".gmash/subtree/$_remote.conf"
+  if [ ! -f "$conf" ]; then
+    echo_die "No subtree metadata found for '$_remote'."
+  fi
+  echo "$conf"
+}
+
+assert_remote_exists(){
+  local _remote="${1:-""}"
+  if ! git remote get-url "$_remote" &>/dev/null; then
+    echo_die "Remote '$_remote' does not exist in this repo."
+  fi
+}
+
 # Creates a new remote git repo for a subtree.
 gmash_mono_subtree_new(){
   local _name="${1:-""}"
@@ -187,64 +203,56 @@ gmash_mono_remove(){
   # Receive input args.
   #############################################################################
   local _remote="${1:-${GMASH_MONO_REMOVE_REMOTE:""}}"
-  local _prefix="${2:-${GMASH_MONO_REMOVE_PREFIX:""}}"
   local _keep_remote="${3:-${GMASH_MONO_REMOVE_KEEP_REMOTE:-0}}"
 
   #############################################################################
   # Validate input and set defaults
   #############################################################################
 
-  # Precondition: must be inside a git repo.
-  local curr_repo_name_
-  curr_repo_name_="$(git_curr_repo)"
-  if [ -z "$curr_repo_name_" ]; then
-    echo_die "Failed to detect active git repo. You must be inside a git repo."
-  fi
+  assert_inside_git_repo > /dev/null
+  assert_working_tree_clean
 
-  # Required: remote arg.
-  if [ -z "$_remote" ]; then
-    echo_die "Missing required '--remote' parameter"
-  fi
+  assert_required_arg "$_remote" "--remote"
 
-  # Precondition: metadata file must exist.
-  local conf=".gmash/subtree/$_remote.conf"
-  if [ ! -f "$conf" ]; then
-    echo_die "No subtree metadata found for '$_remote'."
-  fi
+  local conf_=""
+  conf_="$(assert_metadata_exists "$_remote")"
 
-  # Guard: working tree must be clean.
-  git diff --quiet || echo_die "Working tree is dirty"
+  # Determine prefix from metadata.
+  local _prefix=""
+  _prefix="$(confread "$conf_" "prefix")"
 
-  # Guard: prefix arg must exist and match metadata.
-  local meta_prefix
-  meta_prefix="$(confread "$conf" prefix)"
-  if [ -z "$_prefix" ]; then # default to metadata
-    _prefix="$meta_prefix"
-    vecho_process "Defaulting prefix to metadata value '$_prefix'."
-  else # provided prefix must match metadata
-    if [ "$_prefix" != "$meta_prefix" ]; then
-      echo_die "Provided prefix '$_prefix' does not match metadata value '$meta_prefix'."
-    fi
-    vecho_process "Provided prefix matches metadata value '$_prefix'."
-  fi
-
-  # Subtree path must exist.
-  if [ ! -d "$_prefix" ]; then
-    echo_die "Subtree path '$_prefix' does not exist."
+  if [ -z "$_prefix" ]; then
+    echo_die "Failed to read subtree prefix from metadata. Metadata file may be corrupted."
   fi
 
   #############################################################################
   # Apply removal.
   #############################################################################
   vecho_process "Removing subtree '$_remote' at '$_prefix'"
-  git rm -r "$_prefix"
-  git rm "$conf"
+
+  # Delete path if it is tracked by Git
+  if git ls-files --error-unmatch "$_prefix" >/dev/null 2>&1; then
+      vecho_process "Removing tracked subtree '$_prefix' from Git"
+      git rm -rf "$_prefix"
+  elif [ -d "$_prefix" ]; then
+      vecho_process "Path '$_prefix' exists but is untracked. Removing from disk only."
+      rm -rf "$_prefix"
+  else
+      echo_warn "Subtree path '$_prefix' does not exist."
+  fi
+
+  # Delete metadata file. Check if the file is tracked by Git
+  if git ls-files --error-unmatch "$conf_" >/dev/null 2>&1; then
+      git rm -f "$conf_"
+  else
+      rm "$conf_" # just delete it manually
+  fi
 
   if [[ "$_keep_remote" -eq 0 ]] && git remote get-url "$_remote" &>/dev/null; then
     git remote remove "$_remote"
   fi
 
-  git commit -m "[gmash mono] Removed subtree '$_remote'" \
+  git commit -m "[gmash] Removed subtree '$_remote'" \
              -m "prefix=$_prefix"
 
   vecho_done "Subtree removed successfully."
@@ -263,41 +271,36 @@ gmash_mono_pull(){
   local _prefix="${3:-${GMASH_MONO_PULL_PREFIX:""}}"
   local _all="${4:-${GMASH_MONO_PULL_ALL:-0}}"
 
+  assert_inside_git_repo > /dev/null
+  assert_working_tree_clean
+
+  assert_required_arg "$_remote" "--remote"
+  assert_remote_exists "$_remote" > /dev/null 2>&1
+
+
+  # Metadata will be needed if prefix or branch not provided.
+  if [ -z "$_prefix" ] || [ -z "$_branch" ]; then
+    local conf_=""
+    conf_="$(assert_metadata_exists "$_remote")"
+  fi
 
   if [ "$_all" -eq 1 ]; then
-    _gmash_mono_pull_all
+    _gmash_mono_pull_all # defer to all-subtrees pull
   else
-    # Precondition: must be inside a git repo.
-    local curr_repo_name_
-    curr_repo_name_="$(git_curr_repo)"
-    if [ -z "$curr_repo_name_" ]; then
-      echo_die "Failed to detect active git repo. You must be inside a git repo."
-    fi
-
-    # Required: prefix arg.
+    # Find metadata if prefix not provided.
     if [ -z "$_prefix" ]; then
-      echo_die "Missing required '--prefix' parameter"
+      _prefix="$(confread "$conf_" "prefix")"
+      if [ -z "$_prefix" ]; then
+        echo_die "Failed to read subtree prefix from metadata. Metadata file may be corrupted."
+      fi
     fi
 
-    # Required: remote arg.
-    if [ -z "$_remote" ]; then
-      echo_die "Missing required '--remote' parameter"
-    fi
-
-    # Required: branch arg. Default to main if not provided.
+    # Find metadata if branch not provided.
     if [ -z "$_branch" ]; then
-      _branch="$GMASH_MONO_DEFAULT_BRANCH"
-      vecho_process "Defaulting subtree branch to '$_branch'."
-    fi
-
-    # Guard: prefix path must not match gitignore patterns.
-    if git check-ignore -q "$_prefix"; then
-      echo_die "Target path '$_prefix' matches gitignore patterns"
-    fi
-
-    # Guard : working tree must be clean.
-    if ! git diff --quiet || ! git diff --cached --quiet; then
-      echo_die "Working tree is dirty. Please commit or stash changes before adding subtree."
+      _branch="$(confread "$conf_" "branch")"
+      if [ -z "$_branch" ]; then
+        echo_die "Failed to read subtree branch from metadata. Metadata file may be corrupted."
+      fi
     fi
 
     git subtree pull --prefix="$_prefix" "$_remote" "$_branch" \
@@ -459,20 +462,6 @@ gmash_mono_push(){
   local _all="${10:-${GMASH_MONO_PATCH_ALL:-"0"}}"
   local _makepr="${11:-${GMASH_MONO_PATCH_MAKEPR:-"0"}}"
   local _squash="${12:-${GMASH_MONO_PATCH_SQUASH:-"0"}}"
-
-  local _br=${GMASH_MONO_PATCH_BR:-'main'}
-  local _path=${GMASH_MONO_PATCH_PATH:-'subtreeDirName'}
-  local _remote=${GMASH_MONO_PATCH_REMOTE:-'origin'}
-  local _tgtbr=${GMASH_MONO_PATCH_TGTBR:-'main'}
-  local _user=${GMASH_MONO_PATCH_USER:-{currentGithubUser}}
-  local _tgtuser=${GMASH_MONO_PATCH_TGTUSER:-$_user}
-  local _tempbr=${GMASH_MONO_PATCH_TEMPBR:-""}
-  local _tempdir=${GMASH_MONO_PATCH_TEMPDIR:-""}
-  local _url=${GMASH_MONO_PATCH_URL:-""}
-
-  local _all=${GMASH_MONO_PATCH_ALL:-"0"}
-  local _makepr=${GMASH_MONO_PATCH_MAKEPR:-"0"}
-  local _squash=${GMASH_MONO_PATCH_SQUASH-"0"}
 
   local _curr_repo_name=""
   _curr_repo_name="$(git_curr_repo)"
