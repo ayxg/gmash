@@ -36,7 +36,7 @@ gmash_def_parser_main() {
   msg -- "  "
   msg -- "Commands:"
     cmd dirs \
-      -- "High level path/file manipulation and analysis."
+      -- "High level path/file manipulation."
         msg -- "    prefix          Add a prefix to each top-level file in a directory."
         msg -- "    same            Get a diff of 2 directories."
         msg -- "    separate        Separate a directory into its constituent parts."
@@ -49,7 +49,7 @@ gmash_def_parser_main() {
         msg -- "    sources         Find source files."
         msg -- "  "
     cmd gist \
-      -- "Manage GitHub Gists with git-like functionality, integrates with 'mono' && 'subtree'."
+      -- "Manage GitHub Gists with git-like functionality, integrates with 'mono' command."
         msg -- "    prepare         Sets up a new gist with a title.md page with the same name as the target source file(s)."
         msg -- "    create          Push all files in a directory as gists to GitHub. Adds a title.md and readme.md by default."
         msg -- "    clone           Clones a gist to the local filesystem."
@@ -57,13 +57,14 @@ gmash_def_parser_main() {
         msg -- "    upload          Upload files to existing gists."
         msg -- "  "
     cmd lineage \
-      -- "Amalgamate git commits from archived git repos to a more recent version."
+      -- "Prepend git commits from archived git repos to a more recent version."
     cmd mono \
-      -- "Git+GitHub monorepo workflow strategy."
-        msg -- "    sub           Add or re-configure a sub project to the mono repo as a subtree."
+      -- "Git subtree monorepo workflow strategy."
+        msg -- "    subtree       Add or re-configure a sub project to the mono repo as a subtree."
+        msg -- "    remove        Add or re-configure a sub project to the mono repo as a subtree."
         msg -- "    pull          Pull changes from a sub project's remote into the mono repo."
         msg -- "    push          Push changes in the mono repo to a sub project's remote."
-        msg -- "    config        Configure a mono repo's remotes based on stored subproject metadata."
+        msg -- "    clone         Clone and configure a mono repo's remotes based on stored subproject metadata."
         msg -- "  "
   msg -- "  "
   msg -- "Display:"
@@ -73,6 +74,6 @@ gmash_def_parser_main() {
   msg -- "  "
   msg -- "Development:"
   msg -- "    --compile-parser        Compile command line parser source files."
-  msg -- "  "
+  msg -- "    --unit-tests            Run unit test to validate program."
 
 }
