@@ -62,7 +62,7 @@ export GMASH_CONFIG=""    # Config file path.
       export GMASH_MONO_REMOVE_VERSION="v0-0-0"
       export GMASH_MONO_PULL_VERSION="v0-0-0"
       export GMASH_MONO_CONFIG_VERSION="v0-0-0"
-      export GMASH_MONO_PATCH_VERSION="v0-0-0"
+      export GMASH_MONO_PUSH_VERSION="v0-0-0"
 
 gmash_versions_index(){
   echo "gmash $GMASH_VERSION"
@@ -87,5 +87,5 @@ gmash_versions_index(){
     echo "    subtree $GMASH_MONO_SUBTREE_VERSION"
     echo "    pull $GMASH_MONO_PULL_VERSION"
     echo "    config $GMASH_MONO_CONFIG_VERSION"
-    echo "    push $GMASH_MONO_PATCH_VERSION"
+    echo "    push $GMASH_MONO_PUSH_VERSION"
 }

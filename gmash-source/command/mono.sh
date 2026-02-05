@@ -468,18 +468,15 @@ gmash_mono_push(){
   #############################################################################
   # Receive input args.
   #############################################################################
-  local _source_branch="${1:-${GMASH_MONO_PATCH_BR:-""}}"
-  local _prefix="${2:-${GMASH_MONO_PATCH_PATH:-""}}"
-  local _remote="${3:-${GMASH_MONO_PATCH_REMOTE:-""}}"
-  local _target_branch="${4:-${GMASH_MONO_PATCH_TGTBR:-""}}"
-  local _user="${5:-${GMASH_MONO_PATCH_USER:-""}}"
-  local _tgtuser="${6:-${GMASH_MONO_PATCH_TGTUSER:-""}}"
-  local _temp_branch="${7:-${GMASH_MONO_PATCH_TEMPBR:-""}}"
-  local _temp_worktree_dir="${8:-${GMASH_MONO_PATCH_TEMPDIR:-""}}"
-  local _url="${9:-${GMASH_MONO_PATCH_URL:-""}}"
-  local _all="${10:-${GMASH_MONO_PATCH_ALL:-"0"}}"
-  local _makepr="${11:-${GMASH_MONO_PATCH_MAKEPR:-"0"}}"
-  local _squash="${12:-${GMASH_MONO_PATCH_SQUASH:-"0"}}"
+  local _source_branch="${1:-${GMASH_MONO_PUSH_BR:-""}}"
+  local _prefix="${2:-${GMASH_MONO_PUSH_PATH:-""}}"
+  local _remote="${3:-${GMASH_MONO_PUSH_REMOTE:-""}}"
+  local _target_branch="${4:-${GMASH_MONO_PUSH_TGTBR:-""}}"
+  local _temp_branch="${7:-${GMASH_MONO_PUSH_TEMPBR:-""}}"
+  local _temp_worktree_dir="${8:-${GMASH_MONO_PUSH_TEMPDIR:-""}}"
+  local _all="${10:-${GMASH_MONO_PUSH_ALL:-"0"}}"
+  local _makepr="${11:-${GMASH_MONO_PUSH_MAKEPR:-"0"}}"
+  local _squash="${12:-${GMASH_MONO_PUSH_SQUASH:-"0"}}"
 
   #############################################################################
   # Validate input and set defaults
@@ -624,12 +621,13 @@ gmash_mono_push(){
         exit 1
       fi
 
-    if ! git merge-base "$_temp_branch" "$_remote/$_target_branch" >/dev/null 2>&1; then
-        vecho_warn "No common ancestor found. Forced to use --allow-unrelated-histories."
-        _allow_unrelated="--allow-unrelated-histories"
-    else
-        _allow_unrelated=""
-    fi
+    vecho_action "Checking for common ancestor between mono and subtree."
+      if ! git merge-base "$_temp_branch" "$_remote/$_target_branch" >/dev/null 2>&1; then
+          vecho_warn "No common ancestor found. Forced to use --allow-unrelated-histories."
+          _allow_unrelated="--allow-unrelated-histories"
+      else
+          _allow_unrelated=""
+      fi
 
     vecho_action "Merging changes to remote subtree."
       if ! git merge "$_remote/$_target_branch" $_allow_unrelated -m "$_merge_msg"; then
@@ -718,11 +716,11 @@ _gmash_mono_push_all(){
     fi
 
     vecho_process "Patching subtree '$_remote' at '$prefix_' from '$_url'."
-    GMASH_MONO_PATCH_REMOTE="$_remote"
-    GMASH_MONO_PATCH_URL="$_url"
-    GMASH_MONO_PATCH_BR="$_branch"
-    GMASH_MONO_PATCH_PATH="$prefix_"
-    GMASH_MONO_PATCH_ALL="0" # Disable all to avoid recursion.
+    GMASH_MONO_PUSH_REMOTE="$_remote"
+    GMASH_MONO_PUSH_URL="$_url"
+    GMASH_MONO_PUSH_BR="$_branch"
+    GMASH_MONO_PUSH_PATH="$prefix_"
+    GMASH_MONO_PUSH_ALL="0" # Disable all to avoid recursion.
 
     # Store current commit before merge
     local _pre_merge_commit=$(git rev-parse HEAD)

@@ -126,53 +126,41 @@ gmash_def_parser_mono_pull(){
 
 gmash_def_parser_mono_push(){
   extend_parser
-  standard_parser_setup GMASH_MONO_PATCH_ARGR gmash_mono_patch_help \
+  standard_parser_setup GMASH_MONO_PUSH_ARGR gmash_mono_patch_help \
     "Usage: gmash mono push -r [repo] -b [branch]"
   msg -- "  "
   msg -- "Push changes in the mono repo to a sub project's remote."
   msg -- "  "
   msg -- "Parameters:"
-    param GMASH_MONO_PATCH_BR -b --br var:"<monoBranch>" \
-      -- "Source mono branch to pull changes from."
-
-    param GMASH_MONO_PATCH_PATH -p --path var:"<prefixPath>" \
+    param GMASH_MONO_PUSH_PATH -p --path var:"<prefixPath>" \
       -- "Subtree prefix path in the monorepo."
 
-    param GMASH_MONO_PATCH_REMOTE -r --remote var:"<subtreeRemote>" \
+    param GMASH_MONO_PUSH_REMOTE -r --remote var:"<subtreeRemote>" \
       -- "Target subtree remote alias."
 
-    param GMASH_MONO_PATCH_TGTBR -B --tgtbr var:"<subtreeBranch>" \
-      -- "Target subtree remote alias."
+    param GMASH_MONO_PUSH_TGTBR -B --tgtbr var:"<subtreeBranch>" \
+      -- "Target subtree branch."
 
-    param GMASH_MONO_PATCH_TGTUSER -U --tgtuser var:"<subtreeOwner>" \
-      -- "Owner of the target subtree repo."
+    param GMASH_MONO_PUSH_TEMPBR -t --tempbr var:"<tempBranch>" \
+      -- "Name of the temp worktree branch to create for the push operation. (Prefer not to set manually)"
 
-    param GMASH_MONO_PATCH_TEMPBR -t --tempbr var:"<tempBranch>" \
-      -- "Owner of the target subtree repo."
+    param GMASH_MONO_PUSH_TEMPDIR -T --tempdir var:"<tempPath>" \
+      -- "Path to temp worktree directory to create for the push operation. (Prefer not to set manually)"
 
-    param GMASH_MONO_PATCH_TEMPDIR -T --tempdir var:"<tempPath>" \
-      -- "Owner of the target subtree repo."
-
-    param GMASH_MONO_PATCH_USER -u --user var:"<tempPath>" \
-      -- "Owner the mono repo. Defaults to current GitHub user."
-
-    param GMASH_MONO_PATCH_URL -l --url var:"<repo>" \
-      -- "Target repository."
-
-    flag GMASH_MONO_PATCH_ALL -a --all var:"" \
+    flag GMASH_MONO_PUSH_ALL -a --all var:"" \
       -- "Patch all known subtrees in the mono repo."
 
-    flag GMASH_MONO_PATCH_MAKEPR -P --make-pr var:"" \
+    flag GMASH_MONO_PUSH_MAKEPR -P --make-pr var:"" \
       -- "Make a pull request on GitHub with the patched changes."
 
-    flag GMASH_MONO_PATCH_SQUASH -s --squash var:"" \
+    flag GMASH_MONO_PUSH_SQUASH -s --squash var:"" \
       -- "Squash strategy when merging subtree changes. Must be consistent with\
-  the previous pul of the subtree."
+  the previous pull of the subtree."
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_mono_patch_help
-    disp "GMASH_MONO_PATCH_VERSION" -v --version \
-      -- "[$GMASH_MONO_PATCH_VERSION] Display command group version."
+    disp "GMASH_MONO_PUSH_VERSION" -v --version \
+      -- "[$GMASH_MONO_PUSH_VERSION] Display command group version."
 }
 
 gmash_def_parser_mono_config(){
