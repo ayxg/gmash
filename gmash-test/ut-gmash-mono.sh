@@ -74,14 +74,14 @@ configure_test_repo_with_local_remote(){
 
 ut_gmash_mono_sub(){
     echo "$GMASH_UNIT_TEST_SEPARATOR"
-    echo "[UNIT TEST] gmash_mono_sub"
+    echo "[UNIT TEST] gmash_mono_subtree"
     echo "$GMASH_UNIT_TEST_SEPARATOR"
 
     # Change into monorepo dir.
     cd "$GMASH_TEST_MONOREPO_DIR" || return 1
 
-    # Run gmash mono sub command.
-    "$GMASH_BINARY_PATH" mono sub -p "$GMASH_TEST_MONO_SUBREPO_PREFIX" -r "$GMASH_TEST_MONO_SUBREPO_REMOTE" -l "$GMASH_TEST_SUBREPO_BARE" -b "main" > /dev/null
+    # Run gmash mono subtree command.
+    "$GMASH_BINARY_PATH" mono subtree -p "$GMASH_TEST_MONO_SUBREPO_PREFIX" -r "$GMASH_TEST_MONO_SUBREPO_REMOTE" -l "$GMASH_TEST_SUBREPO_BARE" -b "main" > /dev/null
 
     # Return code must be 0.
     local result_=$?
