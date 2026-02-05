@@ -152,6 +152,38 @@ ut_gmash_mono_sub(){
     echo "$GMASH_UNIT_TEST_SEPARATOR"
 }
 
+ut_gmash_mono_remove(){
+    echo "$GMASH_UNIT_TEST_SEPARATOR"
+    echo "[UNIT TEST] gmash_mono_remove"
+    echo "$GMASH_UNIT_TEST_SEPARATOR"
+
+    # Change into monorepo dir.
+    cd "$GMASH_TEST_MONOREPO_DIR" || return 1
+
+    # Run gmash mono remove command.
+    "$GMASH_BINARY_PATH" mono remove -r "$GMASH_TEST_MONO_SUBREPO_REMOTE"
+
+    # Return code must be 0.
+    local result_=$?
+    if [ $result_ -ne 0 ]; then
+        echo "gmash mono remove command failed with exit code $result_"
+        return 1
+    fi
+
+    # Verify that the subrepo folder was removed from the monorepo.
+    if [ -d "$GMASH_TEST_MONO_SUBREPO_PREFIX" ]; then
+        echo "Subrepo directory '$GMASH_TEST_MONO_SUBREPO_PREFIX' was not removed from the monorepo."
+        return 1
+    fi
+
+    # Leave monorepo dir.
+    cd .. >/dev/null || return 1
+
+    echo "$GMASH_UNIT_TEST_SEPARATOR"
+    echo "[PASSED] gmash_mono_remove"
+    echo "$GMASH_UNIT_TEST_SEPARATOR"
+}
+
 ut_gmash_mono_push(){
     echo "$GMASH_UNIT_TEST_SEPARATOR"
     echo "[UNIT TEST] gmash_mono_push"
@@ -265,7 +297,9 @@ configure_test_repo_with_local_remote "$GMASH_TEST_MONOREPO_DIR" "$GMASH_TEST_MO
 configure_test_repo_with_local_remote "$GMASH_TEST_SUBREPO_DIR" "$GMASH_TEST_SUBREPO_BARE"
 
 # Run test group ut_gmash_mono_1
-ut_gmash_mono_sub
+ut_gmash_mono_sub       # Create subtree
+ut_gmash_mono_remove    # Remove it
+ut_gmash_mono_sub       # Re-create same subtree
 ut_gmash_mono_push
 ut_gmash_mono_push_all_single
 
