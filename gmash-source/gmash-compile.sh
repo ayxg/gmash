@@ -75,7 +75,7 @@ compile_parser
   compile_parser lineage
     compile_parser lineage merge
   compile_parser mono
-    compile_parser mono sub
+    compile_parser mono subtree
     compile_parser mono remove
     compile_parser mono pull
     compile_parser mono push
