@@ -13,6 +13,57 @@
 
 readonly GMASH_MONO_DEFAULT_BRANCH="main"
 
+assert_inside_git_repo(){
+  local curr_repo_name_
+  curr_repo_name_="$(git_curr_repo)"
+  if [ -z "$curr_repo_name_" ]; then
+    echo_die "Failed to detect active git repo. You must be inside a git repo."
+  fi
+  echo "$curr_repo_name_"
+}
+
+assert_working_tree_clean(){
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo_die "Working tree is dirty. Please commit or stash changes before proceeding."
+  fi
+}
+
+# Input arg value cannot be completly unassigned. Empty string "" is considered missing.
+assert_required_arg(){
+  local _arg_value="$1"
+  local _arg_name="$2"
+  if [ -z "$_arg_value" ]; then
+    echo_die "Missing required '$_arg_name' parameter."
+  fi
+}
+
+assert_github_api_user(){
+  local api_user_
+  api_user_="$(gh_api_user)"
+  if [ -z "$api_user_" ]; then
+    echo_die "Unable to determine GitHub API user. Ensure GitHub CLI (gh) is authenticated."
+  fi
+  echo "$api_user_"
+}
+
+# Creates a new remote git repo for a subtree.
+gmash_mono_subtree_new(){
+  local _name="${1:-""}"
+  local _owner="${2:-""}"
+  assert_github_api_user > /dev/null 2>&1
+
+  if command -v gh >/dev/null 2>&1; then
+    if gh repo create "$_owner/$_name" --private --add-readme --description \
+      "[gmash] Init subtree repository '$_owner/$_name'" > /dev/null 2>&1; then
+      return 0
+    else # Unexpected error ?
+      echo_die "Failed to create GitHub repository."
+    fi
+  else # gh not installed...
+      echo_die "GitHub CLI (gh) not found. Cannot create new remote repo."
+  fi
+}
+
 #@doc##########################################################################
   # @func gmash_mono_sub
   # @brief Add subtree to this repo from an existing external git repo,
@@ -29,37 +80,23 @@ gmash_mono_sub(){
   local _branch="${4:-${GMASH_MONO_SUB_BR:-""}}"
   local _squash="${5:-${GMASH_MONO_SUB_SQUASH:-0}}"
   local _new="${6:-${GMASH_MONO_SUB_NEW:-0}}"
+  local _name="${7:-${GMASH_MONO_SUB_NAME:-""}}"
+  local _owner="${8:-${GMASH_MONO_SUB_OWNER:-""}}"
 
   #############################################################################
   # Validate input and set defaults
   #############################################################################
+  assert_inside_git_repo > /dev/null
+  assert_working_tree_clean
 
-  # Precondition: must be inside a git repo.
-  local curr_repo_name_
-  curr_repo_name_="$(git_curr_repo)"
-  if [ -z "$curr_repo_name_" ]; then
-    echo_die "Failed to detect active git repo. You must be inside a git repo."
-  fi
+  assert_required_arg "$_prefix" "--prefix"
+  assert_required_arg "$_remote" "--remote"
+  assert_required_arg "$_url" "--url"
+  assert_required_arg "$_branch" "--branch"
 
-  # Required: prefix arg.
-  if [ -z "$_prefix" ]; then
-    echo_die "Missing required '--prefix' parameter"
-  fi
-
-  # Required: remote arg.
-  if [ -z "$_remote" ]; then
-    echo_die "Missing required '--remote' parameter"
-  fi
-
-  # Required: branch arg. Default to main if not provided.
-  if [ -z "$_branch" ]; then
-    _branch="$GMASH_MONO_DEFAULT_BRANCH"
-    vecho_process "Defaulting subtree branch to '$_branch'."
-  fi
-
-  # Guard: current remotes.
+  # Guard: remote does not already exist.
   if git config "remote.$_remote.url" > /dev/null; then
-    echo_die "Remote '$_remote' already exists."
+    echo_die "Remote '$_remote' already exists. Remove before adding as subtree."
   fi
 
   # Guard: url not already used by another remote.
@@ -77,68 +114,30 @@ gmash_mono_sub(){
     echo_die "Target path '$_prefix' matches gitignore patterns"
   fi
 
-  # Guard : working tree must be clean.
-  if ! git diff --quiet || ! git diff --cached --quiet; then
-    echo_die "Working tree is dirty. Please commit or stash changes before adding subtree."
-  fi
-
   # Guard: gmash metadata file must not already exist.
   if [ -f ".gmash/subtree/$_remote.conf" ]; then
     echo_die "Subtree metadata for remote '$_remote' already exists. Try removing first."
   fi
 
-  # If url is provided, verify access.
+  # Guard: remote must be accessible if a url was specified.
   if [ -n "$_url" ]; then
-    vecho_process "Verifying access to provided subtree URL '$_url'."
     if ! git ls-remote "$_url" &> /dev/null; then
-      echo_die "Provided subtree URL '$_url' is not accessible."
+      echo_die "Provided subtree URL '$_url' is not accessible. Use '--new' flag to create a new remote repo."
     fi
-  else  # No url provided, attempt to get from existing remote.
-    vecho_process "No subtree URL provided, checking url from remote '$_remote'."
-    if git remote get-url "$_remote" >/dev/null 2>&1; then
-      _url=$(git remote get-url "$_remote" 2>&1)
-      vecho_process "Found existing remote '$_remote' with URL '$_url'."
-      if ! git ls-remote "$_url" &> /dev/null; then
-        echo_die "Existing remote '$_remote' URL is not accessible. URL: $_url"
+  else # Otherswise assume user meant to pass '--new' but forgot.
+      if [ "$_new" -eq "0" ]; then
+        echo_die "Remote '--url' argument not provided. Use '--new' flag to create a new remote repo."
       fi
-    else # No existing remote, attempt to construct url to create new repo if --new is passed.
-      if [ "$_new" -eq "1" ]; then
-        vecho_process "URL not provided, attempting to construct from github user and remote names."
+  fi
 
-        # Check GitHub API user.
-        local api_user_
-        api_user_="$(gh_api_user)"
-        if [ -z "$api_user_" ]; then
-          echo_die "Unable to determine GitHub API user. Can't infer new remote URL."
-        fi
-
-        # Get the repo owner.
-        local repo_owner_
-        repo_owner_="$(gh_repo_owner)"
-
-        _url="https://github.com/$repo_owner_/$_remote.git"
-        vecho_process "Targeting subtree remote '$_url'"
-
-        local curr_branch_
-        curr_branch_="$(git_curr_branch)"
-
-        # Create a new GitHub repo with the same name as the remote alias on the api user's
-        # GitHub account. Commit of a README.md file(required to be non-empty to add as subtree).
-        if command -v gh >/dev/null 2>&1; then
-          vecho_process "Creating new GitHub repo '$repo_owner_/$_remote' for subtree..."
-          if gh repo create "$repo_owner_/$_remote" --private --add-readme --description \
-            "[gmash subtree add] Created subtree repository '$repo_owner_/$_remote' for '$repo_owner_/$curr_repo_name_:$curr_branch_'"; then
-            vecho_process "Created subtree repository '$repo_owner_/$_remote'."
-          else # Unexpected error ?
-            echo_die "Failed to create GitHub repository."
-          fi
-        else # gh not installed...
-            echo_die "GitHub CLI (gh) not found."
-        fi
-      else # No --new flag, error out.
-        echo_die "Could not locate subtree remote. Use '--new' to create a repo at '$_url'."
-      fi
-    fi
+  # Create new github repo if --new flag passed.
+  if [ "$_new" -eq "1" ]; then
+    vecho_process "Creating new GitHub repo for subtree '$_remote'."
+    assert_required_arg "$_name" "--name"
+    assert_required_arg "$_owner" "--owner"
+    gmash_mono_subtree_new "$_name" "$_owner"
+    # Set the expected url.
+    _url="https://github.com/$_name/$_remote.git"
   fi
 
   #############################################################################
@@ -168,8 +167,8 @@ gmash_mono_sub(){
   #############################################################################
   vecho_process "Committing changes."
   git add "$conf_"
-  git commit -m "[gmash mono] Add subtree '$_remote' at '$_prefix'" \
-  -m "Subtree details :
+  git commit -m "[gmash] Added subtree '$_remote' at '$_prefix'" \
+  -m "
  - url: $_url
  - remote: $_remote
  - prefix: $_prefix
@@ -195,6 +194,13 @@ gmash_mono_remove(){
   # Validate input and set defaults
   #############################################################################
 
+  # Precondition: must be inside a git repo.
+  local curr_repo_name_
+  curr_repo_name_="$(git_curr_repo)"
+  if [ -z "$curr_repo_name_" ]; then
+    echo_die "Failed to detect active git repo. You must be inside a git repo."
+  fi
+
   # Required: remote arg.
   if [ -z "$_remote" ]; then
     echo_die "Missing required '--remote' parameter"
@@ -203,7 +209,7 @@ gmash_mono_remove(){
   # Precondition: metadata file must exist.
   local conf=".gmash/subtree/$_remote.conf"
   if [ ! -f "$conf" ]; then
-    echo_die "No subtree metadata found for '$_remote'"
+    echo_die "No subtree metadata found for '$_remote'."
   fi
 
   # Guard: working tree must be clean.
@@ -249,29 +255,49 @@ gmash_mono_remove(){
   # @brief Pull subtree changes into the monorepo from the subtree remote.
 #@enddoc#######################################################################
 gmash_mono_pull(){
-  if [ $# == 0 ]; then
-    _remote=${GMASH_MONO_PULL_REMOTE:-""}
-    _branch=${GMASH_MONO_PULL_BRANCH:-"main"}
-    _prefix=${GMASH_MONO_PULL_PREFIX:-""}
-    _all=${GMASH_MONO_PULL_ALL:-"0"}
-  else
-    _remote=${1:-""}
-    _branch=${2:-"main"}
-    _prefix=${3:-""}
-    _all=${4:-"0"}
-  fi
+  #############################################################################
+  # Receive input args.
+  #############################################################################
+  local _remote="${1:-${GMASH_MONO_PULL_REMOTE:""}}"
+  local _branch="${2:-${GMASH_MONO_PULL_BRANCH:-""}}"
+  local _prefix="${3:-${GMASH_MONO_PULL_PREFIX:""}}"
+  local _all="${4:-${GMASH_MONO_PULL_ALL:-0}}"
+
 
   if [ "$_all" -eq 1 ]; then
     _gmash_mono_pull_all
   else
-    if [ -z "$_prefix" ]; then
-      echo_err "Missing required '--prefix' parameter"
-      return 1
+    # Precondition: must be inside a git repo.
+    local curr_repo_name_
+    curr_repo_name_="$(git_curr_repo)"
+    if [ -z "$curr_repo_name_" ]; then
+      echo_die "Failed to detect active git repo. You must be inside a git repo."
     fi
 
+    # Required: prefix arg.
+    if [ -z "$_prefix" ]; then
+      echo_die "Missing required '--prefix' parameter"
+    fi
+
+    # Required: remote arg.
     if [ -z "$_remote" ]; then
-      echo_err "Missing required '--remote' parameter"
-      return 1
+      echo_die "Missing required '--remote' parameter"
+    fi
+
+    # Required: branch arg. Default to main if not provided.
+    if [ -z "$_branch" ]; then
+      _branch="$GMASH_MONO_DEFAULT_BRANCH"
+      vecho_process "Defaulting subtree branch to '$_branch'."
+    fi
+
+    # Guard: prefix path must not match gitignore patterns.
+    if git check-ignore -q "$_prefix"; then
+      echo_die "Target path '$_prefix' matches gitignore patterns"
+    fi
+
+    # Guard : working tree must be clean.
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+      echo_die "Working tree is dirty. Please commit or stash changes before adding subtree."
     fi
 
     git subtree pull --prefix="$_prefix" "$_remote" "$_branch" \
@@ -418,6 +444,22 @@ _gmash_mono_pull_all(){
   #       https://opensource.com/article/20/5/git-submodules-subtrees
 #@enddoc#######################################################################
 gmash_mono_push(){
+  #############################################################################
+  # Receive input args.
+  #############################################################################
+  local _br="${1:-${GMASH_MONO_PATCH_BR:-""}}"
+  local _path="${2:-${GMASH_MONO_PATCH_PATH:-""}}"
+  local _remote="${3:-${GMASH_MONO_PATCH_REMOTE:-""}}"
+  local _tgtbr="${4:-${GMASH_MONO_PATCH_TGTBR:-""}}"
+  local _user="${5:-${GMASH_MONO_PATCH_USER:-""}}"
+  local _tgtuser="${6:-${GMASH_MONO_PATCH_TGTUSER:-""}}"
+  local _tempbr="${7:-${GMASH_MONO_PATCH_TEMPBR:-""}}"
+  local _tempdir="${8:-${GMASH_MONO_PATCH_TEMPDIR:-""}}"
+  local _url="${9:-${GMASH_MONO_PATCH_URL:-""}}"
+  local _all="${10:-${GMASH_MONO_PATCH_ALL:-"0"}}"
+  local _makepr="${11:-${GMASH_MONO_PATCH_MAKEPR:-"0"}}"
+  local _squash="${12:-${GMASH_MONO_PATCH_SQUASH:-"0"}}"
+
   local _br=${GMASH_MONO_PATCH_BR:-'main'}
   local _path=${GMASH_MONO_PATCH_PATH:-'subtreeDirName'}
   local _remote=${GMASH_MONO_PATCH_REMOTE:-'origin'}
@@ -432,7 +474,8 @@ gmash_mono_push(){
   local _makepr=${GMASH_MONO_PATCH_MAKEPR:-"0"}
   local _squash=${GMASH_MONO_PATCH_SQUASH-"0"}
 
-  local _curr_repo_name=$(basename $(git rev-parse --show-toplevel))
+  local _curr_repo_name=""
+  _curr_repo_name="$(git_curr_repo)"
   vecho_process "Applying patch from mono : $_user/$_curr_repo_name"
 
   if [ "$_all" == "1" ]; then

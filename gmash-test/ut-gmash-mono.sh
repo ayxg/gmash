@@ -110,7 +110,7 @@ ut_gmash_mono_sub(){
         return 1
     fi
 
-    # Check that metadta file was created .gmash/subtree/project1_origin.conf
+    # Check that metadata file was created .gmash/subtree/project1_origin.conf
     if [ ! -f "$GMASH_TEST_MONOREPO_DIR/.gmash/subtree/$GMASH_TEST_MONO_SUBREPO_REMOTE.conf" ]; then
         echo "Metadata file '$GMASH_TEST_MONOREPO_DIR/.gmash/subtree/$GMASH_TEST_MONO_SUBREPO_REMOTE.conf' was not created."
         return 1
