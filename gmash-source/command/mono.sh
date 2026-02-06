@@ -62,8 +62,51 @@ assert_remote_exists(){
   fi
 }
 
-# Creates a new remote git repo for a subtree.
-gmash_mono_subtree_new(){
+assert_remote_unused(){
+  local _remote="${1:-""}"
+  if git config "remote.$_remote.url" > /dev/null; then
+    echo_die "Remote '$_remote' already exists."
+  fi
+}
+
+# Asserts remote url is not already used by any other remotes.
+# $1 : Remote url to test.
+assert_remote_url_unused(){
+  local _url="${1:-""}"
+  if git remote -v | awk '{print $2}' | grep -q "^$_url$"; then
+    echo_die "URL '$_url' is already used by another remote."
+  fi
+}
+
+# Asserts path does not exist or is empty.
+# $1 : Path to test.
+assert_directory_empty_or_nonexistant(){
+  local _path="${1:-""}"
+  # Guard: prefix path must not exist or be non-empty.
+  if [ -e "$_path" ] && [ -n "$(find "$_path" -maxdepth 1 -mindepth 1 -print -quit 2>/dev/null)" ]; then
+    echo_die "Target path '$_path' exists and contains files."
+  fi
+}
+
+# Assert path does not match .gitignore patterns in current repo.
+# $1 : Git local path to test.
+assert_path_not_gitignored(){
+  local _path="${1:-""}"
+  if git check-ignore -q "$_prefix"; then
+    echo_die "Target path '$_prefix' matches gitignore patterns"
+  fi
+}
+
+# Assert remote url is accessible
+assert_remote_url_accessible(){
+  local _url="${1:-""}"
+  if ! git ls-remote "$_url" &> /dev/null; then
+    echo_die "Provided remote URL '$_url' is not accessible."
+  fi
+}
+
+# Creates a new remote github repo for a subtree.
+create_new_github_repo(){
   local _name="${1:-""}"
   local _owner="${2:-""}"
   assert_github_api_user > /dev/null 2>&1
@@ -110,40 +153,15 @@ gmash_mono_subtree(){
   assert_required_arg "$_url" "--url"
   assert_required_arg "$_branch" "--branch"
 
-  # Guard: remote does not already exist.
-  if git config "remote.$_remote.url" > /dev/null; then
-    echo_die "Remote '$_remote' already exists. Remove before adding as subtree."
-  fi
-
-  # Guard: url not already used by another remote.
-  if git remote -v | awk '{print $2}' | grep -q "^$_url$"; then
-    echo_die "URL '$_url' is already used by another remote."
-  fi
-
-  # Guard: prefix path must not exist or be non-empty.
-  if [ -e "$_prefix" ] && [ -n "$(find "$_prefix" -maxdepth 1 -mindepth 1 -print -quit 2>/dev/null)" ]; then
-    echo_die "Target path '$_prefix' exists and contains files."
-  fi
-
-  # Guard: prefix path must not match gitignore patterns.
-  if git check-ignore -q "$_prefix"; then
-    echo_die "Target path '$_prefix' matches gitignore patterns"
-  fi
+  assert_remote_unused "$_remote"
+  assert_remote_url_unused "$_url"
+  assert_directory_empty_or_nonexistant "$_prefix"
+  assert_path_not_gitignored "$_prefix"
+  assert_remote_url_accessible "$_url"
 
   # Guard: gmash metadata file must not already exist.
   if [ -f ".gmash/subtree/$_remote.conf" ]; then
     echo_die "Subtree metadata for remote '$_remote' already exists. Try removing first."
-  fi
-
-  # Guard: remote must be accessible if a url was specified.
-  if [ -n "$_url" ]; then
-    if ! git ls-remote "$_url" &> /dev/null; then
-      echo_die "Provided subtree URL '$_url' is not accessible. Use '--new' flag to create a new remote repo."
-    fi
-  else # Otherswise assume user meant to pass '--new' but forgot.
-      if [ "$_new" -eq "0" ]; then
-        echo_die "Remote '--url' argument not provided. Use '--new' flag to create a new remote repo."
-      fi
   fi
 
   # Create new github repo if --new flag passed.
@@ -151,7 +169,7 @@ gmash_mono_subtree(){
     vecho_process "Creating new GitHub repo for subtree '$_remote'."
     assert_required_arg "$_name" "--name"
     assert_required_arg "$_owner" "--owner"
-    gmash_mono_subtree_new "$_name" "$_owner"
+    create_new_github_repo "$_name" "$_owner"
     # Set the expected url.
     _url="https://github.com/$_name/$_remote.git"
   fi
@@ -831,4 +849,56 @@ gmash_mono_clone(){
   done
 
   vecho_done "Successfully added all subtrees from metadata."
+}
+
+#@doc##########################################################################
+  # @func gmash_mono_split
+  # @brief Split a prefix folder in the mono repo into a new subtree.
+#@enddoc#######################################################################
+gmash_mono_split(){
+  #############################################################################
+  # Receive input args.
+  #############################################################################
+  local _prefix="${1:-${GMASH_MONO_SPLIT_PREFIX:""}}"
+  local _remote="${2:-${GMASH_MONO_SPLIT_REMOTE:""}}"
+  local _url="${3:-${GMASH_MONO_SPLIT_URL:""}}"
+  local _branch="${4:-${GMASH_MONO_SPLIT_BR:-""}}"
+  local _squash="${5:-${GMASH_MONO_SPLIT_SQUASH:-0}}"
+  local _new="${6:-${GMASH_MONO_SPLIT_NEW:-0}}"
+  local _name="${7:-${GMASH_MONO_SPLIT_NAME:-""}}"
+  local _owner="${8:-${GMASH_MONO_SPLIT_OWNER:-""}}"
+
+
+
+  #############################################################################
+  # Run the subtree splitting operation.
+  #############################################################################
+  # Generate temporary branch name.
+  local temp_branch_=""
+  temp_branch_="mono-split-$_remote-$_branch-$(date +%s)"
+
+  # Create new github remote.
+
+
+  # Split out the prefix into the temp branch.
+  git subtree split --prefix="$_prefix" -b "$temp_branch_"
+
+  # Push to the new remote.
+  git remote add "$_remote" "https://github.com/$_owner/$_name.git"
+  git push "$_remote" "$temp_branch_:$_branch" --force
+
+  # Delete the temporary branch and commit changes.
+  git branch -D "$temp_branch_"
+  git rm -r my-folder
+  git add .
+  git commit -m "Remove local folder to replace with subtree"
+
+  # Remove the remote temporarily for the mono subtree call.
+  git remote remove "$_remote"
+
+  # Re-establish the subtree link:
+  gmash_mono_subtree \
+    "${remote_:-}" \
+    "${branch_:-}" \
+    "${prefix_:-}"
 }
