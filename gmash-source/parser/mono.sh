@@ -1016,7 +1016,7 @@ gmash_parser_mono_split() {
 }
 gmash_mono_split_help() {
 cat<<'GETOPTIONSHERE'
-Usage: gmash mono subtree <-p <subtreePrefixPath>> <-r <remoteAlias>> [-l <remoteUrl>] <-b <subtreeBranch>> [-N <subtreeRepoName>] [-O <subtreeRepoOwner>] [-s]
+Usage: gmash mono split <-p <subtreePrefixPath>> <-r <remoteAlias>> [-l <remoteUrl>] <-b <subtreeBranch>> [-N <subtreeRepoName>] [-O <subtreeRepoOwner>] [-s]
  
 Split a prefix path into a new subtree remote repo, and re-add it as a subtree in this repo.
  

@@ -191,7 +191,7 @@ gmash_def_parser_mono_config(){
 gmash_def_parser_mono_split(){
   extend_parser
   standard_parser_setup GMASH_MONO_SPLIT_ARGR gmash_mono_split_help \
-    "Usage: gmash mono subtree <-p <subtreePrefixPath>> <-r <remoteAlias>> [-l <remoteUrl>] <-b <subtreeBranch>> [-N <subtreeRepoName>] [-O <subtreeRepoOwner>] [-s]"
+    "Usage: gmash mono split <-p <subtreePrefixPath>> <-r <remoteAlias>> [-l <remoteUrl>] <-b <subtreeBranch>> [-N <subtreeRepoName>] [-O <subtreeRepoOwner>] [-s]"
   msg -- " "
   msg -- "Split a prefix path into a new subtree remote repo, and re-add it as a subtree in this repo."
   msg -- " "

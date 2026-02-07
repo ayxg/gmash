@@ -1,13 +1,13 @@
 ---
-title: "gmash mono subtree"
+title: "gmash mono split"
 nav_order: 706
 parent: "gmash mono"
 ---
 
-# gmash mono subtree
+# gmash mono split
 
 ### Usage
-`gmash mono subtree <-p <subtreePrefixPath>> <-r <remoteAlias>> [-l <remoteUrl>] <-b <subtreeBranch>> [-N <subtreeRepoName>] [-O <subtreeRepoOwner>] [-s]`
+`gmash mono split <-p <subtreePrefixPath>> <-r <remoteAlias>> [-l <remoteUrl>] <-b <subtreeBranch>> [-N <subtreeRepoName>] [-O <subtreeRepoOwner>] [-s]`
 
 ### Brief
 Split a prefix path into a new subtree remote repo, and re-add it as a subtree in this repo.
