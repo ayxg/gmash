@@ -56,7 +56,7 @@ gmash_parser_mono() {
 				break ;;
 			[-+]?*) set "unknown" "$1"; break ;;
 			*)
-				case $1 in 'subtree'|'remove'|'pull'|'push'|'config'|'clone') ;;
+				case $1 in 'subtree'|'remove'|'pull'|'push'|'config'|'clone'|'split') ;;
 					*) set "notcmd" "$1"; break
 				esac
 				while [ $# -gt 0 ]; do
@@ -94,6 +94,7 @@ Sub-Commands:
   push                                  Push changes in the mono repo to a sub project's remote.
   config                                Configure a mono repo's remotes based on stored subproject metadata.
   clone                                 Clone repo from remote or local and add subtrees based on stored metadata.
+  split                                 Split an existing prefix path into a new subtree.
  
 Display:
   -h,     --help                        Display gmash, command or subcommand help. Use -h or --help.

@@ -33,6 +33,8 @@ gmash_def_parser_mono(){
     -- "Configure a mono repo's remotes based on stored subproject metadata."
   cmd clone \
     -- "Clone repo from remote or local and add subtrees based on stored metadata."
+  cmd split \
+    -- "Split an existing prefix path into a new subtree."
   msg -- " "
   msg -- "Display:"
     standard_parser_help gmash_mono_help
