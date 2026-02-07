@@ -107,6 +107,17 @@ assert_remote_url_accessible(){
   fi
 }
 
+# Assert a gvien prefix path in current git repo has a git history.
+# $1 : Prefix path to test.
+assert_prefix_has_history() {
+  local path_="$1"
+  # Check if any commits exist for this path
+  if [ -z "$(git log -1 --format=%H -- "$path_")" ]; then
+    echo "Error: Path '$path_' has no commit history. Subtree split will fail." >&2
+    exit 1
+  fi
+}
+
 # Creates a new remote github repo for a subtree.
 create_new_github_repo(){
   local _name="${1:-""}"
@@ -872,17 +883,19 @@ gmash_mono_split(){
   assert_inside_git_repo > /dev/null
   assert_working_tree_clean
 
-  assert_remote_unused "$_remote"
-  assert_path_not_gitignored "$_prefix"
-
-  if [ -n "$_url" ]; then
-    assert_remote_url_unused "$_url"
-    assert_remote_url_accessible "$_url"
-  fi
 
   assert_required_arg "$_prefix" "--prefix"
   assert_required_arg "$_remote" "--remote"
   assert_required_arg "$_branch" "--branch"
+
+  assert_remote_unused "$_remote"
+  assert_path_not_gitignored "$_prefix"
+  assert_prefix_has_history "$_prefix"
+
+  if [ -n "$_url" ]; then # Check valid url if provided.
+    assert_remote_url_unused "$_url"
+    assert_remote_url_accessible "$_url"
+  fi
 
   #############################################################################
   # Run the subtree splitting operation.
