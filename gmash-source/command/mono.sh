@@ -880,6 +880,9 @@ gmash_mono_split(){
   local _name="${7:-${GMASH_MONO_SPLIT_NAME:-""}}"
   local _owner="${8:-${GMASH_MONO_SPLIT_OWNER:-""}}"
 
+  #############################################################################
+  # Validate input and set defaults
+  #############################################################################
   assert_inside_git_repo > /dev/null
   assert_working_tree_clean
 
@@ -916,13 +919,16 @@ gmash_mono_split(){
   temp_branch_="mono-split-$_remote-$_branch-$(date +%s)"
 
   # Split out the prefix into the temp branch.
+  vecho_process "Splitting '$_prefix' into temporary branch '$temp_branch_'."
   git subtree split --prefix="$_prefix" -b "$temp_branch_"
 
   # Push to the new remote.
+  vecho_process "Adding temporary remote '$_remote:$_url' and pushing to branch '$_branch'."
   git remote add "$_remote" "$_url"
   git push "$_remote" "$temp_branch_:$_branch" --force
 
   # Delete the temporary branch and commit changes.
+  vecho_process "Removing temporary branch, prefix data and remote. Commiting changes."
   git branch -D "$temp_branch_"
   git rm -r "$_prefix"
   git add .
@@ -932,10 +938,13 @@ gmash_mono_split(){
   git remote remove "$_remote"
 
   # Re-establish the subtree link:
+  vecho_process "Re-establishing subtree link to '$_remote' at '$_prefix'."
   gmash_mono_subtree \
     "${_prefix:-}" \
     "${_remote:-}" \
     "${_url:-}" \
     "${_branch:-}" \
     "${_squash:-}"
+
+  vecho_done "Sucessfully split subtree."
 }
