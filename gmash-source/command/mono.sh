@@ -869,6 +869,17 @@ gmash_mono_split(){
   local _name="${7:-${GMASH_MONO_SPLIT_NAME:-""}}"
   local _owner="${8:-${GMASH_MONO_SPLIT_OWNER:-""}}"
 
+  assert_inside_git_repo > /dev/null
+  assert_working_tree_clean
+
+  assert_remote_unused "$_remote"
+  assert_path_not_gitignored "$_prefix"
+
+  if [ -n "$_url" ]; then
+    assert_remote_url_unused "$_url"
+    assert_remote_url_accessible "$_url"
+  fi
+
   assert_required_arg "$_prefix" "--prefix"
   assert_required_arg "$_remote" "--remote"
   assert_required_arg "$_branch" "--branch"
@@ -876,12 +887,9 @@ gmash_mono_split(){
   #############################################################################
   # Run the subtree splitting operation.
   #############################################################################
-  # Generate temporary branch name.
-  local temp_branch_=""
-  temp_branch_="mono-split-$_remote-$_branch-$(date +%s)"
 
   # Create new github remote if url is not specified.
-  if [ -z "$url_" ]; then
+  if [ -z "$_url" ]; then
     vecho_process "Creating new GitHub repo for subtree '$_remote'."
     assert_required_arg "$_name" "--name"
     assert_required_arg "$_owner" "--owner"
@@ -889,6 +897,10 @@ gmash_mono_split(){
     # Set the expected url.
     _url="https://github.com/$_owner/$_name.git"
   fi
+
+  # Generate temporary branch name.
+  local temp_branch_=""
+  temp_branch_="mono-split-$_remote-$_branch-$(date +%s)"
 
   # Split out the prefix into the temp branch.
   git subtree split --prefix="$_prefix" -b "$temp_branch_"
@@ -908,9 +920,9 @@ gmash_mono_split(){
 
   # Re-establish the subtree link:
   gmash_mono_subtree \
-    "${prefix_:-}" \
-    "${remote_:-}" \
-    "${url_:-}" \
-    "${branch_:-}" \
-    "${squash_:-}"
+    "${_prefix:-}" \
+    "${_remote:-}" \
+    "${_url:-}" \
+    "${_branch:-}" \
+    "${_squash:-}"
 }
