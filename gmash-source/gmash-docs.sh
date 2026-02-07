@@ -99,13 +99,12 @@ generate_doc_page "gmash gist" "400" "gmash"
 generate_doc_page "gmash lineage" "500" "gmash"
     generate_doc_page "gmash lineage merge" "501" "gmash lineage"
 
-# subtree
-generate_doc_page "gmash subtree" "600" "gmash"
-    generate_doc_page "gmash subtree new" "601" "gmash subtree"
-    generate_doc_page "gmash subtree patch" "602" "gmash subtree"
-
 # mono
 generate_doc_page "gmash mono" "700" "gmash"
-    generate_doc_page "gmash mono patch" "701" "gmash mono"
+    generate_doc_page "gmash mono subtree" "701" "gmash mono"
+    generate_doc_page "gmash mono remove" "702" "gmash mono"
+    generate_doc_page "gmash mono pull" "703" "gmash mono"
+    generate_doc_page "gmash mono push" "704" "gmash mono"
+    generate_doc_page "gmash mono split" "706" "gmash mono"
 
 echo "Documentation generation complete."

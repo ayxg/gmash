@@ -10,12 +10,31 @@ parent: "gmash"
 `gmash mono <sub-command> [[args]...]`
 
 ### Brief
+Git+GitHub monorepo workflow strategy.
 Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 
 ### Commands
 
-`patch` \
-&nbsp;&nbsp;&nbsp;&nbsp;Patch a git repository with changes from another branch.
+`subtree` \
+&nbsp;&nbsp;&nbsp;&nbsp;Add or re-configure a sub project to the mono repo as a subtree.
+
+`remove` \
+&nbsp;&nbsp;&nbsp;&nbsp;Remove a subtree from the monorepo.
+
+`pull` \
+&nbsp;&nbsp;&nbsp;&nbsp;Pull changes from a sub project's remote into the mono repo.
+
+`push` \
+&nbsp;&nbsp;&nbsp;&nbsp;Push changes in the mono repo to a sub project's remote.
+
+`config` \
+&nbsp;&nbsp;&nbsp;&nbsp;Configure a mono repo's remotes based on stored subproject metadata.
+
+`clone` \
+&nbsp;&nbsp;&nbsp;&nbsp;Clone repo from remote or local and add subtrees based on stored metadata.
+
+`split` \
+&nbsp;&nbsp;&nbsp;&nbsp;Split an existing prefix path into a new subtree.
 
 ### Display:
 `-h`  `--help` \

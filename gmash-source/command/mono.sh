@@ -804,7 +804,7 @@ gmash_mono_clone(){
   vecho_info "Input parameters:"
   vecho_info "- user:   $_user"
   vecho_info "- dir:    $_dir"
-  vecho_info "- br:     $br"
+  vecho_info "- br:     $_br"
 
   if [ -d "$_dir" ]; then
     echo_err "Target directory '$_dir' already exists. Please remove or choose another with --dir."

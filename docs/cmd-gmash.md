@@ -16,7 +16,7 @@ Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 ### Commands
 
 `dirs` \
-&nbsp;&nbsp;&nbsp;&nbsp;High level path/file manipulation and analysis.\
+&nbsp;&nbsp;&nbsp;&nbsp;High level path/file manipulation.\
 &nbsp;&nbsp;&nbsp;&nbsp;`same`\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Get a diff of 2 directories.\
 &nbsp;&nbsp;&nbsp;&nbsp;`separate`\
@@ -32,7 +32,7 @@ Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Find source files.
 
 `gist` \
-&nbsp;&nbsp;&nbsp;&nbsp;Manage GitHub Gists with git-like functionality, integrates with 'mono' && 'subtree'.\
+&nbsp;&nbsp;&nbsp;&nbsp;Manage GitHub Gists with git-like functionality, integrates with 'mono' command.\
 &nbsp;&nbsp;&nbsp;&nbsp;`create`\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Push all files in a directory as gists to GitHub. Adds a title.md and readme.md by default.\
 &nbsp;&nbsp;&nbsp;&nbsp;`clone`\
@@ -43,13 +43,18 @@ Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Upload files to existing gists.
 
 `lineage` \
-&nbsp;&nbsp;&nbsp;&nbsp;Amalgamate git commits from archived git repos to a more recent version.
+&nbsp;&nbsp;&nbsp;&nbsp;Prepend git commits from archived git repos to a more recent version.
 
 `mono` \
-&nbsp;&nbsp;&nbsp;&nbsp;Manage Monorepo->Subtree github git remotes and locals.
-
-`subtree` \
-&nbsp;&nbsp;&nbsp;&nbsp;Manage Subtree->Monorepo github git remotes and locals.
+&nbsp;&nbsp;&nbsp;&nbsp;Git subtree monorepo workflow strategy.\
+&nbsp;&nbsp;&nbsp;&nbsp;`remove`\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Add or re-configure a sub project to the mono repo as a subtree.\
+&nbsp;&nbsp;&nbsp;&nbsp;`pull`\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pull changes from a sub project's remote into the mono repo.\
+&nbsp;&nbsp;&nbsp;&nbsp;`push`\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Push changes in the mono repo to a sub project's remote.\
+&nbsp;&nbsp;&nbsp;&nbsp;`clone`\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Clone and configure a mono repo's remotes based on stored subproject metadata.
 
 ### Globals:
 `-V`  `--verbose` \
@@ -74,3 +79,6 @@ Call [main-cmd] [sub-cmd] --help for details of each sub-command.
 ### Development:
 `--compile-parser` \
 &nbsp;&nbsp;&nbsp;&nbsp;Compile command line parser source files.
+
+`--unit-tests` \
+&nbsp;&nbsp;&nbsp;&nbsp;Run unit test to validate program.
