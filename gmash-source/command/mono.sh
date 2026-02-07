@@ -29,6 +29,8 @@ assert_working_tree_clean(){
 }
 
 # Input arg value cannot be completly unassigned. Empty string "" is considered missing.
+# $1 : Required arg variable to test.
+# $2 : Required arg debug message name(usually the cli arg long flag)
 assert_required_arg(){
   local _arg_value="$1"
   local _arg_name="$2"
@@ -864,11 +866,12 @@ gmash_mono_split(){
   local _url="${3:-${GMASH_MONO_SPLIT_URL:""}}"
   local _branch="${4:-${GMASH_MONO_SPLIT_BR:-""}}"
   local _squash="${5:-${GMASH_MONO_SPLIT_SQUASH:-0}}"
-  local _new="${6:-${GMASH_MONO_SPLIT_NEW:-0}}"
   local _name="${7:-${GMASH_MONO_SPLIT_NAME:-""}}"
   local _owner="${8:-${GMASH_MONO_SPLIT_OWNER:-""}}"
 
-
+  assert_required_arg "$_prefix" "--prefix"
+  assert_required_arg "$_remote" "--remote"
+  assert_required_arg "$_branch" "--branch"
 
   #############################################################################
   # Run the subtree splitting operation.
@@ -877,28 +880,37 @@ gmash_mono_split(){
   local temp_branch_=""
   temp_branch_="mono-split-$_remote-$_branch-$(date +%s)"
 
-  # Create new github remote.
-
+  # Create new github remote if url is not specified.
+  if [ -z "$url_" ]; then
+    vecho_process "Creating new GitHub repo for subtree '$_remote'."
+    assert_required_arg "$_name" "--name"
+    assert_required_arg "$_owner" "--owner"
+    create_new_github_repo "$_name" "$_owner"
+    # Set the expected url.
+    _url="https://github.com/$_owner/$_name.git"
+  fi
 
   # Split out the prefix into the temp branch.
   git subtree split --prefix="$_prefix" -b "$temp_branch_"
 
   # Push to the new remote.
-  git remote add "$_remote" "https://github.com/$_owner/$_name.git"
+  git remote add "$_remote" "$_url"
   git push "$_remote" "$temp_branch_:$_branch" --force
 
   # Delete the temporary branch and commit changes.
   git branch -D "$temp_branch_"
-  git rm -r my-folder
+  git rm -r "$_prefix"
   git add .
-  git commit -m "Remove local folder to replace with subtree"
+  git commit -m "Removed local prefix '$_prefix' to re-add as subtree."
 
   # Remove the remote temporarily for the mono subtree call.
   git remote remove "$_remote"
 
   # Re-establish the subtree link:
   gmash_mono_subtree \
+    "${prefix_:-}" \
     "${remote_:-}" \
+    "${url_:-}" \
     "${branch_:-}" \
-    "${prefix_:-}"
+    "${squash_:-}"
 }

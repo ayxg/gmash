@@ -185,3 +185,39 @@ gmash_def_parser_mono_config(){
     disp "GMASH_MONO_CONFIG_VERSION" -v --version \
       -- "[$GMASH_MONO_CONFIG_VERSION] Display command group version."
 }
+
+gmash_def_parser_mono_split(){
+  extend_parser
+  standard_parser_setup GMASH_MONO_SPLIT_ARGR gmash_mono_split_help \
+    "Usage: gmash mono subtree <-p <subtreePrefixPath>> <-r <remoteAlias>> [-l <remoteUrl>] <-b <subtreeBranch>> [-N <subtreeRepoName>] [-O <subtreeRepoOwner>] [-s]"
+  msg -- " "
+  msg -- "Split a prefix path into a new subtree remote repo, and re-add it as a subtree in this repo."
+  msg -- " "
+  msg -- "Parameters:"
+    param GMASH_MONO_SPLIT_PREFIX -p --prefix var:'<subtreePrefixPath>'\
+      -- "Relative path inside the parent repo where the subtree will be split from. Cannot be\
+ the root path."
+    param GMASH_MONO_SPLIT_REMOTE -r --remote var:"<remoteAlias>" \
+      -- "Remote alias to add to the parent repo, which will be refered to when pulling\
+ and pushing changes to the added subtree."
+    param GMASH_MONO_SPLIT_URL -l --url var:"<remoteURL>" \
+      -- "Remote repository URL of the subtree to add. New github repo won't be created if url is specified."
+    param GMASH_MONO_SPLIT_BR -b --branch var:"<subtreeBranch>"\
+      -- "Target branch of the subtree remote."
+    flag GMASH_MONO_SPLIT_SQUASH -s --squash var:"" \
+      -- "Instead of merging the entire history from the subtree project, produce only\
+ a single commit that contains all the differences to merge. Then, merge that new\
+ commit into the parent repo. Note, if you add a subtree with --squash, future
+ pulls and pushes to that subtree should also be squashed."
+    param GMASH_MONO_SPLIT_NAME -N --name var:"<subtreeRepoName>" \
+      -- "Name of the new remote repo to create for the subtree. Required if '--url' is not\
+ passed."
+    param GMASH_MONO_SPLIT_OWNER -O --owner var:"<subtreeRepoOwner>" \
+      -- "Owner (user or org) of the new remote repo to create for the subtree. Required if\
+ '--url' is not passed."
+  msg -- "  "
+  msg -- "Display:"
+    standard_parser_help gmash_mono_split_help
+    disp "GMASH_MONO_SPLIT_VERSION" -v --version \
+      -- "[$GMASH_MONO_SPLIT_VERSION] Display command group version."
+}

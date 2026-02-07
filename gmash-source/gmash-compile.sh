@@ -80,3 +80,4 @@ compile_parser
     compile_parser mono pull
     compile_parser mono push
     compile_parser mono config
+    compile_parser mono split

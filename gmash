@@ -225,6 +225,8 @@ case $_command in
         gmash_parser_mono_push "$@"; gmash_mono_push; ;;
       config)
         gmash_parser_mono_config "$@"; gmash_mono_config; ;;
+      split)
+        gmash_parser_mono_split "$@"; gmash_mono_split; ;;
       *)
         echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
     esac ;;
