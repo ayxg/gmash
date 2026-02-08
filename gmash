@@ -227,6 +227,8 @@ case $_command in
         gmash_parser_mono_clone "$@"; gmash_mono_clone; ;;
       split)
         gmash_parser_mono_split "$@"; gmash_mono_split; ;;
+      list)
+        gmash_parser_mono_list "$@"; gmash_mono_list; ;;
       *)
         echo "$GMASH_INVALID_SUBCMD_ERROR"; exit 1 ;;
     esac ;;

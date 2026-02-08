@@ -35,6 +35,8 @@ gmash_def_parser_mono(){
     -- "Clone repo from remote or local and add subtrees based on stored metadata."
   cmd split \
     -- "Split an existing prefix path into a new subtree."
+  cmd list \
+    -- "List configured subtree metadata."
   msg -- " "
   msg -- "Display:"
     standard_parser_help gmash_mono_help
@@ -220,6 +222,20 @@ gmash_def_parser_mono_split(){
   msg -- "  "
   msg -- "Display:"
     standard_parser_help gmash_mono_split_help
+    disp "GMASH_MONO_SPLIT_VERSION" -v --version \
+      -- "[$GMASH_MONO_SPLIT_VERSION] Display command group version."
+}
+
+
+gmash_def_parser_mono_list(){
+  extend_parser
+  standard_parser_setup GMASH_MONO_LIST_ARGR gmash_mono_list_help \
+    "Usage: gmash mono list"
+  msg -- " "
+  msg -- "List subtree metadata."
+  msg -- "  "
+  msg -- "Display:"
+    standard_parser_help gmash_mono_list_help
     disp "GMASH_MONO_SPLIT_VERSION" -v --version \
       -- "[$GMASH_MONO_SPLIT_VERSION] Display command group version."
 }

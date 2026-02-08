@@ -12,6 +12,7 @@
 #@enddoc#######################################################################
 
 readonly GMASH_MONO_DEFAULT_BRANCH="main"
+readonly GMASH_MONO_METADATA_PATH=".gmash/subtree"
 
 assert_inside_git_repo(){
   local curr_repo_name_
@@ -119,6 +120,8 @@ assert_prefix_has_history() {
 }
 
 # Creates a new remote github repo for a subtree.
+# $1 : github username or org to own the repo
+# $2 : github repo name
 create_new_github_repo(){
   local _name="${1:-""}"
   local _owner="${2:-""}"
@@ -685,18 +688,15 @@ gmash_mono_push(){
     vecho_action "Syncing subtree changes back to parent."
       if git fetch "$_remote" "$_target_branch"; then
         if ! git merge -s subtree FETCH_HEAD -m "$_sync_msg"; then
-            vecho_warn "Sync-back merge failed. Subtree possibly changed mid-sync."
-            return 1
+            echo_die "Sync-back merge failed. Subtree possibly changed mid-sync."
         fi
       else
-        vecho_warn "Failed to fetch from remote for sync-back. Unexpected error."
-        return 1
+        echo_die "Failed to fetch from remote for sync-back. Unexpected error."
       fi
 
     vecho_action "Validating sync with a mono push."
       if ! git push; then
-          echo_err "Final mono push failed. Unexpected error."
-          return 1
+          echo_die "Final mono push failed. Unexpected error."
       fi
   vecho_done "Changes pushed to subtree remote '$_remote' branch '$_target_branch'."
   return 0
@@ -947,4 +947,35 @@ gmash_mono_split(){
     "${_squash:-}"
 
   vecho_done "Sucessfully split subtree."
+}
+
+
+gmash_mono_list(){
+  if [ ! -d "$GMASH_MONO_METADATA_PATH" ]; then
+    echo_die "Subtree metadata directory '$GMASH_MONO_METADATA_PATH' not found."
+  fi
+
+  conf_files_=("$GMASH_MONO_METADATA_PATH"/*.conf)
+  if [ "${conf_files_[0]}" == "$GMASH_MONO_METADATA_PATH/*.conf" ] && [ ! -e "${conf_files_[0]}" ]; then
+    echo_die "No subtree metadata found."
+  fi
+
+  local url_=""
+  local remote_=""
+  local branch_=""
+  local prefix_=""
+  local squash_=""
+  local owned_=""
+
+  printf "%-10s %-10s %-10s %-8s %-8s %s\n" "REMOTE" "PREFIX" "BRANCH" "SQUASH" "OWNED" "URL"
+  printf "%-10s %-10s %-10s %-8s %-8s %s\n" "----------" "----------" "----------" "--------" "--------" "-----------------------"
+  for conf_file in "${conf_files_[@]}"; do
+    url_=$(confread "$conf_file" "url")
+    remote_=$(confread "$conf_file" "remote")
+    branch_=$(confread "$conf_file" "branch")
+    prefix_=$(confread "$conf_file" "prefix")
+    squash_=$(confread "$conf_file" "squash")
+    owned_=$(confread "$conf_file" "owned")
+    printf "%-10s %-10s %-10s %-8s %-8s %s\n" "$remote_" "$prefix_" "$branch_" "$squash_" "$owned_" "$url_"
+  done
 }
