@@ -139,6 +139,31 @@ create_new_github_repo(){
   fi
 }
 
+# Delete a repo on github
+# !!WARNING: Destructive action. Do not ever call this on non-fresh repos. Always validate input args.
+# $1 : github username or org
+# $2 : github repo name
+delete_github_repo(){
+  local _name="${1:-""}"
+  local _owner="${2:-""}"
+  assert_github_api_user > /dev/null 2>&1
+  assert_required_arg "$_name" "Repository Name"
+  assert_required_arg "$_owner" "Repository Owner"
+
+  # Deletion requires authorization with the delete_repo scope.
+  gh auth refresh -s delete_repo
+
+  if command -v gh >/dev/null 2>&1; then
+    if gh repo delete "$_owner/$_name" --yes > /dev/null 2>&1; then
+      return 0
+    else # Unexpected error ?
+      echo_die "Failed to delete GitHub repository."
+    fi
+  else # gh not installed...
+      echo_die "GitHub CLI (gh) not found. Cannot create new remote repo."
+  fi
+}
+
 # Fetches the name of the default branch from origin (e.g., 'main')
 get_default_branch() {
     git rev-parse --abbrev-ref origin/HEAD | sed 's|^origin/||'
@@ -930,35 +955,41 @@ gmash_mono_split(){
 
   # Split out the prefix into the temp branch.
   vecho_process "Splitting '$_prefix' into temporary branch '$temp_branch_'."
-  git subtree split --prefix="$_prefix" -b "$temp_branch_"
+    if ! git subtree split --prefix="$_prefix" -b "$temp_branch_"; then
+      if [ "$was_new_repo_created_" -eq 1 ]; then
+        vecho_warn "Reverting due to error. Deleting GitHub repo '$_owner/$_name'."
+        delete_github_repo "$_name" "$_owner"
+      fi
+      echo_die "Failed to split subtree."
+    fi
 
   # Push to the new remote.
   vecho_process "Adding temporary remote '$_remote:$_url' and pushing to branch '$_branch'."
-  git remote add "$_remote" "$_url"
-  git push "$_remote" "$temp_branch_:$_branch" --force
+    git remote add "$_remote" "$_url"
+    git push "$_remote" "$temp_branch_:$_branch" --force
 
   # Delete the temporary branch and commit changes.
   vecho_process "Removing temporary branch, prefix data and remote. Commiting changes."
-  git branch -D "$temp_branch_"
-  git rm -r "$_prefix"
-  git add .
-  git commit -m "Removed local prefix '$_prefix' to re-add as subtree."
+    git branch -D "$temp_branch_"
+    git rm -r "$_prefix"
+    git add .
+    git commit -m "Removed local prefix '$_prefix' to re-add as subtree."
 
-  # Remove the remote temporarily for the mono subtree call.
-  git remote remove "$_remote"
+    # Remove the remote temporarily for the mono subtree call.
+    git remote remove "$_remote"
 
   # Re-establish the subtree link:
   vecho_process "Re-establishing subtree link to '$_remote' at '$_prefix'."
-  gmash_mono_subtree \
-    "${_prefix:-}" \
-    "${_remote:-}" \
-    "${_url:-}" \
-    "${_branch:-}" \
-    "${_squash:-}"
+    gmash_mono_subtree \
+      "${_prefix:-}" \
+      "${_remote:-}" \
+      "${_url:-}" \
+      "${_branch:-}" \
+      "${_squash:-}"
 
   # If this is a newly created github remote then overwrite the default branch with the split history.
+  vecho_process "Checking if branch overwrite is necessary."
   if [ "$was_new_repo_created_" -eq 1 ]; then
-
     _temp_dir="$(mktemp -d --tmpdir "mono-split-$_remote-$_branch-XXXXXX")"
     (
         cd "$_temp_dir" || echo_die "Could not change into temp dir '$_temp_dir'."
