@@ -139,6 +139,11 @@ create_new_github_repo(){
   fi
 }
 
+# Fetches the name of the default branch from origin (e.g., 'main')
+get_default_branch() {
+    git rev-parse --abbrev-ref origin/HEAD | sed 's|^origin/||'
+}
+
 #@doc##########################################################################
   # @func gmash_mono_sub
   # @brief Add subtree to this repo from an existing external git repo,
@@ -238,6 +243,7 @@ gmash_mono_remove(){
   #############################################################################
   local _remote="${1:-${GMASH_MONO_REMOVE_REMOTE:""}}"
   local _keep_remote="${3:-${GMASH_MONO_REMOVE_KEEP_REMOTE:-0}}"
+  local _remove_files="${3:-${GMASH_MONO_REMOVE_REMOVE_FILES:-0}}"
 
   #############################################################################
   # Validate input and set defaults
@@ -264,15 +270,17 @@ gmash_mono_remove(){
   #############################################################################
   vecho_process "Removing subtree '$_remote' at '$_prefix'"
 
-  # Delete path if it is tracked by Git
-  if git ls-files --error-unmatch "$_prefix" >/dev/null 2>&1; then
-      vecho_process "Removing tracked subtree '$_prefix' from Git"
-      git rm -rf "$_prefix"
-  elif [ -d "$_prefix" ]; then
-      vecho_process "Path '$_prefix' exists but is untracked. Removing from disk only."
-      rm -rf "$_prefix"
-  else
-      echo_warn "Subtree path '$_prefix' does not exist."
+  if [ "$_remove_files" -eq 1 ]; then
+    # Delete path if it is tracked by Git
+    if git ls-files --error-unmatch "$_prefix" >/dev/null 2>&1; then
+        vecho_process "Removing tracked subtree '$_prefix' from Git"
+        git rm -rf "$_prefix"
+    elif [ -d "$_prefix" ]; then
+        vecho_process "Path '$_prefix' exists but is untracked. Removing from disk only."
+        rm -rf "$_prefix"
+    else
+        echo_warn "Subtree path '$_prefix' does not exist."
+    fi
   fi
 
   # Delete metadata file. Check if the file is tracked by Git
@@ -904,6 +912,7 @@ gmash_mono_split(){
   # Run the subtree splitting operation.
   #############################################################################
 
+  was_new_repo_created_=0
   # Create new github remote if url is not specified.
   if [ -z "$_url" ]; then
     vecho_process "Creating new GitHub repo for subtree '$_remote'."
@@ -912,6 +921,7 @@ gmash_mono_split(){
     create_new_github_repo "$_name" "$_owner"
     # Set the expected url.
     _url="https://github.com/$_owner/$_name.git"
+    was_new_repo_created_=1
   fi
 
   # Generate temporary branch name.
@@ -945,6 +955,29 @@ gmash_mono_split(){
     "${_url:-}" \
     "${_branch:-}" \
     "${_squash:-}"
+
+  # If this is a newly created github remote then overwrite the default branch with the split history.
+  if [ "$was_new_repo_created_" -eq 1 ]; then
+
+    _temp_dir="$(mktemp -d --tmpdir "mono-split-$_remote-$_branch-XXXXXX")"
+    (
+        cd "$_temp_dir" || echo_die "Could not change into temp dir '$_temp_dir'."
+
+        git clone "$_url" "$_name"
+        cd "$_name" || echo_die "Could not change into temp dir '$_temp_dir/$_name'."
+
+        # Only overwrite if the default is not the target branch.
+        default_branch_="$(get_default_branch)"
+        if [ "$_branch" != "$default_branch_" ]; then
+            vecho_process "Overwriting new subtree remote default branch '$default_branch_' with branch '$_branch' history."
+            git fetch origin "$_branch"
+            git checkout "$default_branch_"
+            git reset --hard "origin/$_branch"
+            git push origin "$default_branch_" --force
+        fi
+    )
+    rm -rf "$_temp_dir" # Clean up the temp dir.
+  fi
 
   vecho_done "Sucessfully split subtree."
 }
