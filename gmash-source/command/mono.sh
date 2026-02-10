@@ -135,6 +135,10 @@ assert_prefix_has_history() {
   fi
 }
 
+###############################################################################
+# Shared utility functions.
+###############################################################################
+
 # Creates a new remote github repo for a subtree. Returns the github url of created repo
 # if successful.
 # $1 : GitHub username or org to own the repo.
@@ -186,6 +190,11 @@ delete_github_repo(){
 get_default_branch() {
   git rev-parse --abbrev-ref origin/HEAD | sed 's|^origin/||'
 }
+
+###############################################################################
+# Commands Impl
+###############################################################################
+
 
 #@doc##########################################################################
   # @func gmash_mono_sub
@@ -265,12 +274,7 @@ gmash_mono_subtree(){
   #############################################################################
   vecho_process "Committing changes."
   git add "$conf_"
-  git commit -m "[gmash] Added subtree '$_remote' at '$_prefix'" \
-  -m "
- - url: $_url
- - remote: $_remote
- - prefix: $_prefix
- - metadata: $conf_"
+  git commit -m "[gmash] Added subtree '$_remote' at '$_prefix'. Metadata: $conf_"
 
   vecho_done "Success. Subtree '$_remote' added at '$_prefix'."
   return 0
@@ -656,10 +660,7 @@ gmash_mono_push(){
 }
 
 _gmash_mono_push_all(){
-
-
-  vecho_process "Scanning subtree metadata directory '$_subtree_dir' for subtrees to patch."
-  # Read subtree metadata from $GMASH_MONO_METADATA_PATH/*.conf and call mono-patch for each.
+  vecho_process "Scanning subtree metadata directory '$GMASH_MONO_METADATA_PATH' for subtrees to patch."
   local conf_files_=( "$GMASH_MONO_METADATA_PATH"/*.conf )
   if [ "${conf_files_[0]}" == "$GMASH_MONO_METADATA_PATH/*.conf" ] && [ ! -e "${conf_files_[0]}" ]; then
     echo_die "No subtree metadata found."
