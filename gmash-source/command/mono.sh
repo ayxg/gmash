@@ -50,7 +50,7 @@ assert_github_api_user(){
 
 assert_metadata_exists(){
   local _remote="${1:-""}"
-  local conf=".gmash/subtree/$_remote.conf"
+  local conf="$GMASH_MONO_METADATA_PATH/$_remote.conf"
   if [ ! -f "$conf" ]; then
     echo_die "No subtree metadata found for '$_remote'."
   fi
@@ -172,7 +172,7 @@ get_default_branch() {
   # @func gmash_mono_sub
   # @brief Add subtree to this repo from an existing external git repo,
   #     or create a new remote repo if '--new' is passed. Generates metadata
-  #     file at `.gmash/subtree/<remote>.conf` to track the subtree.
+  #     file at `$GMASH_MONO_METADATA_PATH/<remote>.conf` to track the subtree.
 #@enddoc#######################################################################
 gmash_mono_subtree(){
   #############################################################################
@@ -205,7 +205,7 @@ gmash_mono_subtree(){
   assert_remote_url_accessible "$_url"
 
   # Guard: gmash metadata file must not already exist.
-  if [ -f ".gmash/subtree/$_remote.conf" ]; then
+  if [ -f "$GMASH_MONO_METADATA_PATH/$_remote.conf" ]; then
     echo_die "Subtree metadata for remote '$_remote' already exists. Try removing first."
   fi
 
@@ -227,10 +227,10 @@ gmash_mono_subtree(){
   git subtree add --prefix="$_prefix" "$_url" "$_branch"
 
   #############################################################################
-  # Add subtree metadata to `.gmash/subtree/$_remote.conf`
+  # Add subtree metadata to `$GMASH_MONO_METADATA_PATH/$_remote.conf`
   #############################################################################
-  vecho_process "Writing subtree metadata to '.gmash/subtree/$_remote.conf'."
-  local conf_=".gmash/subtree/$_remote.conf"
+  vecho_process "Writing subtree metadata to '$GMASH_MONO_METADATA_PATH/$_remote.conf'."
+  local conf_="$GMASH_MONO_METADATA_PATH/$_remote.conf"
   confwrite "$conf_" version "${CONFILE_VERSION}"
   confwrite "$conf_" created "$(date -Iseconds)"
   confwrite "$conf_" url "$_url"
@@ -384,18 +384,12 @@ gmash_mono_pull(){
 }
 
 _gmash_mono_pull_all(){
-  local gmash_meta_=".gmash/subtree"
-  if [ ! -d "$gmash_meta_" ]; then
-    echo_die "Subtree metadata directory '$gmash_meta_' not found."
+  local conf_files_=( "$GMASH_MONO_METADATA_PATH"/*.conf )
+  if [ "${conf_files_[0]}" == "$GMASH_MONO_METADATA_PATH/*.conf" ] && [ ! -e "${conf_files_[0]}" ]; then
+    echo_die "No subtree metadata found."
   fi
 
-  for conf_file in "$gmash_meta_"/*.conf; do
-    # Glob did not detect any files.
-    if [ "$conf_file" == "$gmash_meta_/*.conf" ]; then
-      conf_file=""
-      echo_die "No subtree metadata found."
-    fi
-
+  for conf_file in "${conf_files_[@]}"; do
     # Read config values.
     local remote_
     local branch_
@@ -576,7 +570,7 @@ gmash_mono_push(){
 
   # If branch or prefix still empty, metadata may be corrupted.
   if [ -z "$_target_branch" ] || [ -z "$_prefix" ]; then
-    echo_err "Failed to read subtree metadata from '.gmash/subtree/$_remote.conf'."
+    echo_err "Failed to read subtree metadata from '$GMASH_MONO_METADATA_PATH/$_remote.conf'."
     exit 1
   fi
 
@@ -726,23 +720,20 @@ gmash_mono_push(){
 }
 
 _gmash_mono_push_all(){
-  # Read subtree metadata from .gmash/subtree/*.conf and call mono-patch for each.
-  local _subtree_dir=".gmash/subtree"
-  if [ ! -d "$_subtree_dir" ]; then
-    echo_err "Subtree metadata directory '$_subtree_dir' not found."
-    return 1
-  fi
+
 
   vecho_process "Scanning subtree metadata directory '$_subtree_dir' for subtrees to patch."
+  # Read subtree metadata from $GMASH_MONO_METADATA_PATH/*.conf and call mono-patch for each.
+  local conf_files_=( "$GMASH_MONO_METADATA_PATH"/*.conf )
+  if [ "${conf_files_[0]}" == "$GMASH_MONO_METADATA_PATH/*.conf" ] && [ ! -e "${conf_files_[0]}" ]; then
+    echo_die "No subtree metadata found."
+  fi
+
   local _patched_any=0
   local _merge_commits=()
   local _starting_commit=$(git rev-parse HEAD)
 
-  for conf_file in "$_subtree_dir"/*.conf; do
-    if [ "$conf_file" == "$_subtree_dir/*.conf" ]; then
-      conf_file=""
-      break
-    fi
+  for conf_file in "${conf_files_[@]}"; do
 
     if [ ! -f "$conf_file" ]; then
       vecho_action "No subtree metadata files found in '$_subtree_dir'."
@@ -812,7 +803,10 @@ _gmash_mono_push_cleanup(){
   git worktree prune
 }
 
-# Clone monorepo from github. Add all subtrees from metadata.
+#@doc##########################################################################
+  # @func gmash_mono_split
+  # @brief Clone monorepo from github. Add all subtree remotes from metadata.
+#@enddoc#######################################################################
 gmash_mono_clone(){
   local _user="$GMASH_MONO_CLONE_USER"
   local _dir="$GMASH_MONO_CLONE_DIR"
@@ -857,12 +851,11 @@ gmash_mono_clone(){
 
 
   vecho_process "Adding subtrees from metadata."
-  for conf_file in ../.gmash/subtree/*.conf; do
-    if [ "$conf_file" == "../.gmash/subtree/*.conf" ]; then
-      # No .conf files found, break the loop.
-      conf_file=""
-      break
-    fi
+  local conf_files_=( "$GMASH_MONO_METADATA_PATH"/*.conf )
+  if [ "${conf_files_[0]}" == "$GMASH_MONO_METADATA_PATH/*.conf" ] && [ ! -e "${conf_files_[0]}" ]; then
+    echo_die "No subtree metadata found."
+  fi
+  for conf_file in "${conf_files_[@]}"; do
 
     if [ ! -f "$conf_file" ]; then
       vecho_action "No subtree metadata files found in '../.gmash/subtree'. Skipping mono-clone subtree addition."
@@ -1012,7 +1005,10 @@ gmash_mono_split(){
   vecho_done "Sucessfully split subtree."
 }
 
-
+#@doc##########################################################################
+  # @func gmash_mono_split
+  # @brief List current subtree metadata.
+#@enddoc#######################################################################
 gmash_mono_list(){
   if [ ! -d "$GMASH_MONO_METADATA_PATH" ]; then
     echo_die "Subtree metadata directory '$GMASH_MONO_METADATA_PATH' not found."
