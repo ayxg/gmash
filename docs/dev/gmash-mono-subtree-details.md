@@ -1,3 +1,4 @@
+# `gmash mono subtree` impl details
 Detailed overview of the git process for creating an example subtree 'foo-box'.
 For each submodule:
 1. Create github repo with only a single commit (eg. .gitignore or README.md).
