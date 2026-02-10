@@ -11,7 +11,6 @@
 # @file gmash->mono command group
 #@enddoc#######################################################################
 
-readonly GMASH_MONO_DEFAULT_BRANCH="main"
 readonly GMASH_MONO_METADATA_PATH=".gmash/subtree"
 
 assert_inside_git_repo(){
@@ -423,15 +422,6 @@ _gmash_mono_pull_all(){
   return 0
 }
 
-gmash_mono_push_cleanup(){
-  local _temp_worktree_dir="${1:-""}"
-  local _temp_branch="${2:-""}"
-  vecho_action "Cleaning up temporary worktree and branch."
-  git worktree remove --force "$_temp_worktree_dir" 2>/dev/null || rm -rf "$_temp_worktree_dir"
-  git branch -D "$_temp_branch" 2>/dev/null || true
-  git worktree prune
-}
-
 #@doc##########################################################################
   # @func gmash_mono_push
   # @brief Push commits made in a monorepo to an owned subtree repo.
@@ -628,7 +618,7 @@ gmash_mono_push(){
   fi
 
   # Add a trap to clean up temp worktree and branch on exit.
-  trap "gmash_mono_push_cleanup '$_temp_worktree_dir' '$_temp_branch'" EXIT INT TERM
+  trap "_gmash_mono_push_cleanup '$_temp_worktree_dir' '$_temp_branch'" EXIT INT TERM
 
   # Prepare parent->subtree merge commit message.
   local _merge_msg="[mono:$_prefix -> $_remote] Merged mono push to $_target_branch."
@@ -811,6 +801,15 @@ _gmash_mono_push_all(){
   fi
 
   return 0
+}
+
+_gmash_mono_push_cleanup(){
+  local _temp_worktree_dir="${1:-""}"
+  local _temp_branch="${2:-""}"
+  vecho_action "Cleaning up temporary worktree and branch."
+  git worktree remove --force "$_temp_worktree_dir" 2>/dev/null || rm -rf "$_temp_worktree_dir"
+  git branch -D "$_temp_branch" 2>/dev/null || true
+  git worktree prune
 }
 
 # Clone monorepo from github. Add all subtrees from metadata.
