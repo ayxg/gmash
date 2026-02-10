@@ -11,8 +11,16 @@
 # @file gmash->mono command group
 #@enddoc#######################################################################
 
+###############################################################################
+# Shared constants.
+###############################################################################
 readonly GMASH_MONO_METADATA_PATH=".gmash/subtree"
 
+###############################################################################
+# Shared asserts.
+###############################################################################
+
+# Asserts shell cwd is in a git repo. Returns repo name if assert passed.
 assert_inside_git_repo(){
   local curr_repo_name_
   curr_repo_name_="$(git_curr_repo)"
@@ -22,6 +30,7 @@ assert_inside_git_repo(){
   echo "$curr_repo_name_"
 }
 
+# Asserts current git work tree is clean. No uncommited changes.
 assert_working_tree_clean(){
   if ! git diff --quiet || ! git diff --cached --quiet; then
     echo_die "Working tree is dirty. Please commit or stash changes before proceeding."
@@ -39,6 +48,7 @@ assert_required_arg(){
   fi
 }
 
+# Asserts current github api user is available. Returns username if assert passed.
 assert_github_api_user(){
   local api_user_
   api_user_="$(gh_api_user)"
@@ -48,6 +58,8 @@ assert_github_api_user(){
   echo "$api_user_"
 }
 
+# Asserts metadata for a given subtree remote name exists. Returns .conf file path if assert passed.
+# $1 : Configured subtree remote name.
 assert_metadata_exists(){
   local _remote="${1:-""}"
   local conf="$GMASH_MONO_METADATA_PATH/$_remote.conf"
@@ -57,6 +69,8 @@ assert_metadata_exists(){
   echo "$conf"
 }
 
+# Asssert remote exists in the current git repo.
+# $1 : Expected remote name.
 assert_remote_exists(){
   local _remote="${1:-""}"
   if ! git remote get-url "$_remote" &>/dev/null; then
@@ -64,6 +78,8 @@ assert_remote_exists(){
   fi
 }
 
+# Assert remote does NOT exist in the current git repo.
+# $1 : Expected remote name.
 assert_remote_unused(){
   local _remote="${1:-""}"
   if git config "remote.$_remote.url" > /dev/null; then
@@ -100,6 +116,7 @@ assert_path_not_gitignored(){
 }
 
 # Assert remote url is accessible
+# $1 : Remote url to test.
 assert_remote_url_accessible(){
   local _url="${1:-""}"
   if ! git ls-remote "$_url" &> /dev/null; then
@@ -118,9 +135,10 @@ assert_prefix_has_history() {
   fi
 }
 
-# Creates a new remote github repo for a subtree.
-# $1 : github username or org to own the repo
-# $2 : github repo name
+# Creates a new remote github repo for a subtree. Returns the github url of created repo
+# if successful.
+# $1 : GitHub username or org to own the repo.
+# $2 : GitHub repo name.
 create_new_github_repo(){
   local _name="${1:-""}"
   local _owner="${2:-""}"
@@ -129,7 +147,7 @@ create_new_github_repo(){
   if command -v gh >/dev/null 2>&1; then
     if gh repo create "$_owner/$_name" --private --add-readme --description \
       "[gmash] Init subtree repository '$_owner/$_name'" > /dev/null 2>&1; then
-      return 0
+      echo "https://github.com/$_name/$_remote.git"
     else # Unexpected error ?
       echo_die "Failed to create GitHub repository."
     fi
@@ -138,8 +156,9 @@ create_new_github_repo(){
   fi
 }
 
-# Delete a repo on github
-# !!WARNING: Destructive action. Do not ever call this on non-fresh repos. Always validate input args.
+# Delete a repo on github.
+# !!WARNING!!: Destructive action. Do not ever call this on non-fresh repos. Always validate input args.
+# !!WARNING!!: This function may trigger an auth request if user is not already authd on calling device.
 # $1 : github username or org
 # $2 : github repo name
 delete_github_repo(){
@@ -163,9 +182,9 @@ delete_github_repo(){
   fi
 }
 
-# Fetches the name of the default branch from origin (e.g., 'main')
+# Returns the name of the default branch from origin (e.g., 'main')
 get_default_branch() {
-    git rev-parse --abbrev-ref origin/HEAD | sed 's|^origin/||'
+  git rev-parse --abbrev-ref origin/HEAD | sed 's|^origin/||'
 }
 
 #@doc##########################################################################
